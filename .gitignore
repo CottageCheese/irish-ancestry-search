@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# pytest
+.pytest_cache/
+
+# IDE / tooling
+.claude/
+.vscode/
+.idea/
+
+# Scraper runtime artifacts
+run.log
+.search_cache.json
+.storage_state.json
+results.csv
+results.prev.csv
+results.html
+results.json
+results.ged
+run.summary.md
+results/
+notes.md
+
+# OS
+.DS_Store
+Thumbs.db
