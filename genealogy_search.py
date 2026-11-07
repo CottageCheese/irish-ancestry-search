@@ -704,7 +704,9 @@ def main() -> int:
         prev_records = load_records_csv(results_csv_path)
         confirmed = [r for r in prev_records
                      if confs.get(record_key(r), {}).get("status") == "confirmed"]
-        hints_by_person = extract_hints(confirmed)
+        rejected = [r for r in prev_records
+                    if confs.get(record_key(r), {}).get("status") == "rejected"]
+        hints_by_person = extract_hints(confirmed, rejected)
         if hints_by_person:
             logger.info("Loaded feedback hints for %d person(s): %s",
                         len(hints_by_person), ", ".join(hints_by_person.keys()))

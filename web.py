@@ -215,7 +215,9 @@ def _build_hints() -> dict[str, dict]:
     prev = load_records_csv(HERE / RESULTS_CSV)
     confirmed = [r for r in prev
                  if confs.get(record_key(r), {}).get("status") == "confirmed"]
-    return extract_hints(confirmed)
+    rejected = [r for r in prev
+                if confs.get(record_key(r), {}).get("status") == "rejected"]
+    return extract_hints(confirmed, rejected)
 
 
 def _worker(opts: dict) -> None:

@@ -63,3 +63,47 @@ def test_annotate_records_no_hints_backward_compat():
     r = _rec()
     annotate_records(person, [r])
     assert r.score > 0
+
+
+def test_extract_hints_rejected_builds_anti_sets():
+    confirmed = [_rec(place="Ballybeg Galway", age_or_year="1901",
+                      other_details="Mary wife")]
+    rejected = [_rec(place="Dublin City", age_or_year="1870",
+                     other_details="Patrick son")]
+    hints = extract_hints(confirmed, rejected)["John Furey"]
+    assert "dublin" in hints["anti_places"]
+    assert 1870 in hints["anti_years"]
+    assert "patrick" in hints["anti_kin"]
+
+
+def test_extract_hints_confirmed_wins_over_rejected():
+    confirmed = [_rec(place="Ballybeg Galway")]
+    rejected = [_rec(place="Ballybeg Mayo")]
+    hints = extract_hints(confirmed, rejected)["John Furey"]
+    assert "ballybeg" in hints["places"]
+    assert "ballybeg" not in hints["anti_places"]
+    assert "mayo" in hints["anti_places"]
+
+
+def test_score_hint_bonus_anti_place_penalises():
+    hints = {"places": set(), "kin": set(), "years": set(),
+             "anti_places": {"dublin"}, "anti_kin": set(), "anti_years": set()}
+    pts, reason = score_hint_bonus(_rec(place="Dublin City"), hints)
+    assert pts == -2
+    assert "anti_place:dublin" in reason
+
+
+def test_score_hint_bonus_anti_year_within_two():
+    hints = {"places": set(), "kin": set(), "years": set(),
+             "anti_places": set(), "anti_kin": set(), "anti_years": {1870}}
+    assert score_hint_bonus(_rec(age_or_year="1871"), hints)[0] == -2
+    assert score_hint_bonus(_rec(age_or_year="1880"), hints)[0] == 0
+
+
+def test_score_hint_bonus_mixed_positive_and_negative():
+    hints = {"places": {"ballybeg"}, "kin": set(), "years": set(),
+             "anti_places": {"dublin"}, "anti_kin": set(), "anti_years": set()}
+    pts, reason = score_hint_bonus(_rec(place="Ballybeg Dublin"), hints)
+    assert pts == 0
+    assert "place:ballybeg" in reason
+    assert "anti_place:dublin" in reason
