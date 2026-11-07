@@ -65,6 +65,7 @@ def sort_by_score(records: list[Record]) -> list[Record]:
 
 
 IncrementalSaver = Callable[[list[Record]], None]
+SiteDoneCb = Callable[[str, int, int], None]  # (site_key, found_for_person, total_unique)
 
 
 def run_search(playwright: Playwright, people: list[Person], headless: bool,
@@ -73,6 +74,8 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
                score_sort: bool, storage_path: Path | None,
                incremental_save: IncrementalSaver | None = None,
                progress: Callable[[int, int, str], None] | None = None,
+               on_site_done: SiteDoneCb | None = None,
+               hints_by_person: dict[str, dict] | None = None,
                ) -> list[Record]:
     browser: Browser = playwright.chromium.launch(headless=headless)
     ctx_kwargs: dict = {"user_agent": settings.USER_AGENT}
@@ -102,11 +105,15 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
                     continue
                 try:
                     found = fn(page, person, logger, site_state[site_key], cache, use_nicknames, deep)
-                    annotate_records(person, found)
+                    person_hints = (hints_by_person or {}).get(person.label())
+                    annotate_records(person, found, hints=person_hints)
                     logger.info("[%s] %d records for %s", site_key, len(found), person.label())
                     all_records.extend(found)
                 except Exception as exc:
                     logger.exception("[%s] failed for %s: %s", site_key, person.label(), exc)
+                    found = []
+                if on_site_done:
+                    on_site_done(site_key, len(found), len(dedupe_records(all_records)))
             snapshot = dedupe_records(all_records)
             if score_sort:
                 snapshot = sort_by_score(snapshot)

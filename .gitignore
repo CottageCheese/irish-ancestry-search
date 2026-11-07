@@ -25,6 +25,7 @@ results.ged
 run.summary.md
 results/
 notes.md
+confirmations.json
 
 # OS
 .DS_Store

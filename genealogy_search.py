@@ -54,10 +54,15 @@ from genealogy_core import (
     RUNTIME_FLAGS,
     Person,
     Record,
+    apply_confirmations,
     confidence_tier,
     annotate_records,
+    extract_hints,
+    load_confirmations,
     load_previous_keys,
+    load_records_csv,
     mark_new_records,
+    record_key,
     render_results_html,
     render_person_page,
     render_index,
@@ -109,6 +114,7 @@ RESULTS_PEOPLE_DIR = "results"
 LOG_FILE = "run.log"
 CACHE_FILE = ".search_cache.json"
 STORAGE_FILE = ".storage_state.json"
+CONFIRMS_FILE = "confirmations.json"
 
 # ---------------------------------------------------------------------------
 # End of CONFIG - normal users do not need to edit below this line
@@ -691,6 +697,18 @@ def main() -> int:
 
     storage_path = None if args.no_storage else (here / STORAGE_FILE)
 
+    confs_path = here / CONFIRMS_FILE
+    confs = load_confirmations(confs_path)
+    hints_by_person: dict[str, dict] = {}
+    if confs:
+        prev_records = load_records_csv(results_csv_path)
+        confirmed = [r for r in prev_records
+                     if confs.get(record_key(r), {}).get("status") == "confirmed"]
+        hints_by_person = extract_hints(confirmed)
+        if hints_by_person:
+            logger.info("Loaded feedback hints for %d person(s): %s",
+                        len(hints_by_person), ", ".join(hints_by_person.keys()))
+
     def _save_snapshot(snapshot: list[Record]) -> None:
         write_csv(snapshot, here / RESULTS_CSV)
         write_html(snapshot, here / RESULTS_HTML)
@@ -701,13 +719,16 @@ def main() -> int:
                                   cache, use_nicknames, args.deep, score_sort,
                                   storage_path,
                                   incremental_save=_save_snapshot,
-                                  progress=print_progress)
+                                  progress=print_progress,
+                                  hints_by_person=hints_by_person)
     except Exception as exc:
         logger.exception("Fatal error: %s", exc)
         cache.save()
         return 2
 
     new_count = mark_new_records(records, prev_keys)
+    if confs:
+        apply_confirmations(records, confs)
     write_csv(records, results_csv_path)
     if args.per_person:
         rel_map = write_per_person_pages(records, here / RESULTS_PEOPLE_DIR)

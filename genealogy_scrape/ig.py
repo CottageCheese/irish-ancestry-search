@@ -1,4 +1,9 @@
-"""IrishGenealogy.ie scraper: civil (b/m/d) + church (baptism/marriage/burial)."""
+"""IrishGenealogy.ie scraper: civil (b/m/d) + church (baptism/marriage/burial).
+
+parse_ig_item is pure — takes extracted summary + detail-bit strings and
+returns a Record. Scrapers feed it Playwright-extracted strings; the
+function itself is unit-testable without a browser.
+"""
 import logging
 import re
 
@@ -10,6 +15,46 @@ from . import settings
 from .browser import build_url, looks_like_captcha, polite_pause, safe_goto, wait_for_user_after_captcha
 from .cache import SearchCache
 from .sites import IG_SEARCH_MATRIX, SITES
+
+IG_BASE = "https://www.irishgenealogy.ie"
+_PLACE_KEYS = ("District", "Area", "Place", "Parish")
+_YEAR_RE = re.compile(r"\b(1[6-9]\d{2}|20\d{2})\b")
+
+
+def parse_ig_item(summary: str, detail_bits: list[str], href: str,
+                  fallback_url: str, person: Person, forename: str,
+                  surname: str, site_label: str, record_type: str) -> Record:
+    """Build a Record from one IG result list item.
+
+    summary is the h5 text ("John Doe 1872 Civil Birth ..."). detail_bits is
+    the list of child-div strings that contain a ':' separator. href is the
+    raw link attribute (may be relative or empty).
+    """
+    full_href = href or ""
+    if full_href.startswith("/"):
+        full_href = IG_BASE + full_href
+
+    year_match = _YEAR_RE.search(summary or "")
+    found_year = year_match.group(0) if year_match else ""
+
+    place = person.county
+    for bit in detail_bits:
+        if any(key in bit for key in _PLACE_KEYS):
+            place = bit.split(":", 1)[-1].strip()
+            break
+
+    name = summary.strip() if summary else f"{forename} {surname}".strip()
+
+    return Record(
+        person_searched=person.label(),
+        site=site_label,
+        record_type=record_type,
+        name_found=name,
+        age_or_year=found_year,
+        place=place,
+        other_details=" | ".join(detail_bits),
+        link=full_href or fallback_url,
+    )
 
 
 def scrape_ig_detail(page: Page, href: str, logger: logging.Logger) -> str:
@@ -123,8 +168,6 @@ def _search_ig_one(page: Page, person: Person, surname: str, forename: str,
     for item in items[: settings.MAX_RESULTS_PER_SEARCH]:
         link_el = item.query_selector("a")
         href = link_el.get_attribute("href") if link_el else ""
-        if href.startswith("/"):
-            href = "https://www.irishgenealogy.ie" + href
         summary_el = item.query_selector("h5")
         summary = (summary_el.inner_text() if summary_el else "").strip()
         detail_bits: list[str] = []
@@ -133,29 +176,11 @@ def _search_ig_one(page: Page, person: Person, surname: str, forename: str,
             if text and ":" in text:
                 detail_bits.append(text)
 
-        year_match = re.search(r"\b(1[6-9]\d{2}|20\d{2})\b", summary)
-        found_year = year_match.group(0) if year_match else ""
-
-        place = person.county
-        for bit in detail_bits:
-            if any(key in bit for key in ("District", "Area", "Place", "Parish")):
-                place = bit.split(":", 1)[-1].strip()
-                break
-
-        records.append(
-            Record(
-                person_searched=person.label(),
-                site=cfg["name"],
-                record_type=label,
-                name_found=summary or f"{forename} {surname}".strip(),
-                age_or_year=found_year,
-                place=place,
-                other_details=" | ".join(detail_bits),
-                link=href or page.url,
-            )
-        )
-        if deep and href and href.startswith("http"):
-            detail_hrefs.append((len(records) - 1, href))
+        rec = parse_ig_item(summary, detail_bits, href, page.url,
+                            person, forename, surname, cfg["name"], label)
+        records.append(rec)
+        if deep and rec.link.startswith("http"):
+            detail_hrefs.append((len(records) - 1, rec.link))
 
     if deep and detail_hrefs:
         logger.info("[IG %s] deep scrape: %d record pages", label, len(detail_hrefs))

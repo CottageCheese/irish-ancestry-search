@@ -61,6 +61,7 @@ class Record:
     is_new: bool = False
     thumbnail: str = ""
     user_notes: str = ""
+    status: str = ""  # "" | "confirmed" | "rejected" — set by user via web UI
 
 
 def confidence_tier(score: int) -> str:

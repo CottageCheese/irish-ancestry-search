@@ -19,15 +19,24 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-from flask import Flask, Response, abort, redirect, render_template_string, request, send_file, url_for
+from flask import Flask, Response, abort, jsonify, redirect, render_template_string, request, send_file, url_for
 from playwright.sync_api import sync_playwright
 
 from genealogy_core import (
     Record,
     RUNTIME_FLAGS,
+    VALID_STATUSES,
     annotate_records,
+    apply_confirmations,
+    extract_hints,
+    filter_rejected,
+    load_confirmations,
+    load_records_csv,
     load_previous_keys,
     mark_new_records,
+    record_key,
+    save_confirmations,
+    set_status,
 )
 from genealogy_scrape import SearchCache, run_search as _run_search
 from genealogy_scrape import settings as scrape_settings
@@ -50,6 +59,8 @@ from genealogy_search import (
 
 HERE = Path(__file__).resolve().parent
 UPLOAD_CSV = HERE / "ancestors.csv"
+CONFIRMS_FILE = HERE / "confirmations.json"
+CONFIRMS_LOCK = threading.Lock()
 
 app = Flask(__name__)
 
@@ -58,6 +69,8 @@ RUN: dict = {
     "current": 0,
     "total": 0,
     "label": "",
+    "last_site": "",
+    "live_records": 0,
     "started": None,
     "finished": None,
     "error": "",
@@ -109,28 +122,73 @@ INDEX_HTML = """
 </form>
 {% else %}
 <div class="state">
-  <strong>State:</strong> {{ run.state }}<br>
-  {% if run.total %}
-    <strong>Progress:</strong> {{ run.current }} / {{ run.total }} &mdash; {{ run.label }}
-    <div class="bar"><div style="width: {{ (100 * run.current / run.total) if run.total else 0 }}%"></div></div>
-  {% endif %}
+  <strong>State:</strong> <span id="st-state">{{ run.state }}</span><br>
+  <strong>Progress:</strong> <span id="st-current">{{ run.current }}</span> / <span id="st-total">{{ run.total }}</span>
+  &mdash; <span id="st-label">{{ run.label }}</span>
+  <div class="bar"><div id="st-bar" style="width: {{ (100 * run.current / run.total) if run.total else 0 }}%"></div></div>
+  <div style="margin-top:.4rem">
+    <strong>Records so far:</strong> <span id="st-live">{{ run.live_records }}</span>
+    &nbsp;|&nbsp; <strong>Last site:</strong> <span id="st-site">{{ run.last_site or '—' }}</span>
+  </div>
   {% if run.started %}<div><small>Started {{ run.started }}</small></div>{% endif %}
-  {% if run.finished %}<div><small>Finished {{ run.finished }}</small></div>{% endif %}
-  {% if run.error %}<div style="color:#b00"><strong>Error:</strong> {{ run.error }}</div>{% endif %}
-  {% if run.state == 'done' %}
-    <div>{{ run.record_count }} unique record(s). {{ run.new_count }} new since previous run.</div>
+  <div><small id="st-finished">{% if run.finished %}Finished {{ run.finished }}{% endif %}</small></div>
+  <div id="st-error" style="color:#b00">{% if run.error %}<strong>Error:</strong> {{ run.error }}{% endif %}</div>
+
+  <details open style="margin-top:.8rem">
+    <summary>Live log</summary>
+    <pre id="st-log" style="background:#111;color:#cfc;padding:.6rem;border-radius:4px;max-height:220px;overflow:auto;font-size:.8rem;margin:.4rem 0 0">{{ '(waiting…)' }}</pre>
+  </details>
+
+  <div id="st-done" style="display:{{ 'block' if run.state == 'done' else 'none' }}">
+    <div><strong><span id="st-rc">{{ run.record_count }}</span></strong> unique record(s).
+         <span id="st-new">{{ run.new_count }}</span> new since previous run.</div>
     <a class="btn" href="{{ url_for('results_html') }}" target="_blank">Open results.html</a>
     <a class="btn" href="{{ url_for('download', name='results.csv') }}">Download CSV</a>
     <a class="btn" href="{{ url_for('download', name='results.json') }}">Download JSON</a>
     <a class="btn" href="{{ url_for('download', name='run.log') }}">run.log</a>
-  {% endif %}
-  {% if run.state in ('done', 'error') %}
-    <form method="post" action="{{ url_for('reset') }}" style="margin-top:1rem">
-      <button type="submit">New run</button>
-    </form>
-  {% endif %}
+  </div>
+
+  <form id="st-reset" method="post" action="{{ url_for('reset') }}" style="margin-top:1rem;display:{{ 'block' if run.state in ('done','error') else 'none' }}">
+    <button type="submit">New run</button>
+  </form>
 </div>
-{% if run.state == 'running' %}<script>setTimeout(() => location.reload(), 2000);</script>{% endif %}
+
+<script>
+async function tick() {
+  try {
+    const [s, l] = await Promise.all([
+      fetch('{{ url_for("status_json") }}').then(r => r.json()),
+      fetch('{{ url_for("log_json") }}').then(r => r.json()),
+    ]);
+    document.getElementById('st-state').textContent = s.state;
+    document.getElementById('st-current').textContent = s.current;
+    document.getElementById('st-total').textContent = s.total;
+    document.getElementById('st-label').textContent = s.label || '—';
+    document.getElementById('st-live').textContent = s.live_records;
+    document.getElementById('st-site').textContent = s.last_site || '—';
+    document.getElementById('st-bar').style.width = (s.total ? (100 * s.current / s.total) : 0) + '%';
+    document.getElementById('st-finished').textContent = s.finished ? ('Finished ' + s.finished) : '';
+    document.getElementById('st-error').innerHTML = s.error ? ('<strong>Error:</strong> ' + s.error) : '';
+    document.getElementById('st-log').textContent = (l.lines || []).join('\n') || '(waiting…)';
+    const doneBlock = document.getElementById('st-done');
+    const resetBlock = document.getElementById('st-reset');
+    if (s.state === 'done') {
+      doneBlock.style.display = 'block';
+      resetBlock.style.display = 'block';
+      document.getElementById('st-rc').textContent = s.record_count;
+      document.getElementById('st-new').textContent = s.new_count;
+    } else if (s.state === 'error') {
+      doneBlock.style.display = 'none';
+      resetBlock.style.display = 'block';
+    } else {
+      doneBlock.style.display = 'none';
+      resetBlock.style.display = 'none';
+    }
+    if (s.state === 'running') setTimeout(tick, 2000);
+  } catch (e) { setTimeout(tick, 3000); }
+}
+tick();
+</script>
 {% endif %}
 """
 
@@ -140,6 +198,24 @@ def _progress(current: int, total: int, label: str) -> None:
         RUN["current"] = current
         RUN["total"] = total
         RUN["label"] = label
+
+
+def _site_done(site_key: str, found: int, total_unique: int) -> None:
+    with RUN_LOCK:
+        RUN["last_site"] = f"{site_key} (+{found})"
+        RUN["live_records"] = total_unique
+
+
+def _build_hints() -> dict[str, dict]:
+    """Load previous results + confirmations → per-person hints for scoring."""
+    with CONFIRMS_LOCK:
+        confs = load_confirmations(CONFIRMS_FILE)
+    if not confs:
+        return {}
+    prev = load_records_csv(HERE / RESULTS_CSV)
+    confirmed = [r for r in prev
+                 if confs.get(record_key(r), {}).get("status") == "confirmed"]
+    return extract_hints(confirmed)
 
 
 def _worker(opts: dict) -> None:
@@ -166,6 +242,10 @@ def _worker(opts: dict) -> None:
             write_html(snapshot, HERE / RESULTS_HTML)
 
         storage_path = HERE / STORAGE_FILE
+        hints_by_person = _build_hints()
+        if hints_by_person:
+            logger.info("Loaded feedback hints for %d person(s): %s",
+                        len(hints_by_person), ", ".join(hints_by_person.keys()))
 
         with sync_playwright() as pw:
             records = _run_search(
@@ -173,9 +253,14 @@ def _worker(opts: dict) -> None:
                 cache, True, opts["deep"], True, storage_path,
                 incremental_save=_save,
                 progress=_progress,
+                on_site_done=_site_done,
+                hints_by_person=hints_by_person,
             )
 
         new_count = mark_new_records(records, prev_keys)
+        with CONFIRMS_LOCK:
+            confs = load_confirmations(CONFIRMS_FILE)
+        apply_confirmations(records, confs)
         write_csv(records, results_csv_path)
         write_html(records, HERE / RESULTS_HTML)
         write_json(records, HERE / RESULTS_JSON)
@@ -274,6 +359,40 @@ def download(name: str):
     return send_file(p, as_attachment=True)
 
 
+@app.route("/confirm", methods=["POST"])
+def confirm() -> Response:
+    data = request.get_json(silent=True) or {}
+    key = (data.get("key") or "").strip()
+    status = (data.get("status") or "").strip()
+    person = (data.get("person") or "").strip()
+    if not key:
+        return Response("missing key", status=400)
+    if status and status not in VALID_STATUSES:
+        return Response("bad status", status=400)
+    with CONFIRMS_LOCK:
+        confs = load_confirmations(CONFIRMS_FILE)
+        set_status(confs, key, status, person)
+        save_confirmations(CONFIRMS_FILE, confs)
+    _rerender_results_html(confs)
+    return Response(status=204)
+
+
+def _rerender_results_html(confs: dict[str, dict]) -> None:
+    """Re-render results.html with current confirmations so colours persist
+    across page reloads without a fresh run."""
+    results_csv_path = HERE / RESULTS_CSV
+    if not results_csv_path.exists():
+        return
+    try:
+        records = load_records_csv(results_csv_path)
+        if not records:
+            return
+        apply_confirmations(records, confs)
+        write_html(records, HERE / RESULTS_HTML)
+    except Exception:
+        logging.getLogger("genealogy").exception("Re-render after /confirm failed")
+
+
 @app.route("/status.json")
 def status_json() -> Response:
     with RUN_LOCK:
@@ -281,6 +400,21 @@ def status_json() -> Response:
             __import__("json").dumps(RUN, default=str),
             mimetype="application/json",
         )
+
+
+@app.route("/log.json")
+def log_json() -> Response:
+    """Return the last ~15 lines of run.log for live display."""
+    import json as _json
+    p = HERE / LOG_FILE
+    lines: list[str] = []
+    if p.exists():
+        try:
+            raw = p.read_text(encoding="utf-8", errors="replace").splitlines()
+            lines = raw[-15:]
+        except Exception:
+            lines = []
+    return Response(_json.dumps({"lines": lines}), mimetype="application/json")
 
 
 if __name__ == "__main__":

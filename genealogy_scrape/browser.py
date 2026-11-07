@@ -107,32 +107,56 @@ def dismiss_cookie_banner(page: Page, logger: logging.Logger) -> bool:
     return False
 
 
-def safe_goto(page: Page, url: str, logger: logging.Logger) -> bool:
-    """Navigate to `url` tolerantly. Returns True if we ended up on some
-    real page. A redirect that interrupts the first navigation is treated
-    as success — we just wait for the follow-up load. Any visible cookie
-    banner is auto-dismissed before returning so results selectors aren't
-    occluded.
+def _attempt_goto(page: Page, url: str, logger: logging.Logger) -> tuple[bool, bool]:
+    """Single navigation attempt. Returns (ok, transient).
+    `transient` means caller may retry (timeout or 5xx response).
     """
     try:
-        page.goto(url, timeout=settings.PAGE_TIMEOUT_MS, wait_until="domcontentloaded")
+        response = page.goto(url, timeout=settings.PAGE_TIMEOUT_MS, wait_until="domcontentloaded")
+        status = response.status if response is not None else None
+        if status is not None and 500 <= status < 600:
+            logger.error("load got HTTP %s", status)
+            return False, True
         dismiss_cookie_banner(page, logger)
-        return True
+        return True, False
     except PlaywrightTimeoutError as exc:
         logger.error("load timeout: %s", exc)
-        return False
+        return False, True
     except Exception as exc:
         msg = str(exc).lower()
         if "interrupted by another navigation" in msg or "err_aborted" in msg:
             try:
                 page.wait_for_load_state("domcontentloaded", timeout=settings.PAGE_TIMEOUT_MS)
                 dismiss_cookie_banner(page, logger)
-                return True
+                return True, False
             except Exception as inner:
                 logger.error("post-redirect wait failed: %s", inner)
-                return False
+                return False, True
         logger.error("load failed: %s", exc)
-        return False
+        return False, False
+
+
+def safe_goto(page: Page, url: str, logger: logging.Logger) -> bool:
+    """Navigate to `url` tolerantly. Returns True if we ended up on some
+    real page. A redirect that interrupts the first navigation is treated
+    as success — we just wait for the follow-up load. Any visible cookie
+    banner is auto-dismissed before returning so results selectors aren't
+    occluded.
+
+    Retries on transient failures (timeouts, HTTP 5xx) up to
+    `settings.RETRY_ATTEMPTS` extra times with exponential backoff.
+    """
+    total = 1 + max(0, settings.RETRY_ATTEMPTS)
+    for attempt in range(1, total + 1):
+        ok, transient = _attempt_goto(page, url, logger)
+        if ok:
+            return True
+        if not transient or attempt == total:
+            return False
+        delay = settings.RETRY_BACKOFF_BASE * (2 ** (attempt - 1))
+        logger.warning("retrying load (%d/%d) after %.1fs: %s", attempt, total - 1, delay, url)
+        time.sleep(delay)
+    return False
 
 
 def safe_text(page: Page, selector: str) -> str:

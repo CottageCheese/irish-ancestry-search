@@ -7,6 +7,7 @@ filter/toggle script live here too.
 import html
 import re
 
+from .confirmations import record_key
 from .models import Record, confidence_tier
 
 _BASE_CSS = (
@@ -53,20 +54,51 @@ _DARK_CSS = (
     "button.dark-toggle{padding:.3em .8em;cursor:pointer;border:1px solid #888;background:#fff;border-radius:3px}"
     "body.dark button.dark-toggle{background:#333;color:#eee;border-color:#666}"
     "img.thumb{max-width:60px;max-height:60px;border:1px solid #888}"
+    "tr.confirmed td{background:#d7efd0!important}"
+    "tr.rejected td{opacity:.35;text-decoration:line-through}"
+    "body.dark tr.confirmed td{background:#1e4a24!important}"
+    "body.dark tr.rejected td{opacity:.3}"
+    "body.hide-rejected tr.rejected{display:none}"
+    ".conf-btns{display:flex;gap:2px;justify-content:center}"
+    ".conf-btns button{cursor:pointer;border:1px solid #888;background:#fafafa;padding:1px 6px;"
+    "border-radius:3px;font-size:.9em}"
+    ".conf-btns button.on-confirm{background:#2a7d2a;color:#fff;border-color:#2a7d2a}"
+    ".conf-btns button.on-reject{background:#b43232;color:#fff;border-color:#b43232}"
+    "body.dark .conf-btns button{background:#333;color:#ddd;border-color:#666}"
 )
 
 _HTML_SCRIPT = (
     "<script>"
     "(function(){try{if(localStorage.getItem('dark')==='1')document.body.classList.add('dark');}catch(e){}"
+    "try{if(localStorage.getItem('hide_rejected')==='1')document.body.classList.add('hide-rejected');}catch(e){}"
     "var btn=document.getElementById('dm');if(btn)btn.onclick=function(){"
     "document.body.classList.toggle('dark');"
     "try{localStorage.setItem('dark',document.body.classList.contains('dark')?'1':'0');}catch(e){}"
     "};"
+    "var hr=document.getElementById('hr');if(hr){"
+    "hr.checked=document.body.classList.contains('hide-rejected');"
+    "hr.onchange=function(){document.body.classList.toggle('hide-rejected',hr.checked);"
+    "try{localStorage.setItem('hide_rejected',hr.checked?'1':'0');}catch(e){}};}"
     "var inp=document.getElementById('filter');if(inp)inp.oninput=function(){"
     "var q=this.value.toLowerCase();"
     "document.querySelectorAll('table tbody tr').forEach(function(tr){"
     "tr.style.display=tr.innerText.toLowerCase().indexOf(q)>=0?'':'none';});"
-    "};})();"
+    "};"
+    "function applyRow(tr,status){tr.classList.remove('confirmed','rejected');"
+    "if(status)tr.classList.add(status);"
+    "tr.querySelectorAll('.conf-btns button').forEach(function(b){"
+    "b.classList.toggle('on-confirm',status==='confirmed'&&b.dataset.action==='confirmed');"
+    "b.classList.toggle('on-reject',status==='rejected'&&b.dataset.action==='rejected');});}"
+    "document.querySelectorAll('.conf-btns button').forEach(function(b){"
+    "b.addEventListener('click',function(){"
+    "var tr=b.closest('tr'),key=tr.dataset.key,person=tr.dataset.person;"
+    "var cur=tr.classList.contains(b.dataset.action)?'':b.dataset.action;"
+    "fetch('/confirm',{method:'POST',headers:{'Content-Type':'application/json'},"
+    "body:JSON.stringify({key:key,status:cur,person:person})})"
+    ".then(function(r){if(r.ok)applyRow(tr,cur);"
+    "else r.text().then(function(t){alert('Save failed: '+t);});})"
+    ".catch(function(e){alert('Save failed (offline?): '+e);});});});"
+    "})();"
     "</script>"
 )
 
@@ -90,6 +122,8 @@ def _html_controls() -> str:
     return ("<div class='controls'>"
             "<input class='filter' id='filter' placeholder='Filter rows...' type='search'>"
             "<button class='dark-toggle' id='dm' type='button'>Toggle dark mode</button>"
+            "<label style='margin-left:.4em'>"
+            "<input type='checkbox' id='hr'> Hide rejected</label>"
             "</div>")
 
 
@@ -141,7 +175,7 @@ def render_person_table(recs: list[Record], collapse_weak: bool = True) -> str:
             "<table><thead><tr>"
             "<th>Tier</th><th>Score</th><th>Site</th><th>Record type</th><th>Name found</th>"
             "<th>Age / year</th><th>Place</th><th>Other details</th>"
-            "<th>Kin match</th><th>Scan</th><th>Notes</th><th>Link</th>"
+            "<th>Kin match</th><th>Scan</th><th>Notes</th><th>Link</th><th>Confirm</th>"
             "</tr></thead><tbody>"
         ]
         for r in rr:
@@ -151,6 +185,8 @@ def render_person_table(recs: list[Record], collapse_weak: bool = True) -> str:
                 classes.append("top")
             if tier == "Weak":
                 classes.append("weak")
+            if r.status in ("confirmed", "rejected"):
+                classes.append(r.status)
             row_cls = f" class='{' '.join(classes)}'" if classes else ""
             kin_cls = " class='kin'" if r.kin_hits else ""
             new_badge = "<span class='new'>NEW</span>" if r.is_new else ""
@@ -159,8 +195,17 @@ def render_person_table(recs: list[Record], collapse_weak: bool = True) -> str:
                 f"<img class='thumb' src='{_esc(r.thumbnail)}' alt=''></a>"
                 if r.thumbnail else ""
             )
+            key = record_key(r)
+            c_on = " on-confirm" if r.status == "confirmed" else ""
+            x_on = " on-reject" if r.status == "rejected" else ""
+            conf_cell = (
+                "<div class='conf-btns'>"
+                f"<button type='button' data-action='confirmed' class='{c_on.strip()}' title='Confirm'>&#10003;</button>"
+                f"<button type='button' data-action='rejected' class='{x_on.strip()}' title='Reject'>&#10007;</button>"
+                "</div>"
+            )
             buf.append(
-                f"<tr{row_cls}>"
+                f"<tr{row_cls} data-key='{key}' data-person='{_esc(r.person_searched)}'>"
                 f"<td><span class='tier tier-{tier}'>{tier}</span>{new_badge}</td>"
                 f"<td class='score'>{r.score}</td>"
                 f"<td>{_esc(r.site)}</td>"
@@ -173,6 +218,7 @@ def render_person_table(recs: list[Record], collapse_weak: bool = True) -> str:
                 f"<td>{thumb_cell}</td>"
                 f"<td>{_esc(r.user_notes)}</td>"
                 f"<td><a href='{_esc(r.link)}' target='_blank'>open</a></td>"
+                f"<td>{conf_cell}</td>"
                 "</tr>"
             )
         buf.append("</tbody></table>")

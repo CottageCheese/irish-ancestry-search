@@ -18,6 +18,12 @@ CACHE_TTL_DAYS = 30
 # After this many consecutive load failures, mark a site dead for the run.
 MAX_CONSECUTIVE_FAILURES = 2
 
+# safe_goto retry behaviour for transient failures (timeouts, 5xx like
+# Cloudflare 503). Total attempts = 1 + RETRY_ATTEMPTS. Sleep between
+# attempts is RETRY_BACKOFF_BASE * 2**(attempt-1) seconds.
+RETRY_ATTEMPTS = 2
+RETRY_BACKOFF_BASE = 3.0
+
 # Plain desktop Chrome UA.
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "

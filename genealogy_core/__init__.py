@@ -14,6 +14,16 @@ from .diff import (
     load_previous_keys,
     mark_new_records,
 )
+from .confirmations import (
+    record_key,
+    load_confirmations,
+    save_confirmations,
+    set_status,
+    apply_confirmations,
+    filter_rejected,
+    VALID_STATUSES,
+)
+from .feedback import extract_hints, load_records_csv, score_hint_bonus
 from .render import (
     render_results_html,
     render_person_page,
@@ -38,6 +48,16 @@ __all__ = [
     "RECORD_ID_RE",
     "load_previous_keys",
     "mark_new_records",
+    "record_key",
+    "load_confirmations",
+    "save_confirmations",
+    "set_status",
+    "apply_confirmations",
+    "filter_rejected",
+    "VALID_STATUSES",
+    "extract_hints",
+    "load_records_csv",
+    "score_hint_bonus",
     "render_results_html",
     "render_person_page",
     "render_index",
