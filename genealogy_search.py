@@ -219,12 +219,28 @@ def read_people(path: Path, logger: logging.Logger | None = None) -> list[Person
 # SearchCache moved to genealogy_scrape.cache (imported above).
 
 
+def _set_terminal_title(text: str) -> None:
+    """Emit OSC 0 escape so window/taskbar title reflects progress.
+    Works in Windows Terminal, most Linux terminals, and macOS Terminal.
+    Silently no-ops when stderr isn't a tty.
+    """
+    if not sys.stderr.isatty():
+        return
+    try:
+        sys.stderr.write(f"\033]0;{text}\007")
+        sys.stderr.flush()
+    except Exception:
+        pass
+
+
 def print_progress(current: int, total: int, label: str) -> None:
     """
     One-line stderr progress bar. No external dep (tqdm optional, used only
     if present). Keeps output readable when stdout is also receiving the
-    per-search log lines.
+    per-search log lines. Also updates the terminal title so progress stays
+    visible when the window is minimised or scrolled.
     """
+    _set_terminal_title(f"genealogy [{current}/{total}] {label[:60]}")
     try:
         from tqdm import tqdm  # noqa: F401
         # tqdm present: emit via stderr so it overwrites cleanly.
@@ -731,6 +747,7 @@ def main() -> int:
                                   hints_by_person=hints_by_person)
     except Exception as exc:
         logger.exception("Fatal error: %s", exc)
+        _set_terminal_title("genealogy error")
         cache.save()
         return 2
 
@@ -764,6 +781,7 @@ def main() -> int:
         "Cache hits: %d, misses: %d. See %s and %s",
         len(records), new_count, cache.hits, cache.misses, RESULTS_CSV, RESULTS_HTML,
     )
+    _set_terminal_title(f"genealogy done — {len(records)} records")
     print(f"\nDone. {len(records)} unique record(s) saved to {RESULTS_CSV} and {RESULTS_HTML}.")
     if new_count:
         print(f"  {new_count} record(s) are new since the previous run.")

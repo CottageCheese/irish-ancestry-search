@@ -23,7 +23,7 @@ Working list. Tick when done. Add free-form.
 
 ## UX
 
-- [ ] Status line / taskbar progress in CLI (tail of run.log to stdout live).
+- [x] Status line / taskbar progress in CLI (tail of run.log to stdout live).
 - [x] Per-person page (`render_person_page`) has no "back to index" nav yet when opened from HTML results page.
 - [x] Download confirmations.json as backup button.
 - [x] GEDCOM export of confirmed records only (`--gedcom-confirmed-only`).
