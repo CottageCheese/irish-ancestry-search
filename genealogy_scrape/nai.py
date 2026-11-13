@@ -42,68 +42,9 @@ def parse_nai_row(cells: list[str], href: str, fallback_url: str,
     )
 
 
-def scrape_nai_detail(page: Page, href: str, logger: logging.Logger) -> tuple[str, str]:
-    """Click into a NAI record page. Returns (details, thumbnail_url).
-    Empty strings on any load or parse failure.
-    """
-    if not href or not href.startswith("http"):
-        return "", ""
-    try:
-        if not safe_goto(page, href, logger):
-            return "", ""
-        page.wait_for_function(NAI_READY_JS, timeout=settings.PAGE_TIMEOUT_MS)
-    except Exception:
-        return "", ""
-
-    thumb = ""
-    try:
-        img = page.query_selector(
-            "img[src*='scan'], img[src*='image'], img[src*='.jpg'], "
-            "img[src*='.jpeg'], img[src*='.png']"
-        )
-        if img:
-            src = img.get_attribute("src") or ""
-            if src.startswith("/"):
-                src = NAI_LINK_BASE + src
-            if src.startswith("http"):
-                thumb = src
-    except Exception:
-        pass
-
-    bits: list[str] = []
-    try:
-        rows = page.query_selector_all("table tr")
-        people_rows: list[str] = []
-        for row in rows[1:15]:
-            text = (row.inner_text() or "").strip()
-            if text and len(text) < 300:
-                people_rows.append(" ".join(text.split()))
-        if people_rows:
-            bits.append("Household: " + " ; ".join(people_rows[:10]))
-    except Exception:
-        pass
-
-    try:
-        labels = page.query_selector_all("dt, strong")
-        for lab in labels[:30]:
-            key = (lab.inner_text() or "").strip().rstrip(":")
-            if key.lower() in {"religion", "occupation", "relation to head", "marital status", "birthplace"}:
-                sib = lab.evaluate_handle("el => el.nextElementSibling || el.parentElement")
-                try:
-                    val = sib.evaluate("el => el ? (el.innerText || '').trim() : ''")
-                except Exception:
-                    val = ""
-                if val:
-                    bits.append(f"{key}: {val}")
-    except Exception:
-        pass
-
-    return " | ".join(bits)[:800], thumb
-
-
 def _search_nai_one(page: Page, person: Person, surname: str, forename: str,
                     year: str, cache: SearchCache, state: dict,
-                    logger: logging.Logger, deep: bool) -> list[Record]:
+                    logger: logging.Logger) -> list[Record]:
     cfg = SITES["nai_census"]
     cache_key = cache.key("nai", surname, forename, person.county, year)
     cached = cache.get(cache_key)
@@ -145,7 +86,6 @@ def _search_nai_one(page: Page, person: Person, surname: str, forename: str,
 
     records: list[Record] = []
     rows = page.query_selector_all(cfg["results_row"])
-    detail_hrefs: list[tuple[int, str]] = []
     for row in rows[: settings.MAX_RESULTS_PER_SEARCH + 5]:
         tds = row.query_selector_all("td")
         if not tds:
@@ -157,21 +97,8 @@ def _search_nai_one(page: Page, person: Person, surname: str, forename: str,
         href = link_el.get_attribute("href") if link_el else ""
         rec = parse_nai_row(cells, href, page.url, person, year, cfg["name"])
         records.append(rec)
-        if deep and rec.link.startswith("http"):
-            detail_hrefs.append((len(records) - 1, rec.link))
 
     logger.info("[NAI %s] parsed %d rows for %s %s", year, len(records), surname, forename)
-
-    if deep and detail_hrefs:
-        logger.info("[NAI %s] deep scrape: %d record pages", year, len(detail_hrefs))
-        for idx, href in detail_hrefs[: settings.MAX_RESULTS_PER_SEARCH]:
-            detail, thumb = scrape_nai_detail(page, href, logger)
-            if detail:
-                existing = records[idx].other_details
-                records[idx].other_details = (existing + " || " + detail).strip(" |") if existing else detail
-            if thumb:
-                records[idx].thumbnail = thumb
-            polite_pause(logger, "nai")
 
     cache.put(cache_key, records)
     polite_pause(logger, "nai")
@@ -179,8 +106,7 @@ def _search_nai_one(page: Page, person: Person, surname: str, forename: str,
 
 
 def search_nai_census(page: Page, person: Person, logger: logging.Logger,
-                      state: dict, cache: SearchCache, use_nicknames: bool,
-                      deep: bool) -> list[Record]:
+                      state: dict, cache: SearchCache, use_nicknames: bool) -> list[Record]:
     """NAI census (1901, 1911, 1926). SPA that reads URL-fragment params."""
     records: list[Record] = []
     for surname in person.all_surnames():
@@ -189,6 +115,6 @@ def search_nai_census(page: Page, person: Person, logger: logging.Logger,
                 if state.get("dead"):
                     return records
                 records.extend(
-                    _search_nai_one(page, person, surname, forename, year, cache, state, logger, deep)
+                    _search_nai_one(page, person, surname, forename, year, cache, state, logger)
                 )
     return records

@@ -19,8 +19,6 @@ Run:
     python genealogy_search.py                 # headed (visible browser)
     python genealogy_search.py --headless      # no browser window
     python genealogy_search.py --input my.csv  # a different input file
-    python genealogy_search.py --deep          # click into each NAI hit for
-                                               # household detail (slow)
     python genealogy_search.py --no-cache      # ignore .search_cache.json
     python genealogy_search.py --no-nicknames  # skip forename nickname expansion
     python genealogy_search.py --no-score      # don't sort hits by relevance score
@@ -316,8 +314,6 @@ def parse_args() -> argparse.Namespace:
               "nai_census, irishgenealogy_civil, griffiths. "
               "Example: --skip nai_census"),
     )
-    p.add_argument("--deep", action="store_true",
-                   help="Click into each NAI census hit and scrape the household detail page.")
     p.add_argument("--no-cache", action="store_true",
                    help="Ignore .search_cache.json and re-fetch every search.")
     p.add_argument("--no-nicknames", action="store_true",
@@ -681,9 +677,9 @@ def main() -> int:
     cache = SearchCache(here / CACHE_FILE, enabled=not args.no_cache)
     logger.info("Loaded %d people from %s", len(people), input_path)
     logger.info(
-        "Headless: %s | Skip: %s | Deep: %s | Cache: %s | Nicknames: %s | "
+        "Headless: %s | Skip: %s | Cache: %s | Nicknames: %s | "
         "Soundex: %s | Score sort: %s | Diff: %s",
-        args.headless, sorted(skip_sites) or "none", args.deep,
+        args.headless, sorted(skip_sites) or "none",
         "on" if not args.no_cache else "off",
         "on" if use_nicknames else "off",
         "on" if RUNTIME_FLAGS["soundex"] else "off",
@@ -728,7 +724,7 @@ def main() -> int:
     try:
         with sync_playwright() as pw:
             records = _run_search(pw, people, args.headless, logger, skip_sites,
-                                  cache, use_nicknames, args.deep, score_sort,
+                                  cache, use_nicknames, score_sort,
                                   storage_path,
                                   incremental_save=_save_snapshot,
                                   progress=print_progress,

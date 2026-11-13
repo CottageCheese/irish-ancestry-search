@@ -14,7 +14,6 @@ python genealogy_search.py
 python genealogy_search.py --headless                # no visible browser
 python genealogy_search.py --skip nai_census         # skip one site
 python genealogy_search.py --only "Furey,John"       # restrict to subset
-python genealogy_search.py --deep                    # click into each hit
 python genealogy_search.py --no-cache                # ignore .search_cache.json
 python genealogy_search.py --max-results 50          # override MAX_RESULTS_PER_SEARCH
 

@@ -35,7 +35,7 @@ def build_griffiths_record(person: Person, surname: str, url: str,
 
 def search_griffiths(page: Page, person: Person, logger: logging.Logger,
                      state: dict, cache: SearchCache,
-                     use_nicknames: bool, deep: bool) -> list[Record]:
+                     use_nicknames: bool) -> list[Record]:
     """askaboutireland.ie sits behind Cloudflare's challenge which blocks
     automated browsers. Bypassing would be rude and brittle, so we don't.
     Emit a manual-search row per surname instead — the user clicks the

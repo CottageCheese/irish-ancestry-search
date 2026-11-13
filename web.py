@@ -113,7 +113,6 @@ INDEX_HTML = """
 
   <div class="row" style="margin-top:.8rem">
     <label><input type="checkbox" name="headless" checked> Headless (no visible browser)</label>
-    <label><input type="checkbox" name="deep"> Deep (click into each hit)</label>
     <label><input type="checkbox" name="no_cache"> Ignore cache</label>
   </div>
 
@@ -253,7 +252,7 @@ def _worker(opts: dict) -> None:
         with sync_playwright() as pw:
             records = _run_search(
                 pw, people, opts["headless"], logger, skip_sites,
-                cache, True, opts["deep"], True, storage_path,
+                cache, True, True, storage_path,
                 incremental_save=_save,
                 progress=_progress,
                 on_site_done=_site_done,
@@ -318,7 +317,6 @@ def start():
 
     opts = {
         "headless": bool(request.form.get("headless")),
-        "deep": bool(request.form.get("deep")),
         "no_cache": bool(request.form.get("no_cache")),
         "only": request.form.get("only", ""),
         "skip": request.form.get("skip", ""),

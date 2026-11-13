@@ -86,7 +86,7 @@ SiteDoneCb = Callable[[str, int, int], None]  # (site_key, found_for_person, tot
 
 def run_search(playwright: Playwright, people: list[Person], headless: bool,
                logger: logging.Logger, skip_sites: set[str],
-               cache: SearchCache, use_nicknames: bool, deep: bool,
+               cache: SearchCache, use_nicknames: bool,
                score_sort: bool, storage_path: Path | None,
                incremental_save: IncrementalSaver | None = None,
                progress: Callable[[int, int, str], None] | None = None,
@@ -121,7 +121,7 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
                     continue
                 fails_before = site_state[site_key]["fails"]
                 try:
-                    found = fn(page, person, logger, site_state[site_key], cache, use_nicknames, deep)
+                    found = fn(page, person, logger, site_state[site_key], cache, use_nicknames)
                     person_hints = (hints_by_person or {}).get(person.label())
                     annotate_records(person, found, hints=person_hints)
                     logger.info("[%s] %d records for %s", site_key, len(found), person.label())

@@ -57,47 +57,6 @@ def parse_ig_item(summary: str, detail_bits: list[str], href: str,
     )
 
 
-def scrape_ig_detail(page: Page, href: str, logger: logging.Logger) -> str:
-    """Click into an IG record page. Returns terse field summary or ''."""
-    if not href or not href.startswith("http"):
-        return ""
-    try:
-        if not safe_goto(page, href, logger):
-            return ""
-        page.wait_for_selector("body", timeout=settings.PAGE_TIMEOUT_MS)
-    except Exception:
-        return ""
-
-    wanted = {
-        "father", "father's name",
-        "mother", "mother's name", "mother's maiden name", "mother's maiden surname",
-        "spouse", "spouse's name",
-        "witness", "witnesses",
-        "townland", "parish", "address",
-        "occupation", "age",
-        "informant",
-    }
-
-    bits: list[str] = []
-    try:
-        labels = page.query_selector_all("dt, strong, label, th")
-        for lab in labels[:80]:
-            key = (lab.inner_text() or "").strip().rstrip(":")
-            if key.lower() not in wanted:
-                continue
-            sib = lab.evaluate_handle("el => el.nextElementSibling || el.parentElement")
-            try:
-                val = sib.evaluate("el => el ? (el.innerText || '').trim() : ''")
-            except Exception:
-                val = ""
-            if val and len(val) < 200:
-                bits.append(f"{key}: {' '.join(val.split())}")
-    except Exception:
-        pass
-
-    return " | ".join(bits)[:800]
-
-
 def _event_window(label: str, year_window: tuple[int, int] | None,
                   mode: str) -> tuple[int, int]:
     """Translate a person's birth window into an event window. Marriages
@@ -116,7 +75,7 @@ def _event_window(label: str, year_window: tuple[int, int] | None,
 
 def _search_ig_one(page: Page, person: Person, surname: str, forename: str,
                    mode: str, flag: str, label: str, cache: SearchCache,
-                   state: dict, logger: logging.Logger, deep: bool) -> list[Record]:
+                   state: dict, logger: logging.Logger) -> list[Record]:
     cfg = SITES["irishgenealogy_civil"]
     year_from, year_to = _event_window(label, person.year_window(), mode)
 
@@ -164,7 +123,6 @@ def _search_ig_one(page: Page, person: Person, surname: str, forename: str,
     items = page.query_selector_all(cfg["results_row"])
     logger.info("[IG %s] %d result items on page", label, len(items))
 
-    detail_hrefs: list[tuple[int, str]] = []
     for item in items[: settings.MAX_RESULTS_PER_SEARCH]:
         link_el = item.query_selector("a")
         href = link_el.get_attribute("href") if link_el else ""
@@ -179,17 +137,6 @@ def _search_ig_one(page: Page, person: Person, surname: str, forename: str,
         rec = parse_ig_item(summary, detail_bits, href, page.url,
                             person, forename, surname, cfg["name"], label)
         records.append(rec)
-        if deep and rec.link.startswith("http"):
-            detail_hrefs.append((len(records) - 1, rec.link))
-
-    if deep and detail_hrefs:
-        logger.info("[IG %s] deep scrape: %d record pages", label, len(detail_hrefs))
-        for idx, href in detail_hrefs:
-            detail = scrape_ig_detail(page, href, logger)
-            if detail:
-                existing = records[idx].other_details
-                records[idx].other_details = (existing + " || " + detail).strip(" |") if existing else detail
-            polite_pause(logger, "ig")
 
     cache.put(cache_key, records)
     polite_pause(logger, "ig")
@@ -198,7 +145,7 @@ def _search_ig_one(page: Page, person: Person, surname: str, forename: str,
 
 def search_irishgenealogy_civil(page: Page, person: Person, logger: logging.Logger,
                                 state: dict, cache: SearchCache,
-                                use_nicknames: bool, deep: bool) -> list[Record]:
+                                use_nicknames: bool) -> list[Record]:
     """Search IG across all six event matrices for every name variant."""
     records: list[Record] = []
     for surname in person.all_surnames():
@@ -208,6 +155,6 @@ def search_irishgenealogy_civil(page: Page, person: Person, logger: logging.Logg
                     return records
                 records.extend(
                     _search_ig_one(page, person, surname, forename, mode, flag, label,
-                                   cache, state, logger, deep)
+                                   cache, state, logger)
                 )
     return records

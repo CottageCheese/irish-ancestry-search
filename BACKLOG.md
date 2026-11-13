@@ -20,7 +20,6 @@ Working list. Tick when done. Add free-form.
 - [x] Fixture-based tests for IG + Griffiths parsers (currently only NAI has `parse_nai_row` with fixture test).
 - [x] Capture + save failing HTML to `results/debug/` when a scraper returns 0 but page clearly loaded. Opt-in via `settings.DEBUG_DUMP_HTML`.
 - [x] Retry wrapper around `safe_goto` for transient Cloudflare 503s.
-- [ ] Fix or delete `--deep` mode. Status unclear.
 
 ## UX
 
