@@ -32,6 +32,23 @@ def test_forename_and_surname_both_matched():
     assert s >= 1 + 3 + 3 + 2  # base + forename + surname + county
 
 
+def test_townland_variant_scores_when_main_misses():
+    p = Person(surname="Furey", forename="John", birth_year_approx=1875, year_range=5,
+               county="Galway", townland="Ballinasloe",
+               townland_variants=["Ballybeg", "Ballybeag"])
+    r = _rec(name_found="John Furey", place="Ballybeag, County Galway")
+    baseline = _rec(name_found="John Furey", place="Dublin")
+    assert score_record(p, r) - score_record(p, baseline) >= 3
+
+
+def test_townland_soundex_fallback():
+    p = Person(surname="Furey", forename="John", birth_year_approx=1875, year_range=5,
+               county="Galway", townland="Ballinasloe")
+    r = _rec(name_found="John Furey", place="Ballinasloo")  # misspell, soundex match
+    baseline = _rec(name_found="John Furey", place="Dublin")
+    assert score_record(p, r) - score_record(p, baseline) >= 2
+
+
 def test_townland_match_adds_four():
     with_t = _rec(name_found="John Furey", place="Ballinasloe")
     without_t = _rec(name_found="John Furey", place="Dublin")

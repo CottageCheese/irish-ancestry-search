@@ -146,6 +146,7 @@ INDEX_HTML = """
     <a class="btn" href="{{ url_for('download', name='results.csv') }}">Download CSV</a>
     <a class="btn" href="{{ url_for('download', name='results.json') }}">Download JSON</a>
     <a class="btn" href="{{ url_for('download', name='run.log') }}">run.log</a>
+    <a class="btn" href="{{ url_for('download', name='confirmations.json') }}">confirmations.json</a>
   </div>
 
   <form id="st-reset" method="post" action="{{ url_for('reset') }}" style="margin-top:1rem;display:{{ 'block' if run.state in ('done','error') else 'none' }}">
@@ -352,7 +353,8 @@ def results_html():
 
 @app.route("/download/<name>")
 def download(name: str):
-    allowed = {RESULTS_CSV, RESULTS_JSON, RESULTS_HTML, LOG_FILE, RESULTS_SUMMARY}
+    allowed = {RESULTS_CSV, RESULTS_JSON, RESULTS_HTML, LOG_FILE, RESULTS_SUMMARY,
+               "confirmations.json"}
     if name not in allowed:
         abort(404)
     p = HERE / name

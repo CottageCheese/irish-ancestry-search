@@ -173,6 +173,9 @@ def read_people(path: Path, logger: logging.Logger | None = None) -> list[Person
             variants_raw = (row.get("surname_variants") or "").strip()
             variants = [v.strip() for v in variants_raw.split(";") if v.strip()]
 
+            t_variants_raw = (row.get("townland_variants") or "").strip()
+            t_variants = [v.strip() for v in t_variants_raw.split(";") if v.strip()]
+
             year_raw = (row.get("birth_year_approx") or "").strip()
             if year_raw and not (year_raw.isdigit() and 1500 <= int(year_raw) <= 2000):
                 warn(f"row {i} ({surname},{forename}): birth_year_approx={year_raw!r} "
@@ -203,6 +206,7 @@ def read_people(path: Path, logger: logging.Logger | None = None) -> list[Person
                     year_range=year_range,
                     county=county,
                     townland=(row.get("townland") or "").strip(),
+                    townland_variants=t_variants,
                     father=(row.get("father") or "").strip(),
                     mother=(row.get("mother") or "").strip(),
                     spouse=(row.get("spouse") or "").strip(),
@@ -342,6 +346,9 @@ def parse_args() -> argparse.Namespace:
                         "results.html into an index page.")
     p.add_argument("--export-gedcom", action="store_true",
                    help="Write results.ged (minimal GEDCOM 5.5.1, Possible-tier and up).")
+    p.add_argument("--gedcom-confirmed-only", action="store_true",
+                   help="With --export-gedcom, only include records marked confirmed in "
+                        "confirmations.json. Ignored unless --export-gedcom is set.")
     p.add_argument("--no-storage", action="store_true",
                    help="Don't persist browser session cookies across runs.")
     p.add_argument("--no-summary", action="store_true",
@@ -454,7 +461,8 @@ def write_per_person_pages(records: list[Record], dir_path: Path) -> dict[str, s
 
 
 def write_gedcom(records: list[Record], people: list[Person], path: Path,
-                 min_tier: str = "Possible") -> int:
+                 min_tier: str = "Possible",
+                 confirmed_keys: set[str] | None = None) -> int:
     """
     Write a minimal GEDCOM 5.5.1 file. For each input Person we emit an INDI
     with name, birth year (if known), and residence/occupation lines pulled
@@ -478,6 +486,8 @@ def write_gedcom(records: list[Record], people: list[Person], path: Path,
 
     by_person: dict[str, list[Record]] = {}
     for r in records:
+        if confirmed_keys is not None and record_key(r) not in confirmed_keys:
+            continue
         by_person.setdefault(r.person_searched, []).append(r)
 
     indi_count = 0
@@ -741,7 +751,13 @@ def main() -> int:
     if not args.no_json:
         write_json(records, here / RESULTS_JSON)
     if args.export_gedcom:
-        n = write_gedcom(records, people, here / RESULTS_GEDCOM)
+        confirmed_keys = None
+        if args.gedcom_confirmed_only:
+            confirmed_keys = {k for k, v in confs.items()
+                              if v.get("status") == "confirmed"}
+            logger.info("GEDCOM filter: confirmed-only (%d key(s))", len(confirmed_keys))
+        n = write_gedcom(records, people, here / RESULTS_GEDCOM,
+                         confirmed_keys=confirmed_keys)
         logger.info("Wrote %d INDI records to %s", n, RESULTS_GEDCOM)
     if not args.no_summary:
         write_summary(records, people, here / RESULTS_SUMMARY,

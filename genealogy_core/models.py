@@ -17,6 +17,7 @@ class Person:
     year_range: int = 5
     county: str = ""
     townland: str = ""
+    townland_variants: list[str] = field(default_factory=list)
     father: str = ""
     mother: str = ""
     spouse: str = ""

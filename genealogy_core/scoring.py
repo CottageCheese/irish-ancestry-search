@@ -48,6 +48,20 @@ def score_record(person: Person, rec: Record) -> int:
         pts += 2
     if person.townland and person.townland.lower() in haystack:
         pts += 4
+    else:
+        matched_variant = False
+        for variant in getattr(person, "townland_variants", []) or []:
+            if variant and variant.lower() in haystack:
+                pts += 3
+                matched_variant = True
+                break
+        if not matched_variant and person.townland:
+            t_code = soundex(person.townland)
+            if t_code:
+                for tok in re.findall(r"[A-Za-z']{4,}", place_l):
+                    if soundex(tok) == t_code:
+                        pts += 2
+                        break
     if _year_in_window(rec.age_or_year, person.year_window()):
         pts += 2
     if not rec.place and not rec.age_or_year:

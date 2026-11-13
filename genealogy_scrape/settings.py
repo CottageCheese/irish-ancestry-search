@@ -24,6 +24,10 @@ MAX_CONSECUTIVE_FAILURES = 2
 RETRY_ATTEMPTS = 2
 RETRY_BACKOFF_BASE = 3.0
 
+# When a scraper returns 0 results but didn't fail to load, dump the rendered
+# page HTML under results/debug/ for diagnosis. Off by default.
+DEBUG_DUMP_HTML = False
+
 # Plain desktop Chrome UA.
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "

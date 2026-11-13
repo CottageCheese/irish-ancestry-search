@@ -13,6 +13,7 @@ from playwright.sync_api import Browser, Page, Playwright
 from genealogy_core.diff import RECORD_ID_RE
 from genealogy_core.kin import annotate_records
 from genealogy_core.models import Person, Record
+from genealogy_core.render import slugify
 
 from . import settings
 from .cache import SearchCache
@@ -45,6 +46,21 @@ def dedupe_records(records: list[Record]) -> list[Record]:
         seen.add(key)
         out.append(r)
     return out
+
+
+def _dump_debug_html(page: Page, site_key: str, person: Person,
+                     logger: logging.Logger) -> None:
+    """Save page.content() under results/debug/ when a scraper returned 0
+    but the page loaded cleanly. Opt-in via settings.DEBUG_DUMP_HTML."""
+    try:
+        debug_dir = Path("results") / "debug"
+        debug_dir.mkdir(parents=True, exist_ok=True)
+        slug = slugify(person.label())
+        out = debug_dir / f"{site_key}_{slug}.html"
+        out.write_text(page.content(), encoding="utf-8")
+        logger.info("[%s] dumped 0-result page to %s", site_key, out)
+    except Exception as exc:
+        logger.warning("[%s] debug dump failed: %s", site_key, exc)
 
 
 def sort_by_score(records: list[Record]) -> list[Record]:
@@ -103,6 +119,7 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
                     logger.info("[%s] skipped - marked dead after %d failures",
                                 site_key, settings.MAX_CONSECUTIVE_FAILURES)
                     continue
+                fails_before = site_state[site_key]["fails"]
                 try:
                     found = fn(page, person, logger, site_state[site_key], cache, use_nicknames, deep)
                     person_hints = (hints_by_person or {}).get(person.label())
@@ -112,6 +129,9 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
                 except Exception as exc:
                     logger.exception("[%s] failed for %s: %s", site_key, person.label(), exc)
                     found = []
+                if (settings.DEBUG_DUMP_HTML and not found
+                        and site_state[site_key]["fails"] == fails_before):
+                    _dump_debug_html(page, site_key, person, logger)
                 if on_site_done:
                     on_site_done(site_key, len(found), len(dedupe_records(all_records)))
             snapshot = dedupe_records(all_records)

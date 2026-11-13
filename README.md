@@ -26,6 +26,27 @@ The sites it searches:
 
 ---
 
+## Architecture at a glance
+
+```mermaid
+flowchart TD
+  CLI[genealogy_search.py<br/>CLI + I/O]
+  WEB[web.py<br/>Flask UI]
+  SCRAPE[genealogy_scrape<br/>Playwright scrapers,<br/>cache, runner]
+  CORE[genealogy_core<br/>pure logic:<br/>models, scoring,<br/>soundex, kin, render]
+
+  CLI --> SCRAPE
+  CLI --> CORE
+  WEB --> SCRAPE
+  WEB --> CORE
+  SCRAPE --> CORE
+```
+
+`genealogy_core` has no browser or I/O. `genealogy_scrape` owns everything
+browser-ish. `genealogy_search.py` and `web.py` are thin orchestrators.
+
+---
+
 ## What you need
 
 * A computer running **Windows 10/11** or **macOS**.
@@ -115,6 +136,8 @@ Columns:
 | `birth_year_approx` | Roughly when they were born | `1875` |
 | `year_range` | How many years either side of that to search | `5` |
 | `county` | Irish county | `Galway` |
+| `townland` | Townland / parish (optional) | `Ballinasloe` |
+| `townland_variants` | Other spellings of townland, separated by `;` | `Ballybeg;Ballybeag` |
 | `notes` | Anything for your own reference | `Born near Ballinasloe` |
 
 Replace the two example rows with your own ancestors. Save the file as **CSV
