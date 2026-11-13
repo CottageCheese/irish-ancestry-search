@@ -10,7 +10,7 @@ Working list. Tick when done. Add free-form.
 
 ## Scoring / matching quality
 
-- [ ] Feedback bonus tuning: current weights (place +2, kin +1, year +2) are guesses. Check whether confirmed records consistently top sort after a second run.
+- [ ] ~~Feedback bonus tuning~~ — deferred. Revisit only if a real run shows confirmed records ranking poorly.
 - [x] Add `townland_variants` column to `ancestors.csv` so user can spell variants (Ballybeg / Ballybeag) before any search.
 - [x] Negative feedback: rejected records' places should *penalise* similar records (not just filter_rejected drop).
 - [x] Soundex on townlands too, not just surnames.
