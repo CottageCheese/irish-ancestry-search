@@ -200,6 +200,7 @@ INDEX_HTML = """
       <div class="filter-row">
         <span class="filter-lbl">Census</span>
         <div class="btn-group">
+          <button type="button" class="tog-btn all-btn" data-group="census_year">All</button>
           <label class="tog-btn"><input type="checkbox" name="census_year" value="1901">1901</label>
           <label class="tog-btn"><input type="checkbox" name="census_year" value="1911">1911</label>
           <label class="tog-btn"><input type="checkbox" name="census_year" value="1926">1926</label>
@@ -208,6 +209,7 @@ INDEX_HTML = """
       <div class="filter-row" style="margin-top:.4rem">
         <span class="filter-lbl">Records</span>
         <div class="btn-group">
+          <button type="button" class="tog-btn all-btn" data-group="ig_event">All</button>
           <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-birth">Births</label>
           <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-marriage">Marriages</label>
           <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-death">Deaths</label>
@@ -216,18 +218,22 @@ INDEX_HTML = """
           <label class="tog-btn"><input type="checkbox" name="ig_event" value="griffiths">Land records</label>
         </div>
       </div>
+      <div class="filter-hint">Pick some to search faster, or leave on <em>All</em> for everything.</div>
     </div>
     <style>
       .filter-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
       .filter-lbl { font-size:.92rem; font-weight:700; color:var(--moss-dark); min-width:65px; flex-shrink:0; }
+      .filter-hint { font-size:.82rem; color:var(--sepia); margin-top:.45rem; margin-left:71px; font-style:italic; }
       .btn-group { display:flex; gap:.35rem; flex-wrap:wrap; }
       .tog-btn {
         display:inline-block; cursor:pointer; padding:.32rem .8rem;
         border-radius:20px; font-size:.92rem; border:2px solid var(--cream-dark);
         background:#fff; color:var(--sepia); transition:all .12s; user-select:none;
+        font-family:inherit;
       }
       .tog-btn input { display:none; }
-      .tog-btn:has(input:checked) { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+      .tog-btn:has(input:checked),
+      .tog-btn.all-btn.active { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
       .tog-btn:hover { border-color:var(--gold); }
     </style>
 
@@ -250,6 +256,25 @@ INDEX_HTML = """
         const sp  = document.getElementById('qs-spinner');
         if (btn) { btn.disabled = true; btn.textContent = 'Searching…'; }
         if (sp)  sp.style.display = 'block';
+      });
+
+      function syncAll(group){
+        const any = form.querySelectorAll('input[name="'+group+'"]:checked').length > 0;
+        const btn = form.querySelector('.all-btn[data-group="'+group+'"]');
+        if (btn) btn.classList.toggle('active', !any);
+      }
+      form.querySelectorAll('.all-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          const g = btn.dataset.group;
+          form.querySelectorAll('input[name="'+g+'"]').forEach(function(cb){ cb.checked = false; });
+          syncAll(g);
+        });
+      });
+      ['census_year','ig_event'].forEach(function(g){
+        form.querySelectorAll('input[name="'+g+'"]').forEach(function(cb){
+          cb.addEventListener('change', function(){ syncAll(g); });
+        });
+        syncAll(g);
       });
     })();
   </script>
@@ -809,22 +834,24 @@ def quick_search():
     RUNTIME_FLAGS["soundex"] = False
     RUNTIME_FLAGS["collapse_weak"] = True
     census_years = set(request.form.getlist("census_year")) & {"1901", "1911", "1926"}
-    scrape_settings.CENSUS_YEAR_FILTER = census_years if census_years else ""
     ig_events = set(request.form.getlist("ig_event"))
     valid_ev = {"event-birth", "event-marriage", "event-death", "event-baptism", "event-burial"}
     want_griffiths = "griffiths" in ig_events
     want_ig = ig_events & valid_ev
-    skip_sites = ""
-    if want_griffiths and not want_ig:
-        scrape_settings.IG_EVENT_FILTER = ()
-        skip_sites = "nai_census,irishgenealogy_civil"
-    elif want_ig and not want_griffiths:
-        scrape_settings.IG_EVENT_FILTER = tuple(want_ig)
-        skip_sites = "griffiths"
-    elif want_ig and want_griffiths:
-        scrape_settings.IG_EVENT_FILTER = tuple(want_ig)
-    else:
-        scrape_settings.IG_EVENT_FILTER = ()
+    any_filter = bool(census_years or want_ig or want_griffiths)
+
+    scrape_settings.CENSUS_YEAR_FILTER = census_years if census_years else ""
+    scrape_settings.IG_EVENT_FILTER = tuple(want_ig) if want_ig else ()
+
+    skip_list: list[str] = []
+    if any_filter:
+        if not census_years:
+            skip_list.append("nai_census")
+        if not want_ig:
+            skip_list.append("irishgenealogy_civil")
+        if not want_griffiths:
+            skip_list.append("griffiths")
+    skip_sites = ",".join(skip_list)
 
     opts = {
         "headless": True,
