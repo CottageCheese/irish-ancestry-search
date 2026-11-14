@@ -1,8 +1,7 @@
 """Pure HTML rendering. Every function returns a string; callers handle I/O.
 
-Split out so the renderer can be snapshot-tested without touching disk or
-threading `RUNTIME_FLAGS` through fixtures. Dark-mode CSS and the inline
-filter/toggle script live here too.
+Card-based kid-friendly layout: per-record cards grouped by confidence tier,
+emoji icons per record type, big confirm/reject buttons, learning tooltips.
 """
 import html
 import re
@@ -10,61 +9,152 @@ import re
 from .confirmations import record_key
 from .models import Record, confidence_tier
 
+
+RECORD_ICONS: dict[str, str] = {
+    "census": "📜",
+    "civil birth": "👶",
+    "civil marriage": "💍",
+    "civil death": "🕯️",
+    "church baptism": "⛪",
+    "church marriage": "💒",
+    "church burial": "⚰️",
+    "griffith": "🏡",
+    "manual": "🔗",
+}
+
+RECORD_FACTS: dict[str, str] = {
+    "census": "A count of everyone sleeping in a house on one night. Ireland did a census in 1901, 1911, and 1926.",
+    "civil birth": "Official birth record. Ireland started keeping these in 1864.",
+    "civil marriage": "Government marriage register. From 1845 for non-Catholic, 1864 for all.",
+    "civil death": "Government death register, from 1864.",
+    "church baptism": "Church record of a baptism — often older than government records.",
+    "church marriage": "Church record of a marriage ceremony.",
+    "church burial": "Church record of a burial. Can predate civil records by centuries.",
+    "griffith": "A list of who rented land in Ireland in the 1850s-60s.",
+    "manual": "A link you'll need to open and read yourself.",
+}
+
+TIER_STARS: dict[str, str] = {
+    "Likely": "★★★",
+    "Possible": "★★",
+    "Weak": "★",
+    "Manual": "🔍",
+}
+
+TIER_BLURB: dict[str, str] = {
+    "Likely": "Looks like a strong match.",
+    "Possible": "Could be them — worth a look.",
+    "Weak": "Shaky match. Check carefully.",
+    "Manual": "Needs a human eye.",
+}
+
+TIER_ORDER = ["Likely", "Possible", "Weak", "Manual"]
+
+
 _BASE_CSS = (
-    "body{font-family:Georgia,serif;max-width:960px;margin:2em auto;padding:0 1em;color:#222}"
-    "h1{border-bottom:2px solid #444}"
-    "h2{margin-top:2em;background:#f4efe6;padding:.4em .6em;border-left:4px solid #8b6f47}"
-    ".summary{margin:.3em 0 1em;color:#444;font-style:italic}"
-    ".score{text-align:right;font-variant-numeric:tabular-nums}"
-    ".kin{background:#fef6d8}"
-    "tr.top td{background:#e8f5e8}"
+    "body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;"
+    "max-width:1000px;margin:1.5em auto;padding:0 1em;color:#222;background:#fafaf7}"
+    "h1{border-bottom:3px solid #8b6f47;padding-bottom:.3em}"
+    ".person-hero{display:flex;gap:1em;align-items:center;margin-top:2em;"
+    "padding:1em 1.2em;background:linear-gradient(135deg,#fff6d8,#ffe8c7);"
+    "border-radius:12px;border-left:4px solid #8b6f47}"
+    ".avatar{width:56px;height:56px;border-radius:50%;background:#8b6f47;color:#fff;"
+    "font-weight:700;font-size:1.3em;display:flex;align-items:center;justify-content:center;"
+    "flex-shrink:0}"
+    ".hero-body{flex:1}"
+    ".hero-name{font-size:1.4em;font-weight:700;margin:0}"
+    ".hero-sub{color:#555;font-size:.95em;margin:.2em 0 0}"
+    ".progress{margin-top:.5em}"
+    ".progress-bar{height:8px;background:#eee;border-radius:4px;overflow:hidden}"
+    ".progress-fill{height:100%;background:linear-gradient(90deg,#2a7d2a,#5cb85c);width:0%;transition:width .4s}"
+    ".progress-text{font-size:.85em;color:#555;margin-top:.2em}"
+    ".tier-section{margin:1.2em 0}"
+    ".tier-head{font-weight:700;font-size:1.05em;margin:0 0 .5em;display:flex;align-items:center;gap:.4em}"
+    ".tier-head .stars{color:#f3a800;letter-spacing:2px}"
+    ".tier-blurb{color:#666;font-size:.9em;margin:0 0 .5em}"
+    ".rec-card{background:#fff;border-radius:8px;border-left:5px solid #ccc;"
+    "padding:.8em 1em;margin:.5em 0;box-shadow:0 1px 3px rgba(0,0,0,.08);"
+    "transition:transform .12s,box-shadow .12s}"
+    ".rec-card:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.12)}"
+    ".rec-card.tier-Likely{border-left-color:#2a7d2a}"
+    ".rec-card.tier-Possible{border-left-color:#b48a1a}"
+    ".rec-card.tier-Weak{border-left-color:#888}"
+    ".rec-card.tier-Manual{border-left-color:#bbb}"
+    ".rec-head{display:flex;align-items:center;gap:.5em;margin-bottom:.3em}"
+    ".rec-icon{font-size:1.4em;cursor:help}"
+    ".rec-title{font-weight:600;flex:1}"
+    ".rec-stars{color:#f3a800;letter-spacing:2px;font-size:1.05em}"
+    ".rec-sentence{margin:.3em 0 .5em;line-height:1.4}"
+    ".rec-meta{display:flex;flex-wrap:wrap;gap:.3em;margin-bottom:.5em}"
+    ".chip{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.85em;"
+    "background:#eef;color:#335}"
+    ".chip-place{background:#eaf4ea;color:#2a5}"
+    ".chip-year{background:#faf0e0;color:#8a5a1a}"
+    ".chip-new{background:#fde8f0;color:#a2366a}"
+    ".chip-kin{background:#fef6d8;color:#8a6a00}"
+    ".chip-variant{background:#eef;color:#447}"
+    ".rec-actions{display:flex;gap:.5em;align-items:center;flex-wrap:wrap}"
+    ".btn-open{display:inline-block;padding:.35em .8em;background:#0b5fa4;color:#fff;"
+    "border-radius:6px;text-decoration:none;font-weight:600;font-size:.9em}"
+    ".btn-open:hover{background:#094680;text-decoration:none}"
+    ".conf-btns{display:flex;gap:.3em;margin-left:auto}"
+    ".conf-btns button{cursor:pointer;border:1px solid #bbb;background:#fff;"
+    "padding:.3em .7em;border-radius:6px;font-size:.9em;font-weight:600}"
+    ".conf-btns button:hover{background:#f4f4f4}"
+    ".conf-btns button.on-confirm{background:#2a7d2a;color:#fff;border-color:#2a7d2a}"
+    ".conf-btns button.on-reject{background:#b43232;color:#fff;border-color:#b43232}"
+    ".tier-new{display:inline-block;padding:1px 6px;border-radius:3px;background:#c33;"
+    "color:#fff;font-size:.8em;font-weight:bold}"
     ".tier{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.85em;font-weight:bold;color:#fff}"
     ".tier-Likely{background:#2a7d2a}"
     ".tier-Possible{background:#b48a1a}"
     ".tier-Weak{background:#888}"
     ".tier-Manual{background:#bbb;color:#333}"
-    ".new{display:inline-block;margin-left:.3em;padding:1px 6px;border-radius:3px;"
-    "background:#c33;color:#fff;font-size:.8em;font-weight:bold}"
-    "tr.weak td{opacity:.6}"
-    "details{margin:1em 0}"
-    "details summary{cursor:pointer;color:#555;font-style:italic;padding:.3em 0}"
-    "table{border-collapse:collapse;width:100%;margin-bottom:1em;font-size:.95em}"
-    "th,td{border:1px solid #ccc;padding:.4em .6em;text-align:left;vertical-align:top}"
-    "th{background:#eee}"
+    "img.thumb{max-width:60px;max-height:60px;border:1px solid #888;border-radius:4px}"
+    "details{margin:.4em 0}"
+    "details summary{cursor:pointer;color:#555;font-style:italic}"
+    ".empty{color:#777;font-style:italic;padding:1em;background:#fff;border-radius:8px}"
+    ".controls{margin:1em 0;display:flex;gap:.6em;align-items:center;flex-wrap:wrap}"
+    "input.filter{padding:.5em .8em;font-size:1em;width:280px;border:1px solid #ccc;border-radius:6px}"
+    "button.dark-toggle{padding:.4em .9em;cursor:pointer;border:1px solid #888;background:#fff;border-radius:6px}"
+    "ul.toc{list-style:none;padding:0}"
+    "ul.toc li{margin:.4em 0;padding:.5em .8em;background:#fff;border-radius:6px;border-left:4px solid #8b6f47}"
+    "ul.toc a{font-weight:600;font-size:1.05em}"
     "a{color:#0b5fa4;text-decoration:none}a:hover{text-decoration:underline}"
-    ".empty{color:#777;font-style:italic}"
-    "ul.toc li{margin:.3em 0}"
+    ".variant{font-size:.8em;color:#666;font-style:italic;margin-top:.15em}"
 )
 
 _DARK_CSS = (
     "body.dark{background:#1a1a1a;color:#ddd}"
-    "body.dark h1{border-bottom-color:#888}"
-    "body.dark h2{background:#2a241c;border-left-color:#c7a46b;color:#eee}"
-    "body.dark .summary{color:#aaa}"
-    "body.dark .kin{background:#4a3f10}"
-    "body.dark tr.top td{background:#1e3b1e}"
-    "body.dark th{background:#2a2a2a;color:#eee}"
-    "body.dark th,body.dark td{border-color:#444}"
-    "body.dark a{color:#6bb6ff}"
-    "body.dark .empty,body.dark details summary{color:#aaa}"
-    "body.dark .tier-Manual{background:#555;color:#ddd}"
+    "body.dark h1{border-bottom-color:#c7a46b}"
+    "body.dark .person-hero{background:linear-gradient(135deg,#2a241c,#3a2e20);border-left-color:#c7a46b}"
+    "body.dark .hero-sub,body.dark .progress-text,body.dark .tier-blurb{color:#aaa}"
+    "body.dark .rec-card{background:#242424}"
+    "body.dark .chip{background:#333;color:#ccc}"
+    "body.dark .chip-place{background:#1e3b1e;color:#9c9}"
+    "body.dark .chip-year{background:#3b2e1e;color:#e5c58a}"
+    "body.dark .chip-new{background:#3b1e2e;color:#f0a0c0}"
+    "body.dark .chip-kin{background:#4a3f10;color:#e0cc6a}"
+    "body.dark .chip-variant{background:#2a2a3a;color:#aab}"
+    "body.dark .conf-btns button{background:#333;color:#ddd;border-color:#555}"
+    "body.dark .conf-btns button:hover{background:#444}"
     "body.dark input.filter{background:#222;color:#eee;border-color:#555}"
-    ".controls{margin:.6em 0;display:flex;gap:.6em;align-items:center}"
-    "input.filter{padding:.4em .6em;font-size:1em;width:260px;border:1px solid #ccc;border-radius:3px}"
-    "button.dark-toggle{padding:.3em .8em;cursor:pointer;border:1px solid #888;background:#fff;border-radius:3px}"
     "body.dark button.dark-toggle{background:#333;color:#eee;border-color:#666}"
-    "img.thumb{max-width:60px;max-height:60px;border:1px solid #888}"
-    "tr.confirmed td{background:#d7efd0!important}"
-    "tr.rejected td{opacity:.35;text-decoration:line-through}"
-    "body.dark tr.confirmed td{background:#1e4a24!important}"
-    "body.dark tr.rejected td{opacity:.3}"
-    "body.hide-rejected tr.rejected{display:none}"
-    ".conf-btns{display:flex;gap:2px;justify-content:center}"
-    ".conf-btns button{cursor:pointer;border:1px solid #888;background:#fafafa;padding:1px 6px;"
-    "border-radius:3px;font-size:.9em}"
-    ".conf-btns button.on-confirm{background:#2a7d2a;color:#fff;border-color:#2a7d2a}"
-    ".conf-btns button.on-reject{background:#b43232;color:#fff;border-color:#b43232}"
-    "body.dark .conf-btns button{background:#333;color:#ddd;border-color:#666}"
+    "body.dark ul.toc li{background:#242424}"
+    "body.dark details summary,body.dark .empty{color:#aaa}"
+    "body.dark a{color:#6bb6ff}"
+    ".rec-card.confirmed{background:#d7efd0!important}"
+    ".rec-card.rejected{opacity:.35}"
+    "body.dark .rec-card.confirmed{background:#1e4a24!important}"
+    "body.dark .rec-card.rejected{opacity:.3}"
+    "body.hide-rejected .rec-card.rejected{display:none}"
+    "@keyframes starPop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}"
+    ".rec-stars{display:inline-block;animation:starPop .3s ease-out}"
+    "@keyframes confettiFly{"
+    "0%{transform:translate(0,0) rotate(0);opacity:1}"
+    "100%{transform:translate(var(--tx),var(--ty)) rotate(360deg);opacity:0}}"
+    ".confetti{position:absolute;pointer-events:none;font-size:1.2em;animation:confettiFly .8s ease-out forwards}"
+    ".rec-actions{position:relative}"
 )
 
 _HTML_SCRIPT = (
@@ -81,23 +171,45 @@ _HTML_SCRIPT = (
     "try{localStorage.setItem('hide_rejected',hr.checked?'1':'0');}catch(e){}};}"
     "var inp=document.getElementById('filter');if(inp)inp.oninput=function(){"
     "var q=this.value.toLowerCase();"
-    "document.querySelectorAll('table tbody tr').forEach(function(tr){"
-    "tr.style.display=tr.innerText.toLowerCase().indexOf(q)>=0?'':'none';});"
+    "document.querySelectorAll('.rec-card').forEach(function(c){"
+    "c.style.display=c.innerText.toLowerCase().indexOf(q)>=0?'':'none';});"
     "};"
-    "function applyRow(tr,status){tr.classList.remove('confirmed','rejected');"
-    "if(status)tr.classList.add(status);"
-    "tr.querySelectorAll('.conf-btns button').forEach(function(b){"
+    "function updateProgress(personEl){"
+    "if(!personEl)return;"
+    "var cards=personEl.querySelectorAll('.rec-card');"
+    "var confirmed=personEl.querySelectorAll('.rec-card.confirmed').length;"
+    "var bar=personEl.querySelector('.progress-fill');"
+    "var txt=personEl.querySelector('.progress-text');"
+    "if(bar&&cards.length)bar.style.width=(100*confirmed/cards.length)+'%';"
+    "if(txt)txt.textContent='\\u2713 '+confirmed+' of '+cards.length+' confirmed';}"
+    "function burstConfetti(anchor){"
+    "var emojis=['\\u2728','\\ud83c\\udf89','\\u2b50','\\ud83c\\udf8a'];"
+    "for(var i=0;i<6;i++){"
+    "var s=document.createElement('span');"
+    "s.className='confetti';s.textContent=emojis[i%emojis.length];"
+    "var ang=Math.random()*2*Math.PI;var dist=40+Math.random()*40;"
+    "s.style.setProperty('--tx',Math.cos(ang)*dist+'px');"
+    "s.style.setProperty('--ty',Math.sin(ang)*dist+'px');"
+    "s.style.right='10px';s.style.top='0';"
+    "anchor.appendChild(s);setTimeout(function(n){n.remove();},800,s);}}"
+    "function applyCard(card,status){"
+    "card.classList.remove('confirmed','rejected');"
+    "if(status)card.classList.add(status);"
+    "card.querySelectorAll('.conf-btns button').forEach(function(b){"
     "b.classList.toggle('on-confirm',status==='confirmed'&&b.dataset.action==='confirmed');"
-    "b.classList.toggle('on-reject',status==='rejected'&&b.dataset.action==='rejected');});}"
+    "b.classList.toggle('on-reject',status==='rejected'&&b.dataset.action==='rejected');});"
+    "updateProgress(card.closest('.person-block'));}"
     "document.querySelectorAll('.conf-btns button').forEach(function(b){"
     "b.addEventListener('click',function(){"
-    "var tr=b.closest('tr'),key=tr.dataset.key,person=tr.dataset.person;"
-    "var cur=tr.classList.contains(b.dataset.action)?'':b.dataset.action;"
+    "var card=b.closest('.rec-card'),key=card.dataset.key,person=card.dataset.person;"
+    "var cur=card.classList.contains(b.dataset.action)?'':b.dataset.action;"
     "fetch('/confirm',{method:'POST',headers:{'Content-Type':'application/json'},"
     "body:JSON.stringify({key:key,status:cur,person:person})})"
-    ".then(function(r){if(r.ok)applyRow(tr,cur);"
+    ".then(function(r){if(r.ok){applyCard(card,cur);"
+    "if(cur==='confirmed'){var a=b.closest('.rec-actions');if(a)burstConfetti(a);}}"
     "else r.text().then(function(t){alert('Save failed: '+t);});})"
     ".catch(function(e){alert('Save failed (offline?): '+e);});});});"
+    "document.querySelectorAll('.person-block').forEach(updateProgress);"
     "})();"
     "</script>"
 )
@@ -105,6 +217,61 @@ _HTML_SCRIPT = (
 
 def _esc(s: str) -> str:
     return html.escape(s or "")
+
+
+def _record_icon_key(record_type: str) -> str:
+    rt = (record_type or "").lower()
+    if "census" in rt:
+        return "census"
+    if "civil birth" in rt or ("birth" in rt and "baptism" not in rt):
+        return "civil birth"
+    if "civil marriage" in rt:
+        return "civil marriage"
+    if "church marriage" in rt:
+        return "church marriage"
+    if "civil death" in rt:
+        return "civil death"
+    if "baptism" in rt:
+        return "church baptism"
+    if "burial" in rt:
+        return "church burial"
+    if "griff" in rt or "land" in rt:
+        return "griffith"
+    if "manual" in rt:
+        return "manual"
+    return ""
+
+
+def _record_icon(record_type: str) -> str:
+    return RECORD_ICONS.get(_record_icon_key(record_type), "📄")
+
+
+def _record_fact(record_type: str) -> str:
+    return RECORD_FACTS.get(_record_icon_key(record_type), "A genealogy record.")
+
+
+def _narrate(r: Record) -> str:
+    """Natural sentence describing one record."""
+    name = (r.name_found or "").strip() or "Someone"
+    rtype = (r.record_type or "").strip()
+    place = (r.place or "").strip()
+    year = (r.age_or_year or "").strip()
+    bits = [f"<strong>{_esc(name)}</strong>"]
+    if rtype:
+        bits.append(f"in a {_esc(rtype.lower())} record")
+    if year:
+        bits.append(f"({_esc(year)})")
+    if place:
+        bits.append(f"at <strong>{_esc(place)}</strong>")
+    return " ".join(bits) + "."
+
+
+def _variant_tag(r: Record) -> str:
+    used = (r.name_used or "").strip()
+    primary = (r.person_searched or "").strip()
+    if not used or used.lower() == primary.lower():
+        return ""
+    return f"<span class='chip chip-variant' title='We searched using this name variant'>🔀 tried: {_esc(used)}</span>"
 
 
 def _html_head(title: str) -> list[str]:
@@ -120,8 +287,8 @@ def _html_head(title: str) -> list[str]:
 
 def _html_controls() -> str:
     return ("<div class='controls'>"
-            "<input class='filter' id='filter' placeholder='Filter rows...' type='search'>"
-            "<button class='dark-toggle' id='dm' type='button'>Toggle dark mode</button>"
+            "<input class='filter' id='filter' placeholder='Find a name, place or year...' type='search'>"
+            "<button class='dark-toggle' id='dm' type='button'>🌙 Toggle dark mode</button>"
             "<label style='margin-left:.4em'>"
             "<input type='checkbox' id='hr'> Hide rejected</label>"
             "</div>")
@@ -160,78 +327,165 @@ def summarise_person(recs: list[Record]) -> str:
     return ", ".join(parts) if parts else "no records"
 
 
+def _tier_counts(recs: list[Record]) -> dict[str, int]:
+    out = {t: 0 for t in TIER_ORDER}
+    for r in recs:
+        out[confidence_tier(r.score)] += 1
+    return out
+
+
+def _avatar_initials(name: str) -> str:
+    parts = [p for p in (name or "").split() if p]
+    if not parts:
+        return "?"
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[-1][0]).upper()
+
+
+def _hero_sentence(name: str, tiers: dict[str, int], total: int) -> str:
+    if total == 0:
+        return "We didn't find anything yet."
+    bits = [f"We found <strong>{total}</strong> clue{'s' if total != 1 else ''}."]
+    tags = []
+    if tiers["Likely"]:
+        tags.append(f"{tiers['Likely']} very likely")
+    if tiers["Possible"]:
+        tags.append(f"{tiers['Possible']} possible")
+    if tiers["Weak"]:
+        tags.append(f"{tiers['Weak']} weak")
+    if tiers["Manual"]:
+        tags.append(f"{tiers['Manual']} to check by hand")
+    if tags:
+        bits.append(" &middot; ".join(tags) + ".")
+    return " ".join(bits)
+
+
+def _render_card(r: Record) -> str:
+    tier = confidence_tier(r.score)
+    icon = _record_icon(r.record_type)
+    fact = _record_fact(r.record_type)
+    stars = TIER_STARS[tier]
+    key = record_key(r)
+
+    chips: list[str] = []
+    if r.place:
+        chips.append(f"<span class='chip chip-place'>📍 {_esc(r.place)}</span>")
+    if r.age_or_year:
+        chips.append(f"<span class='chip chip-year'>📅 {_esc(r.age_or_year)}</span>")
+    if r.is_new:
+        chips.append("<span class='chip chip-new' title='Not in the previous run'>✨ NEW</span>")
+    if r.kin_hits:
+        chips.append(f"<span class='chip chip-kin' title='Related family names seen in the same record'>👨‍👩‍👧 family: {_esc(r.kin_hits)}</span>")
+    vt = _variant_tag(r)
+    if vt:
+        chips.append(vt)
+
+    thumb = ""
+    if r.thumbnail:
+        thumb = (f"<a href='{_esc(r.thumbnail)}' target='_blank'>"
+                 f"<img class='thumb' src='{_esc(r.thumbnail)}' alt=''></a>")
+
+    status_cls = f" {r.status}" if r.status in ("confirmed", "rejected") else ""
+    c_on = " on-confirm" if r.status == "confirmed" else ""
+    x_on = " on-reject" if r.status == "rejected" else ""
+
+    title_bits = []
+    if r.record_type:
+        title_bits.append(_esc(r.record_type))
+    if r.site:
+        title_bits.append(_esc(r.site))
+    title = " &middot; ".join(title_bits) or "Record"
+
+    notes_html = ""
+    if r.user_notes:
+        notes_html = f"<div class='rec-notes'><em>{_esc(r.user_notes)}</em></div>"
+
+    other = ""
+    if r.other_details:
+        other = f"<div class='rec-other' style='color:#555;font-size:.9em;margin:.3em 0'>{_esc(r.other_details)}</div>"
+
+    return (
+        f"<article class='rec-card tier-{tier}{status_cls}' data-key='{key}' data-person='{_esc(r.person_searched)}'>"
+        f"<div class='rec-head'>"
+        f"<span class='rec-icon' title='{_esc(fact)}'>{icon}</span>"
+        f"<span class='rec-title'>{title}</span>"
+        f"<span class='rec-stars' title='{tier} match'>{stars}</span>"
+        f"</div>"
+        f"<p class='rec-sentence'>{_narrate(r)}</p>"
+        f"<div class='rec-meta'>{''.join(chips)}</div>"
+        f"{thumb}"
+        f"{other}"
+        f"{notes_html}"
+        f"<div class='rec-actions'>"
+        f"<a class='btn-open' href='{_esc(r.link)}' target='_blank'>🔎 Open the record</a>"
+        f"<div class='conf-btns'>"
+        f"<button type='button' data-action='confirmed' class='{c_on.strip()}' title='That\\u2019s them'>👍 That\u2019s them</button>"
+        f"<button type='button' data-action='rejected' class='{x_on.strip()}' title='Not them'>👎 Not them</button>"
+        f"</div></div>"
+        f"</article>"
+    )
+
+
+def _tier_section(tier: str, recs: list[Record]) -> str:
+    if not recs:
+        return ""
+    head = (f"<div class='tier-head'>"
+            f"<span class='stars'>{TIER_STARS[tier]}</span>"
+            f"<span class='tier tier-{tier}'>{tier}</span>"
+            f"<span>({len(recs)})</span>"
+            f"</div>"
+            f"<p class='tier-blurb'>{TIER_BLURB[tier]}</p>")
+    cards = "".join(_render_card(r) for r in recs)
+    return f"<section class='tier-section tier-{tier}-section'>{head}{cards}</section>"
+
+
 def render_person_table(recs: list[Record], collapse_weak: bool = True) -> str:
-    """Render a single person's record table (strong + optional collapsed weak)."""
+    """Render a single person's records as cards grouped by tier."""
     if not recs:
         return "<p class='empty'>No records.</p>"
-    max_score = max((r.score for r in recs), default=0)
-    strong = [r for r in recs if confidence_tier(r.score) != "Weak"]
-    weak = [r for r in recs if confidence_tier(r.score) == "Weak"]
 
-    def rows(rr: list[Record]) -> str:
-        if not rr:
-            return ""
-        buf = [
-            "<table><thead><tr>"
-            "<th>Tier</th><th>Score</th><th>Site</th><th>Record type</th><th>Name found</th>"
-            "<th>Age / year</th><th>Place</th><th>Other details</th>"
-            "<th>Kin match</th><th>Scan</th><th>Notes</th><th>Link</th><th>Confirm</th>"
-            "</tr></thead><tbody>"
-        ]
-        for r in rr:
-            tier = confidence_tier(r.score)
-            classes: list[str] = []
-            if r.score and r.score == max_score and max_score > 1:
-                classes.append("top")
-            if tier == "Weak":
-                classes.append("weak")
-            if r.status in ("confirmed", "rejected"):
-                classes.append(r.status)
-            row_cls = f" class='{' '.join(classes)}'" if classes else ""
-            kin_cls = " class='kin'" if r.kin_hits else ""
-            new_badge = "<span class='new'>NEW</span>" if r.is_new else ""
-            thumb_cell = (
-                f"<a href='{_esc(r.thumbnail)}' target='_blank'>"
-                f"<img class='thumb' src='{_esc(r.thumbnail)}' alt=''></a>"
-                if r.thumbnail else ""
-            )
-            key = record_key(r)
-            c_on = " on-confirm" if r.status == "confirmed" else ""
-            x_on = " on-reject" if r.status == "rejected" else ""
-            conf_cell = (
-                "<div class='conf-btns'>"
-                f"<button type='button' data-action='confirmed' class='{c_on.strip()}' title='Confirm'>&#10003;</button>"
-                f"<button type='button' data-action='rejected' class='{x_on.strip()}' title='Reject'>&#10007;</button>"
-                "</div>"
-            )
-            buf.append(
-                f"<tr{row_cls} data-key='{key}' data-person='{_esc(r.person_searched)}'>"
-                f"<td><span class='tier tier-{tier}'>{tier}</span>{new_badge}</td>"
-                f"<td class='score'>{r.score}</td>"
-                f"<td>{_esc(r.site)}</td>"
-                f"<td>{_esc(r.record_type)}</td>"
-                f"<td>{_esc(r.name_found)}</td>"
-                f"<td>{_esc(r.age_or_year)}</td>"
-                f"<td>{_esc(r.place)}</td>"
-                f"<td>{_esc(r.other_details)}</td>"
-                f"<td{kin_cls}>{_esc(r.kin_hits)}</td>"
-                f"<td>{thumb_cell}</td>"
-                f"<td>{_esc(r.user_notes)}</td>"
-                f"<td><a href='{_esc(r.link)}' target='_blank'>open</a></td>"
-                f"<td>{conf_cell}</td>"
-                "</tr>"
-            )
-        buf.append("</tbody></table>")
-        return "".join(buf)
+    by_tier: dict[str, list[Record]] = {t: [] for t in TIER_ORDER}
+    for r in recs:
+        by_tier[confidence_tier(r.score)].append(r)
 
-    out = rows(strong)
+    parts: list[str] = []
+    for tier in ("Likely", "Possible"):
+        parts.append(_tier_section(tier, by_tier[tier]))
+
+    weak = by_tier["Weak"]
     if weak:
         if collapse_weak:
-            out += (f"<details><summary>Show {len(weak)} weak-tier record(s)</summary>"
-                    + rows(weak) + "</details>")
+            parts.append(
+                f"<details><summary>Show {len(weak)} weak matches (weak-tier record)</summary>"
+                f"{_tier_section('Weak', weak)}</details>"
+            )
         else:
-            out += rows(weak)
-    return out
+            parts.append(_tier_section("Weak", weak))
+
+    parts.append(_tier_section("Manual", by_tier["Manual"]))
+    return "".join(parts)
+
+
+def _person_hero(name: str, recs: list[Record]) -> str:
+    tiers = _tier_counts(recs)
+    total = len(recs)
+    confirmed = sum(1 for r in recs if r.status == "confirmed")
+    pct = (100 * confirmed / total) if total else 0
+    initials = _avatar_initials(name)
+    sentence = _hero_sentence(name, tiers, total)
+    return (
+        f"<div class='person-hero'>"
+        f"<div class='avatar'>{_esc(initials)}</div>"
+        f"<div class='hero-body'>"
+        f"<h2 class='hero-name'>{_esc(name)}</h2>"
+        f"<p class='hero-sub'>{sentence}</p>"
+        f"<div class='progress'>"
+        f"<div class='progress-bar'><div class='progress-fill' style='width:{pct:.0f}%'></div></div>"
+        f"<div class='progress-text'>✓ {confirmed} of {total} confirmed</div>"
+        f"</div>"
+        f"</div></div>"
+    )
 
 
 def render_results_html(records: list[Record], stamp: str,
@@ -242,16 +496,18 @@ def render_results_html(records: list[Record], stamp: str,
         grouped.setdefault(r.person_searched, []).append(r)
 
     parts = _html_head("Irish genealogy search results")
-    parts.append(f"<h1>Irish genealogy search results</h1><p>Generated {_esc(stamp)}.</p>")
+    parts.append("<h1>🌳 Irish genealogy search results</h1>")
+    parts.append(f"<p>Generated {_esc(stamp)}.</p>")
     parts.append(_html_controls())
 
     if not grouped:
         parts.append("<p class='empty'>No records found.</p>")
 
     for person, recs in grouped.items():
-        parts.append(f"<h2>{_esc(person)}</h2>")
-        parts.append(f"<p class='summary'>{_esc(summarise_person(recs))}.</p>")
+        parts.append(f"<div class='person-block'>")
+        parts.append(_person_hero(person, recs))
         parts.append(render_person_table(recs, collapse_weak=collapse_weak))
+        parts.append("</div>")
 
     parts.append(_HTML_SCRIPT)
     parts.append("</body></html>")
@@ -263,11 +519,12 @@ def render_person_page(name: str, recs: list[Record], stamp: str,
     """Render one person's page for the per-person output layout."""
     parts = _html_head(f"{name} - genealogy results")
     parts.append(f"<p><a href='{_esc(back_href)}'>&larr; back to index</a></p>")
-    parts.append(f"<h1>{_esc(name)}</h1>")
     parts.append(f"<p>Generated {_esc(stamp)}.</p>")
     parts.append(_html_controls())
-    parts.append(f"<p class='summary'>{_esc(summarise_person(recs))}.</p>")
+    parts.append("<div class='person-block'>")
+    parts.append(_person_hero(name, recs))
     parts.append(render_person_table(recs, collapse_weak=collapse_weak))
+    parts.append("</div>")
     parts.append(_HTML_SCRIPT)
     parts.append("</body></html>")
     return "\n".join(parts)
@@ -279,21 +536,23 @@ def render_index(records: list[Record], rel_map: dict[str, str], stamp: str) -> 
     for r in records:
         grouped.setdefault(r.person_searched, []).append(r)
     parts = _html_head("Irish genealogy search results")
-    parts.append("<h1>Irish genealogy search results</h1>")
+    parts.append("<h1>🌳 Irish genealogy search results</h1>")
     parts.append(f"<p>Generated {_esc(stamp)}. Click a name for their records.</p>")
     parts.append(_html_controls())
     parts.append("<ul class='toc'>")
     for name, recs in grouped.items():
-        tiers = {"Likely": 0, "Possible": 0, "Weak": 0, "Manual": 0}
-        for r in recs:
-            tiers[confidence_tier(r.score)] += 1
+        tiers = _tier_counts(recs)
         badges = " ".join(
             f"<span class='tier tier-{k}'>{k}:{v}</span>"
             for k, v in tiers.items() if v
         )
         href = rel_map.get(name, "#")
+        initials = _avatar_initials(name)
         parts.append(
-            f"<li><a href='{_esc(href)}'>{_esc(name)}</a> &mdash; {len(recs)} record(s) {badges}</li>"
+            f"<li>"
+            f"<span class='avatar' style='display:inline-flex;width:32px;height:32px;font-size:.9em;vertical-align:middle;margin-right:.5em'>{_esc(initials)}</span>"
+            f"<a href='{_esc(href)}'>{_esc(name)}</a> &mdash; {len(recs)} record(s) {badges}"
+            f"</li>"
         )
     parts.append("</ul>")
     parts.append(_HTML_SCRIPT)

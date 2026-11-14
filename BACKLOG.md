@@ -2,6 +2,22 @@
 
 Working list. Tick when done. Add free-form.
 
+## Kid-friendly UI rework
+
+Goal: web.py from technical scraper surface → learning tool a child can use. Phases incremental, lowest risk first.
+
+- [x] **Phase 1 — Scrub live log of technical terms** (~30 min)
+  Replace `nai_census`, `[IG Civil Birth]`, `cache hit`, `polite_pause`, raw URLs with kid phrases. JS phrase dictionary in the `log_json` consumer inside `web.py` template. No backend change.
+
+- [x] **Phase 2 — Primary vs variant tagging** (~1 h)
+  Add `name_used: str` (or `is_primary: bool`) to `genealogy_core/models.py::Record`. Scrapers (`nai.py`, `ig.py`) set it per call. Log display + results split "main name" vs "variant spellings".
+
+- [x] **Phase 3 — "What we found" narrative panel** (~1 h)
+  Status page after `state=done`: read `results.json`, render cards grouped by confidence tier. Natural sentences, star ratings not numeric scores. Implemented as `/narrative` route in `web.py`, linked from done block.
+
+- [x] **Phase 4 — Kid-friendly results.html** (2–3 h)
+  Replaced table in `genealogy_core/render.py` with cards. Emoji icons per record type (📜 census, 👶 birth, 💍 marriage, ⛪ baptism, ⚰ burial, 🏡 Griffiths). Star ratings (★★★/★★/★/🔍). Grouped per person → tier. Person hero with avatar initials + confirm progress bar. Learning tooltips on record icons. Celebratory confetti burst on confirm. Natural-sentence summary + chip row (📍 place, 📅 year, ✨ NEW, 👨‍👩‍👧 kin, 🔀 variant).
+
 ## Next up
 
 - [x] Wire CLI (`genealogy_search.py`) to `_build_hints` so command-line runs also benefit from feedback loop (web.py already does).

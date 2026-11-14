@@ -99,6 +99,58 @@ def test_person_page_has_back_link():
     assert "back to index" in out
 
 
+def test_card_has_record_icon():
+    recs = [_rec(record_type="Civil Birth", score=12)]
+    out = render_person_table(recs)
+    assert "👶" in out  # birth icon
+
+
+def test_card_has_star_rating_by_tier():
+    out = render_person_table([_rec(score=12)])  # Likely
+    assert "★★★" in out
+    out = render_person_table([_rec(score=6)])  # Possible
+    assert "★★" in out
+
+
+def test_card_sentence_includes_name_and_place():
+    out = render_person_table([_rec(name_found="Patrick Furey", place="Ballinasloe", score=12)])
+    assert "Patrick Furey" in out
+    assert "Ballinasloe" in out
+
+
+def test_card_kin_chip_rendered():
+    out = render_person_table([_rec(kin_hits="Mary (spouse)", score=12)])
+    assert "chip-kin" in out
+    assert "Mary" in out
+
+
+def test_card_variant_chip_when_name_differs():
+    r = _rec(score=12, name_used="Johannes Furey")
+    out = render_person_table([r])
+    assert "chip-variant" in out
+    assert "Johannes" in out
+
+
+def test_card_confirmed_status_class():
+    out = render_person_table([_rec(score=12, status="confirmed")])
+    assert "rec-card" in out
+    assert "confirmed" in out
+
+
+def test_person_hero_shows_counts():
+    recs = [_rec(score=12), _rec(score=6), _rec(score=2)]
+    out = render_person_page("John Furey", recs, stamp="t", back_href="x")
+    assert "person-hero" in out
+    assert "progress" in out
+    # avatar initials
+    assert "JF" in out
+
+
+def test_record_icon_griffiths():
+    out = render_person_table([_rec(record_type="Griffith's Valuation", score=12)])
+    assert "🏡" in out
+
+
 def test_index_lists_people_and_counts():
     recs = [
         _rec(person_searched="John Furey", score=12),
