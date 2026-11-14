@@ -168,12 +168,12 @@ INDEX_HTML = """
 {% if run.state == 'idle' %}
 <div class="hero">
   <h2>&#128269; Who do you want to find?</h2>
-  <p style="margin:.2rem 0 0;color:#666">Type a name of someone in your family tree. We will search old Irish records for them.</p>
+  <p style="margin:.2rem 0 0;color:#666">Someone from your family who lived in Ireland. We will search old records to find them.</p>
 
   <form method="post" action="{{ url_for('quick_search') }}">
     <div class="two-col">
       <div>
-        <label for="forename">First name</label>
+        <label for="forename">&#128100; First name</label>
         <input type="text" id="forename" name="forename" required placeholder="e.g. Mary" autofocus>
         <div id="fore-variants" style="display:none;margin-top:.45rem">
           <div style="font-size:.85rem;color:var(--sepia);margin-bottom:.3rem">
@@ -187,46 +187,50 @@ INDEX_HTML = """
         </div>
       </div>
       <div>
-        <label for="surname">Last name</label>
+        <label for="surname">&#128106; Last name</label>
         <input type="text" id="surname" name="surname" required placeholder="e.g. Kelly">
       </div>
     </div>
 
-    <div class="two-col">
+    <div style="margin-top:.55rem">
+      <label style="display:block;margin-bottom:.3rem">Are they a&hellip;</label>
+      <div style="display:flex;gap:.45rem;flex-wrap:wrap">
+        <label class="sex-btn"><input type="radio" name="sex" value="" checked> &#129335; Don&rsquo;t know</label>
+        <label class="sex-btn"><input type="radio" name="sex" value="M"> &#128102; Boy / Man</label>
+        <label class="sex-btn"><input type="radio" name="sex" value="F"> &#128103; Girl / Woman</label>
+      </div>
+      <div class="hint">Picking boy or girl helps skip records that are clearly the wrong person.</div>
+    </div>
+
+    <div class="two-col" style="margin-top:.55rem">
       <div>
-        <label for="county">County in Ireland</label>
+        <label for="county">&#128506; Where in Ireland?</label>
         <select id="county" name="county">
           <option value="">(any county)</option>
           {% for c in counties %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
         </select>
       </div>
       <div>
-        <label for="birth_year">Birth year</label>
+        <label for="birth_year">&#127874; When were they born? <button type="button" id="year-helper-btn" style="font-size:.78rem;cursor:pointer;border:1px solid var(--gold);background:#fffcf2;color:var(--sepia);border-radius:10px;padding:1px 8px;font-family:inherit;margin-left:.3rem">&#127922; Help me guess</button></label>
+        <div id="year-helper" style="display:none;margin-bottom:.4rem;padding:.5rem .7rem;background:#fffcf2;border:1px solid var(--gold);border-radius:8px;font-size:.88rem">
+          <div style="font-weight:600;color:var(--moss-dark);margin-bottom:.35rem">Who is this person to you?</div>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <button type="button" class="gen-btn" data-year="1950" data-range="15">&#128106; Parent (born ~1935&ndash;1965)</button>
+            <button type="button" class="gen-btn" data-year="1910" data-range="15">&#128106;&#128106; Grandparent (born ~1895&ndash;1925)</button>
+            <button type="button" class="gen-btn" data-year="1875" data-range="15">&#128106;&#128106;&#128106; Great-grandparent (born ~1860&ndash;1900)</button>
+            <button type="button" class="gen-btn" data-year="1840" data-range="15">Further back (born ~1820&ndash;1860)</button>
+          </div>
+        </div>
         <input type="number" id="birth_year" name="birth_year" min="1700" max="1950" placeholder="e.g. 1875">
         <div style="margin-top:.35rem;display:flex;gap:.9rem;flex-wrap:wrap;font-size:.85rem">
           <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
-            <input type="radio" name="year_mode" value="approx" checked> Approx (&plusmn;5 years)
+            <input type="radio" name="year_mode" value="approx" checked> About right (&plusmn;5 years)
           </label>
           <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
             <input type="radio" name="year_mode" value="exact"> Exact year
           </label>
         </div>
-        <div class="hint">Pick <em>Exact</em> if you know the birth year; otherwise a guess is fine.</div>
-      </div>
-      <div>
-        <label>Sex</label>
-        <div style="display:flex;gap:.9rem;margin-top:.35rem;font-size:.85rem">
-          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
-            <input type="radio" name="sex" value=""> Unknown
-          </label>
-          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
-            <input type="radio" name="sex" value="M"> Male
-          </label>
-          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
-            <input type="radio" name="sex" value="F"> Female
-          </label>
-        </div>
-        <div class="hint">Helps filter out records clearly the wrong sex.</div>
+        <div class="hint">Not sure of the exact year? A rough guess is fine.</div>
       </div>
     </div>
 
@@ -242,18 +246,21 @@ INDEX_HTML = """
       </div>
       <div class="filter-row" style="margin-top:.4rem">
         <span class="filter-lbl">Records</span>
-        <div class="btn-group">
-          <button type="button" class="tog-btn all-btn" data-group="ig_event">All</button>
-          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-baptism">Baptisms</label>
-          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-birth">Births</label>
-          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-marriage">Marriages</label>
-          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-death">Deaths</label>
-          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-burial">Burials</label>
-          <label class="tog-btn"><input type="checkbox" name="ig_event" value="griffiths">Land records</label>
+        <div class="btn-group" id="rec-btn-group">
+          <button type="button" class="tog-btn all-btn" data-group="ig_event" data-tip="Search all types of record.">All</button>
+          <label class="tog-btn" data-tip="&#128220; Official birth records. Ireland started keeping these in 1864."><input type="checkbox" name="ig_event" value="event-birth">Births</label>
+          <label class="tog-btn" data-tip="&#9962; Church record of a baptism &mdash; often older than official records, going back centuries."><input type="checkbox" name="ig_event" value="event-baptism">Baptisms</label>
+          <label class="tog-btn" data-tip="&#128141; Official and church marriage records. Civil records from 1845."><input type="checkbox" name="ig_event" value="event-marriage">Marriages</label>
+          <label class="tog-btn" data-tip="&#128366; Official death records, kept from 1864."><input type="checkbox" name="ig_event" value="event-death">Deaths</label>
+          <label class="tog-btn" data-tip="&#9960; Church burial record &mdash; can be much older than official records."><input type="checkbox" name="ig_event" value="event-burial">Burials</label>
+          <label class="tog-btn" data-tip="&#127969; A list of who rented land in Ireland in the 1850s and 1860s. Great for finding whole families."><input type="checkbox" name="ig_event" value="griffiths">Land records</label>
         </div>
       </div>
-      <div class="filter-hint">Pick some to search faster, or leave on <em>All</em> for everything. Civil registration of births, marriages &amp; deaths started in Ireland in <strong>1864</strong> (marriages 1845). Church baptism &amp; burial records go back further.</div>
+      <div id="rec-tip" style="display:none;margin-top:.4rem;margin-left:71px;padding:.4rem .7rem;background:#fffcf2;border-left:3px solid var(--gold);border-radius:0 6px 6px 0;font-size:.88rem;color:var(--ink)"></div>
+      <div class="filter-hint">Pick some to search faster, or leave on <em>All</em> for everything.</div>
     </div>
+
+    <div id="search-quality" style="display:none;margin:.7rem 0 .2rem;padding:.55rem .8rem;border-radius:8px;background:#f4fdf4;border:1px solid #c0dfc0;font-size:.95rem"></div>
     <style>
       .filter-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
       .filter-lbl { font-size:.92rem; font-weight:700; color:var(--moss-dark); min-width:65px; flex-shrink:0; }
@@ -269,6 +276,21 @@ INDEX_HTML = """
       .tog-btn:has(input:checked),
       .tog-btn.all-btn.active { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
       .tog-btn:hover { border-color:var(--gold); }
+      .sex-btn {
+        display:inline-block; cursor:pointer; padding:.38rem 1rem;
+        border-radius:20px; font-size:1rem; border:2px solid var(--cream-dark);
+        background:#fff; color:var(--sepia); transition:all .12s; user-select:none;
+        font-family:inherit;
+      }
+      .sex-btn input { display:none; }
+      .sex-btn:has(input:checked) { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+      .sex-btn:hover { border-color:var(--gold); }
+      .gen-btn {
+        cursor:pointer; padding:.3rem .75rem; border-radius:16px; font-size:.85rem;
+        border:1px solid var(--gold); background:#fff; color:var(--sepia);
+        font-family:inherit; transition:all .12s;
+      }
+      .gen-btn:hover { background:var(--gold); color:#fff; }
     </style>
 
     <button type="submit" class="go" id="qs-btn">&#127808; Find them!</button>
@@ -342,6 +364,70 @@ INDEX_HTML = """
           } else {
             foreVarDiv.style.display = 'none';
           }
+          updateQuality();
+        });
+      }
+
+      // --- Record type tooltips ---
+      var recTip = document.getElementById('rec-tip');
+      if (recTip) {
+        document.querySelectorAll('#rec-btn-group [data-tip]').forEach(function(el){
+          el.addEventListener('mouseenter', function(){
+            recTip.innerHTML = el.dataset.tip;
+            recTip.style.display = 'block';
+          });
+          el.addEventListener('mouseleave', function(){ recTip.style.display = 'none'; });
+          el.addEventListener('focus', function(){
+            recTip.innerHTML = el.dataset.tip;
+            recTip.style.display = 'block';
+          });
+          el.addEventListener('blur', function(){ recTip.style.display = 'none'; });
+        });
+      }
+
+      // --- Search quality stars ---
+      var qualDiv = document.getElementById('search-quality');
+      function updateQuality() {
+        if (!qualDiv) return;
+        var fore = (document.getElementById('forename').value || '').trim();
+        var sur  = (document.getElementById('surname').value || '').trim();
+        var yr   = (document.getElementById('birth_year').value || '').trim();
+        var cty  = (document.getElementById('county').value || '').trim();
+        if (!fore && !sur) { qualDiv.style.display = 'none'; return; }
+        var score = 1 + (yr ? 1 : 0) + (cty ? 1 : 0);
+        var stars = ['&#9733;','&#9733;','&#9733;'].map(function(s,i){
+          return '<span style="color:'+(i<score?'#c9a04a':'#ccc')+';font-size:1.3em">'+s+'</span>';
+        }).join('');
+        var msg = score === 3
+          ? '<strong>Brilliant!</strong> Ready to search &#127808;'
+          : score === 2
+          ? '<strong>Getting there!</strong> Add a ' + (!yr ? 'birth year' : 'county') + ' to narrow it down.'
+          : '<strong>Good start!</strong> Add a birth year and county for better results.';
+        qualDiv.innerHTML = stars + '&nbsp; ' + msg;
+        qualDiv.style.display = 'block';
+      }
+      ['surname','birth_year','county'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateQuality);
+        if (el && el.tagName === 'SELECT') el.addEventListener('change', updateQuality);
+      });
+
+      // --- Birth year helper ---
+      var yhBtn = document.getElementById('year-helper-btn');
+      var yhDiv = document.getElementById('year-helper');
+      if (yhBtn && yhDiv) {
+        yhBtn.addEventListener('click', function(){
+          yhDiv.style.display = yhDiv.style.display === 'none' ? 'block' : 'none';
+        });
+        yhDiv.querySelectorAll('.gen-btn').forEach(function(b){
+          b.addEventListener('click', function(){
+            var yr = parseInt(b.dataset.year);
+            var yInput = document.getElementById('birth_year');
+            if (yInput) { yInput.value = yr; updateQuality(); }
+            var approx = form.querySelector('input[name="year_mode"][value="approx"]');
+            if (approx) approx.checked = true;
+            yhDiv.style.display = 'none';
+          });
         });
       }
     })();

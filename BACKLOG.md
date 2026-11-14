@@ -71,6 +71,11 @@ Working list. Tick when done. Add free-form.
 ### Dedupe follow-up (Nov 2026)
 - [x] Semantic dedupe second pass in `runner.dedupe_records`: collapse by `(person, site, record_type, name_found, place, age_or_year)`, keep highest-scoring row. Fixes 91-copy IG birth bloat.
 
+### Nickname variant UI (Nov 2026)
+- [x] Typing a first name on "Who do you want to find?" shows nickname chips (e.g. William → will · bill · billy · liam) using embedded NICKNAMES dict in JS.
+- [x] "Search all these names too ✨" checkbox (default checked) controls `use_nicks` passed to the search worker; unchecked = exact name only.
+- [x] Results page gains client-side "Who do you want to find?" name filter: filters person-blocks by first+last name with same variant-aware toggle.
+
 ### Kid-mode quick wins (Nov 2026)
 - [x] Nicknames default-on in `/quick-search` worker opts (`use_nicks=True`). Michael → Mick/Mike automatic.
 - [x] Sheep spinner + "Asking the old books…" on quick-search submit; button disables.
