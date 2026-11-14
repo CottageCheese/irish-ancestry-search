@@ -97,421 +97,169 @@ INDEX_HTML = """
 <meta charset="utf-8">
 <title>Irish genealogy search</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
-  label { display: block; margin: .6rem 0 .2rem; font-weight: 600; }
-  input[type=file], input[type=text] { width: 100%; padding: .4rem; box-sizing: border-box; }
-  .row { display: flex; gap: 1rem; flex-wrap: wrap; }
-  .row label { font-weight: 400; }
-  button { padding: .6rem 1.2rem; font-size: 1rem; cursor: pointer; }
-  button[disabled] { opacity: .5; cursor: not-allowed; }
-  .state { margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 6px; }
-  .bar { height: 10px; background: #e0e0e0; border-radius: 5px; overflow: hidden; margin-top: .4rem; }
-  .bar > div { height: 100%; background: #4a90e2; transition: width .3s; }
-  a.btn { display: inline-block; margin-top: .6rem; padding: .4rem .8rem; background: #4a90e2; color: white; text-decoration: none; border-radius: 4px; }
+  :root {
+    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
+    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    max-width: 900px; margin: 0 auto; padding: 1rem;
+    background: var(--cream); color: var(--ink); min-height: 100vh;
+  }
+  h1 { font-size: 2.6rem; margin:.4rem 0 .2rem; color: var(--moss-dark); text-align:center; letter-spacing:.02em; }
+  .tagline { text-align:center; color: var(--sepia); font-style:italic; margin:0 0 1.2rem; font-size:1.1rem; }
+  .hero {
+    background: #fffcf2; border: 2px solid var(--gold); border-radius: 12px;
+    padding: 1.4rem 1.6rem; margin: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    position: relative;
+  }
+  .hero h2 { margin-top:0; color: var(--moss-dark); font-size:1.5rem; }
+  label { display: block; margin:.9rem 0 .3rem; font-weight: 600; color: var(--moss-dark); }
+  input[type=text], input[type=number], select {
+    width: 100%; padding:.7rem; font: inherit; font-size: 1.05rem;
+    border: 2px solid var(--cream-dark); border-radius: 6px; background:#fff;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--moss); }
+  .two-col { display:grid; grid-template-columns: 1fr 1fr; gap:.8rem; }
+  @media (max-width:520px){ .two-col { grid-template-columns: 1fr; } }
+  button.go {
+    display:block; width:100%; margin-top:1.2rem; padding:.9rem;
+    font: inherit; font-size:1.3rem; font-weight:700;
+    background: var(--moss); color:#fff; border:0; border-radius:8px; cursor:pointer;
+    box-shadow: 0 3px 0 var(--moss-dark); transition: transform .1s;
+  }
+  button.go:hover { background: var(--moss-dark); }
+  button.go:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--moss-dark); }
+  .scene { margin: 1.4rem 0 .4rem; }
+  .scene svg { width:100%; height:auto; display:block; border-radius:8px; }
+  .hint { font-size:.9rem; color: var(--sepia); margin-top:.3rem; font-style:italic; }
+  .state { margin: 1rem 0; padding: 1rem; background:#fffcf2; border:2px solid var(--gold); border-radius: 8px; }
+  .bar { height: 10px; background: var(--cream-dark); border-radius: 5px; overflow: hidden; margin-top: .4rem; }
+  .bar > div { height: 100%; background: var(--moss); transition: width .3s; }
+  a.btn { display: inline-block; margin:.4rem .3rem 0 0; padding:.5rem 1rem; background: var(--moss); color: white; text-decoration: none; border-radius: 6px; font-weight:600; }
+  a.btn:hover { background: var(--moss-dark); }
 </style>
 
-<h1>Irish genealogy search</h1>
+<h1>&#9752; Family Finder &#9752;</h1>
+<p class="tagline">Find your Irish ancestors in old books and papers</p>
 
 {% if run.state == 'idle' %}
-<details class="state" style="background:#fff7e0;border:1px solid #f0d08a">
-  <summary style="cursor:pointer;font-weight:600;font-size:1rem">&#128214; What is this? (click to open)</summary>
-  <div style="margin-top:.5rem;font-size:.95rem;line-height:1.45">
-    A free search of Ireland's old records. Pick someone from your family, and we'll
-    look them up in three different places on the internet:
-    <ul style="margin:.4rem 0 .4rem 1.2rem;padding:0">
-      <li>&#128203; <strong>The census</strong> &mdash; a big head-count the government did in <strong>1901, 1911 and 1926</strong>, listing every person in every house.</li>
-      <li>&#128220; <strong>Birth, marriage &amp; death records</strong> &mdash; and church baptisms, weddings and burials going back to the 1800s.</li>
-      <li>&#127969; <strong>Griffith's Valuation</strong> &mdash; a list of who rented or owned land in the <strong>1850s</strong>. Older than the census!</li>
-    </ul>
-    <small style="color:#666">Tip: start with just one person and one record type. Add more only after you've seen some results.</small>
+<div class="hero">
+  <h2>&#128269; Who do you want to find?</h2>
+  <p style="margin:.2rem 0 0;color:#666">Type a name of someone in your family tree. We will search old Irish records for them.</p>
+
+  <form method="post" action="{{ url_for('quick_search') }}">
+    <div class="two-col">
+      <div>
+        <label for="forename">First name</label>
+        <input type="text" id="forename" name="forename" required placeholder="e.g. Mary" autofocus>
+      </div>
+      <div>
+        <label for="surname">Last name</label>
+        <input type="text" id="surname" name="surname" required placeholder="e.g. Kelly">
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <label for="county">County in Ireland</label>
+        <select id="county" name="county">
+          <option value="">(any county)</option>
+          {% for c in counties %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="birth_year">Born around (year)</label>
+        <input type="number" id="birth_year" name="birth_year" min="1700" max="1950" placeholder="e.g. 1875">
+        <div class="hint">A guess is fine. We search 5 years either side.</div>
+      </div>
+    </div>
+
+    <button type="submit" class="go" id="qs-btn">&#127808; Find them!</button>
+    <div id="qs-spinner" style="display:none;margin-top:.8rem;text-align:center">
+      <div class="sheep-spin" aria-hidden="true">&#128017;</div>
+      <div style="color:var(--sepia);font-style:italic;margin-top:.3rem">Asking the old books…</div>
+    </div>
+  </form>
+  <style>
+    .sheep-spin { font-size:2.4rem; display:inline-block; animation: sheep-bounce 1s infinite ease-in-out; }
+    @keyframes sheep-bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+  </style>
+  <script>
+    (function(){
+      const form = document.querySelector('form[action="{{ url_for('quick_search') }}"]');
+      if (!form) return;
+      form.addEventListener('submit', function(){
+        const btn = document.getElementById('qs-btn');
+        const sp  = document.getElementById('qs-spinner');
+        if (btn) { btn.disabled = true; btn.textContent = 'Searching…'; }
+        if (sp)  sp.style.display = 'block';
+      });
+    })();
+  </script>
+
+  <div class="scene" aria-hidden="true">
+    <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#cfe6f2"/>
+          <stop offset="100%" stop-color="#f4ecd8"/>
+        </linearGradient>
+        <linearGradient id="hill1" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#6ca84a"/>
+          <stop offset="100%" stop-color="#4a7c3a"/>
+        </linearGradient>
+        <linearGradient id="hill2" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#8bbd5d"/>
+          <stop offset="100%" stop-color="#5d8f3d"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="200" fill="url(#sky)"/>
+      <path d="M0 150 Q200 80 400 130 T800 110 L800 200 L0 200 Z" fill="url(#hill1)"/>
+      <path d="M0 170 Q150 130 350 160 T800 150 L800 200 L0 200 Z" fill="url(#hill2)"/>
+      <g transform="translate(540,120)">
+        <rect x="0" y="20" width="70" height="45" fill="#d9c9a0" stroke="#8b6f47" stroke-width="2"/>
+        <polygon points="-5,20 35,-5 75,20" fill="#6b4a2a" stroke="#4a3220" stroke-width="2"/>
+        <rect x="26" y="40" width="14" height="25" fill="#4a3220"/>
+        <rect x="8" y="28" width="12" height="12" fill="#f4ecd8" stroke="#8b6f47"/>
+        <rect x="50" y="28" width="12" height="12" fill="#f4ecd8" stroke="#8b6f47"/>
+        <rect x="46" y="-5" width="8" height="18" fill="#8b6f47"/>
+        <path d="M46 -3 Q48 -8 50 -5" fill="none" stroke="#999" stroke-width="2"/>
+      </g>
+      <g transform="translate(120,130)">
+        <ellipse cx="0" cy="30" rx="30" ry="18" fill="#2f5a22"/>
+        <ellipse cx="-15" cy="22" rx="20" ry="18" fill="#3a6b2a"/>
+        <ellipse cx="15" cy="22" rx="20" ry="18" fill="#3a6b2a"/>
+        <rect x="-4" y="30" width="8" height="18" fill="#5a3a20"/>
+      </g>
+      <g transform="translate(220,160)">
+        <ellipse cx="0" cy="0" rx="14" ry="9" fill="#f5f0e4"/>
+        <circle cx="-12" cy="-2" r="6" fill="#4a3a28"/>
+        <circle cx="-14" cy="-4" r="1.5" fill="#000"/>
+        <rect x="-6" y="7" width="3" height="5" fill="#4a3a28"/>
+        <rect x="4" y="7" width="3" height="5" fill="#4a3a28"/>
+      </g>
+      <g transform="translate(300,170)">
+        <ellipse cx="0" cy="0" rx="14" ry="9" fill="#f5f0e4"/>
+        <circle cx="-12" cy="-2" r="6" fill="#4a3a28"/>
+        <circle cx="-14" cy="-4" r="1.5" fill="#000"/>
+        <rect x="-6" y="7" width="3" height="5" fill="#4a3a28"/>
+        <rect x="4" y="7" width="3" height="5" fill="#4a3a28"/>
+      </g>
+      <circle cx="680" cy="40" r="22" fill="#f6d35e" opacity=".85"/>
+    </svg>
   </div>
-</details>
+</div>
 
-<form method="post" action="{{ url_for('start') }}" enctype="multipart/form-data">
-
-  <div class="state" style="background:#eef6ff">
-    <strong>Who to search for</strong>
-    <div style="font-size:.85rem;color:#444;margin-top:.2rem">
-      Pick an ancestor from your list, or leave as {All} to search everyone.
-      <a href="{{ url_for('people_page') }}">Edit the list &rarr;</a>
-    </div>
-    <div style="display:flex;gap:.6rem;align-items:center;margin-top:.4rem;font-size:.85rem">
-      <span style="color:#555">Sort by:</span>
-      <div id="sort-group" role="group" style="display:inline-flex;border:1px solid #bcd;border-radius:999px;overflow:hidden;background:#fff">
-        <button type="button" class="sort-btn" data-v="sur"     style="border:0;padding:.3rem .8rem;cursor:pointer;background:transparent;font:inherit">Surname</button>
-        <button type="button" class="sort-btn" data-v="full"    style="border:0;padding:.3rem .8rem;cursor:pointer;background:transparent;font:inherit;border-left:1px solid #bcd">Forename</button>
-        <button type="button" class="sort-btn" data-v="entered" style="border:0;padding:.3rem .8rem;cursor:pointer;background:transparent;font:inherit;border-left:1px solid #bcd">As entered</button>
-      </div>
-    </div>
-    <select name="pick" id="pick" style="margin-top:.4rem;padding:.4rem;width:100%;font-size:1rem">
-      <option value="" data-idx="-1">{All} ({{ people|length }} people)</option>
-      {% for p in people %}
-      <option value="{{ p.forename }} {{ p.surname }}"
-              data-idx="{{ loop.index0 }}"
-              data-fore="{{ p.forename }}"
-              data-sur="{{ p.surname }}"
-              data-var="{{ p.surname_variants }}"
-              data-year="{{ p.birth_year_approx }}"
-              data-county="{{ p.county }}"
-              data-townland="{{ p.townland }}">
-        {{ p.forename }} {{ p.surname }}{% if p.birth_year_approx %} c.{{ p.birth_year_approx }}{% endif %}{% if p.townland %} — {{ p.townland }}{% endif %}{% if p.county %}, {{ p.county }}{% endif %}
-      </option>
-      {% endfor %}
-    </select>
-
-    <div id="search-preview" style="margin-top:.8rem;padding:.6rem .8rem;background:#fff;border:1px solid #cde;border-radius:4px;font-size:.95rem">
-      <div style="font-size:.75rem;color:#666;text-transform:uppercase;letter-spacing:.05em">Will search for</div>
-      <div id="sp-main" style="font-size:1.15rem;margin-top:.2rem"><em style="color:#888">Pick someone above.</em></div>
-      <div id="sp-extra" style="margin-top:.3rem;font-size:.85rem;color:#555"></div>
-    </div>
+<div class="hero" style="background:#fff7e0">
+  <h2 style="margin:0 0 .4rem;font-size:1.15rem">&#128214; What we search</h2>
+  <div style="font-size:.95rem;line-height:1.5">
+    <div>&#128203; <strong>The old census</strong> &mdash; who lived in which house in 1901, 1911 and 1926.</div>
+    <div>&#128220; <strong>Births, marriages &amp; deaths</strong> &mdash; government and church records.</div>
+    <div>&#127969; <strong>Griffiths Valuation</strong> &mdash; a list from the 1850s of who rented land.</div>
   </div>
-
-  <div class="state">
-    <label style="margin-top:0">Where to look</label>
-    <input type="hidden" name="census_year" id="census_year" value="">
-    <input type="hidden" name="ig_event" id="ig_event" value="">
-    <div style="font-size:.85rem;margin:.2rem 0 .6rem;color:#555">
-      Three different websites, three different kinds of records. Tick the ones to search.
-    </div>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.8rem">
-
-      <div class="site-card" data-site="nai_census"
-           style="border:2px solid #bcd;border-radius:8px;padding:.7rem .9rem;background:#fff">
-        <label style="display:flex;align-items:center;gap:.5rem;font-weight:600;cursor:pointer;margin:0">
-          <input type="checkbox" name="use_site" value="nai_census" checked style="width:1.1rem;height:1.1rem">
-          <span style="font-size:1.3rem">&#128203;</span>
-          <span>Census head-count</span>
-        </label>
-        <div style="margin-top:.3rem;font-size:.85rem;color:#444;line-height:1.35">
-          A list of <em>every person</em> living in <em>every house</em> in Ireland on one night.
-          Shows ages, jobs and who shared the room.
-        </div>
-        <div style="margin-top:.5rem">
-          <div style="font-size:.75rem;color:#666;margin-bottom:.2rem">Which year?</div>
-          <div id="year-group" role="group" style="display:inline-flex;border:1px solid #bcd;border-radius:999px;overflow:hidden;background:#fff;font-size:.85rem">
-            <button type="button" class="year-btn" data-v=""     style="border:0;padding:.3rem .7rem;cursor:pointer;background:transparent;font:inherit">All</button>
-            <button type="button" class="year-btn" data-v="1901" style="border:0;padding:.3rem .7rem;cursor:pointer;background:transparent;font:inherit;border-left:1px solid #bcd">1901</button>
-            <button type="button" class="year-btn" data-v="1911" style="border:0;padding:.3rem .7rem;cursor:pointer;background:transparent;font:inherit;border-left:1px solid #bcd">1911</button>
-            <button type="button" class="year-btn" data-v="1926" style="border:0;padding:.3rem .7rem;cursor:pointer;background:transparent;font:inherit;border-left:1px solid #bcd">1926</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="site-card" data-site="irishgenealogy_civil"
-           style="border:2px solid #bcd;border-radius:8px;padding:.7rem .9rem;background:#fff">
-        <label style="display:flex;align-items:center;gap:.5rem;font-weight:600;cursor:pointer;margin:0">
-          <input type="checkbox" name="use_site" value="irishgenealogy_civil" checked style="width:1.1rem;height:1.1rem">
-          <span style="font-size:1.3rem">&#128220;</span>
-          <span>Births, marriages &amp; deaths</span>
-        </label>
-        <div style="margin-top:.3rem;font-size:.85rem;color:#444;line-height:1.35">
-          Government records for when someone was <em>born</em>, got <em>married</em>, or <em>died</em>.
-          Also church baptisms, weddings and burials.
-        </div>
-        <div style="margin-top:.5rem">
-          <div style="font-size:.75rem;color:#666;margin-bottom:.2rem">Which event?</div>
-          <div id="event-group" role="group" style="display:flex;flex-wrap:wrap;gap:.25rem;font-size:.8rem">
-            <button type="button" class="ev-btn" data-v=""               style="border:1px solid #bcd;border-radius:999px;padding:.2rem .6rem;cursor:pointer;background:#fff;font:inherit">All</button>
-            <button type="button" class="ev-btn" data-v="event-birth"    style="border:1px solid #bcd;border-radius:999px;padding:.2rem .6rem;cursor:pointer;background:#fff;font:inherit">&#127793; Birth</button>
-            <button type="button" class="ev-btn" data-v="event-baptism"  style="border:1px solid #bcd;border-radius:999px;padding:.2rem .6rem;cursor:pointer;background:#fff;font:inherit">&#128118; Baptism</button>
-            <button type="button" class="ev-btn" data-v="event-marriage" style="border:1px solid #bcd;border-radius:999px;padding:.2rem .6rem;cursor:pointer;background:#fff;font:inherit">&#128141; Marriage</button>
-            <button type="button" class="ev-btn" data-v="event-death"    style="border:1px solid #bcd;border-radius:999px;padding:.2rem .6rem;cursor:pointer;background:#fff;font:inherit">&#9752;&#65039; Death</button>
-            <button type="button" class="ev-btn" data-v="event-burial"   style="border:1px solid #bcd;border-radius:999px;padding:.2rem .6rem;cursor:pointer;background:#fff;font:inherit">&#128367;&#65039; Burial</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="site-card" data-site="griffiths"
-           style="border:2px solid #bcd;border-radius:8px;padding:.7rem .9rem;background:#fff">
-        <label style="display:flex;align-items:center;gap:.5rem;font-weight:600;cursor:pointer;margin:0">
-          <input type="checkbox" name="use_site" value="griffiths" checked style="width:1.1rem;height:1.1rem">
-          <span style="font-size:1.3rem">&#127969;</span>
-          <span>Griffith's Valuation</span>
-        </label>
-        <div style="margin-top:.3rem;font-size:.85rem;color:#444;line-height:1.35">
-          A list from the <strong>1850s</strong> of who rented or owned every bit of land in Ireland.
-          Great for finding your great-great-grandparents' farm.
-        </div>
-        <div style="margin-top:.5rem;font-size:.75rem;color:#888;font-style:italic">
-          Covers 1847&ndash;1864 &mdash; before any census you can read online today.
-        </div>
-      </div>
-
-    </div>
-
-    <div id="variants-wrap" style="margin-top:1rem">
-      <label style="margin-top:0">Name variations <small style="font-weight:400;color:#666">(off by default — clearest search first)</small></label>
-      <div id="variants-gate" style="font-size:.9rem;padding:.6rem .8rem;background:#fffbe6;border-left:3px solid #e0a800;border-radius:4px;color:#555">
-        Pick one person above to enable name variations.
-      </div>
-      <div id="variants-body" style="display:none">
-        <div style="font-size:.85rem;margin:.1rem 0 .5rem;color:#555">
-          Tick to also search spelling/name variations. More variants = more site calls.
-        </div>
-        <div class="row">
-          <label><input type="checkbox" id="opt-surnames">
-            <strong>Surname spellings</strong></label>
-          <label><input type="checkbox" id="opt-nicks">
-            <strong>Forename variants</strong></label>
-        </div>
-
-        <div id="sur-panel" style="display:none;margin-top:.6rem;padding:.6rem .8rem;background:#fff;border:1px solid #e0d090;border-radius:4px">
-          <div style="font-size:.8rem;color:#666;margin-bottom:.3rem">Surnames to search</div>
-          <div id="sur-boxes"></div>
-        </div>
-
-        <div id="fore-panel" style="display:none;margin-top:.6rem;padding:.6rem .8rem;background:#fff;border:1px solid #e0d090;border-radius:4px">
-          <div style="font-size:.8rem;color:#666;margin-bottom:.3rem">Forenames to search</div>
-          <div id="fore-boxes"></div>
-        </div>
-
-        <div id="cost-panel" style="margin-top:.5rem;font-size:.85rem;color:#555"></div>
-      </div>
-    </div>
-
-    <label for="csv" style="margin-top:1rem">Upload a different ancestors CSV <small style="font-weight:400;color:#666">(optional)</small></label>
-    <input type="file" name="csv" id="csv" accept=".csv">
-
-    <div class="row" style="margin-top:.8rem">
-      <label><input type="checkbox" name="headless" checked> Headless (no visible browser)</label>
-      <label><input type="checkbox" name="no_cache"> Ignore cache</label>
-    </div>
-  </div>
-
-  <input type="hidden" name="only" id="only-hidden" value="">
-  <div id="pick-hidden-fields"></div>
-  <button type="submit" style="margin-top:.4rem">Start search</button>
-</form>
-
-<script>
-const pick = document.getElementById('pick');
-const only = document.getElementById('only-hidden');
-const spMain = document.getElementById('sp-main');
-const spExtra = document.getElementById('sp-extra');
-const optSur = document.getElementById('opt-surnames');
-const optNick = document.getElementById('opt-nicks');
-const ySel = document.getElementById('census_year');
-const yearGroup = document.getElementById('year-group');
-function paintYearButtons() {
-  yearGroup.querySelectorAll('.year-btn').forEach(btn => {
-    const active = btn.dataset.v === ySel.value;
-    btn.style.background = active ? '#4a90e2' : 'transparent';
-    btn.style.color = active ? '#fff' : '#333';
-    btn.style.fontWeight = active ? '600' : '400';
-  });
-}
-yearGroup.querySelectorAll('.year-btn').forEach(btn => {
-  btn.addEventListener('click', () => { ySel.value = btn.dataset.v; paintYearButtons(); renderPreview(); });
-});
-paintYearButtons();
-
-const eSel = document.getElementById('ig_event');
-const eventGroup = document.getElementById('event-group');
-function paintEventButtons() {
-  eventGroup.querySelectorAll('.ev-btn').forEach(btn => {
-    const active = btn.dataset.v === eSel.value;
-    btn.style.background = active ? '#4a90e2' : '#fff';
-    btn.style.color = active ? '#fff' : '#333';
-    btn.style.fontWeight = active ? '600' : '400';
-    btn.style.borderColor = active ? '#4a90e2' : '#bcd';
-  });
-}
-eventGroup.querySelectorAll('.ev-btn').forEach(btn => {
-  btn.addEventListener('click', () => { eSel.value = btn.dataset.v; paintEventButtons(); updateCost(); renderPreview(); });
-});
-paintEventButtons();
-
-// Fade site filter areas when their site is unticked
-function paintSiteCards() {
-  document.querySelectorAll('.site-card').forEach(card => {
-    const cb = card.querySelector('input[name="use_site"]');
-    card.style.opacity = cb && cb.checked ? '1' : '.5';
-  });
-}
-document.querySelectorAll('input[name="use_site"]').forEach(cb => cb.addEventListener('change', paintSiteCards));
-paintSiteCards();
-
-const vGate = document.getElementById('variants-gate');
-const vBody = document.getElementById('variants-body');
-const surPanel = document.getElementById('sur-panel');
-const forePanel = document.getElementById('fore-panel');
-const surBoxes = document.getElementById('sur-boxes');
-const foreBoxes = document.getElementById('fore-boxes');
-const costPanel = document.getElementById('cost-panel');
-const hiddenFields = document.getElementById('pick-hidden-fields');
-let CACHE = {forenames: [], surnames: []};
-
-const pickedSurnames = () => Array.from(surBoxes.querySelectorAll('input:checked')).map(i => i.value);
-const pickedForenames = () => Array.from(foreBoxes.querySelectorAll('input:checked')).map(i => i.value);
-const activeSites = () => Array.from(document.querySelectorAll('input[name="use_site"]:checked')).map(i => i.value);
-
-function updateCost() {
-  if (!pick.value) { costPanel.innerHTML = ''; return; }
-  const surCount = optSur.checked ? Math.max(1, pickedSurnames().length) : 1;
-  const foreCount = optNick.checked ? Math.max(1, pickedForenames().length) : 1;
-  const yearCount = ySel.value ? 1 : 3;
-  const sites = activeSites();
-  const parts = [];
-  let total = 0;
-  if (sites.includes('nai_census')) { const n = surCount * foreCount * yearCount; parts.push(`${n} NAI`); total += n; }
-  if (sites.includes('irishgenealogy_civil')) {
-    // event-marriage matches both civil + church marriage rows (2 events); others match 1.
-    const evMult = (eSel.value === '') ? 6 : (eSel.value === 'event-marriage' ? 2 : 1);
-    const n = surCount * foreCount * evMult;
-    parts.push(`${n} IrishGenealogy`); total += n;
-  }
-  if (sites.includes('griffiths')) { const n = surCount * foreCount; parts.push(`${n} Griffith\\'s`); total += n; }
-  const colour = total > 50 ? '#b00' : (total > 20 ? '#a60' : '#060');
-  const warn = total > 20 ? ' &mdash; polite 5-10s pauses between each' : '';
-  costPanel.innerHTML = `<span style="color:${colour}">&#9888; ~${total} site calls (${parts.join(', ')})</span>${warn}`;
-}
-
-function renderVariantBoxes(container, items, primary, defaultTicked) {
-  container.innerHTML = '';
-  (items || []).forEach(name => {
-    const isPrimary = (name || '').toLowerCase() === (primary || '').toLowerCase();
-    const checked = isPrimary || defaultTicked;
-    container.insertAdjacentHTML('beforeend',
-      `<label style="display:inline-block;margin:.1rem .6rem .1rem 0;font-weight:400">
-         <input type="checkbox" value="${name}" ${checked?'checked':''} ${isPrimary?'disabled':''}>
-         ${name}${isPrimary?' <small style="color:#888">(primary)</small>':''}
-       </label>`);
-  });
-  container.querySelectorAll('input').forEach(i => i.addEventListener('change', () => { updateCost(); syncHidden(); renderPreview(); }));
-}
-
-async function loadCandidates() {
-  const opt = pick.options[pick.selectedIndex];
-  if (!opt || !pick.value) { CACHE = {forenames:[], surnames:[]}; return; }
-  const fore = opt.dataset.fore || '';
-  const sur  = opt.dataset.sur  || '';
-  const vars_ = opt.dataset.var  || '';
-  const q = `forename=${encodeURIComponent(fore)}&surname=${encodeURIComponent(sur)}&variants=${encodeURIComponent(vars_)}`;
-  const d = await (await fetch(`{{ url_for('api_preview') }}?${q}`)).json();
-  CACHE.forenames = d.forenames || [fore];
-  CACHE.surnames = (d.surnames || []).map(s => s.name);
-  if (!CACHE.surnames.includes(sur)) CACHE.surnames.unshift(sur);
-  renderVariantBoxes(surBoxes, CACHE.surnames, sur, true);
-  renderVariantBoxes(foreBoxes, CACHE.forenames, fore, false);
-}
-
-function syncHidden() {
-  hiddenFields.innerHTML = '';
-  if (!pick.value) return;
-  const add = (n, v) => {
-    const h = document.createElement('input');
-    h.type = 'hidden'; h.name = n; h.value = v;
-    hiddenFields.appendChild(h);
-  };
-  if (optSur.checked) { pickedSurnames().forEach(v => add('surname_pick', v)); add('surnames','1'); }
-  if (optNick.checked) { pickedForenames().forEach(v => add('forename_pick', v)); add('nicks','1'); }
-}
-
-async function renderPreview() {
-  const opt = pick.options[pick.selectedIndex];
-  only.value = pick.value;
-
-  if (!pick.value) {
-    spMain.innerHTML = '<em style="color:#888">{All} — every person in your list will be searched.</em>';
-    spExtra.innerHTML = '';
-    vGate.style.display = 'block'; vBody.style.display = 'none';
-    optSur.checked = false; optNick.checked = false;
-    surPanel.style.display = 'none'; forePanel.style.display = 'none';
-    syncHidden(); updateCost();
-    return;
-  }
-
-  vGate.style.display = 'none'; vBody.style.display = 'block';
-
-  const fore = opt.dataset.fore || '';
-  const sur  = opt.dataset.sur  || '';
-  const year = opt.dataset.year || '';
-  const county = opt.dataset.county || '';
-  const townland = opt.dataset.townland || '';
-
-  let main = `<strong>${fore}</strong> <strong>${sur}</strong>`;
-  const bits = [];
-  if (year) bits.push(`born c.${year}`);
-  if (townland) bits.push(townland);
-  if (county) bits.push(`Co. ${county}`);
-  if (bits.length) main += ` <span style="color:#555">— ${bits.join(', ')}</span>`;
-  spMain.innerHTML = main;
-
-  const yr = ySel.value || 'All years (1901, 1911, 1926)';
-  const lines = [`Census year: <strong>${yr}</strong>`];
-  if (optSur.checked) lines.push(`Surnames: <strong>${pickedSurnames().join(', ') || '(none ticked)'}</strong>`);
-  if (optNick.checked) lines.push(`Forenames: <strong>${pickedForenames().join(', ') || '(none ticked)'}</strong>`);
-  if (!optSur.checked && !optNick.checked) lines.push('<span style="color:#060">Exact names only — no variations.</span>');
-  spExtra.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
-
-  syncHidden(); updateCost();
-}
-
-async function onPickChange() {
-  if (pick.value) await loadCandidates();
-  renderPreview();
-}
-
-const sortGroup = document.getElementById('sort-group');
-const sortSel = { value: 'sur' };
-function paintSortButtons() {
-  sortGroup.querySelectorAll('.sort-btn').forEach(btn => {
-    const active = btn.dataset.v === sortSel.value;
-    btn.style.background = active ? '#4a90e2' : 'transparent';
-    btn.style.color = active ? '#fff' : '#333';
-    btn.style.fontWeight = active ? '600' : '400';
-  });
-}
-sortGroup.querySelectorAll('.sort-btn').forEach(btn => {
-  btn.addEventListener('click', () => { sortSel.value = btn.dataset.v; paintSortButtons(); applySort(); });
-});
-const everyoneOpt = pick.querySelector('option[value=""]');
-const peopleOpts = Array.from(pick.querySelectorAll('option')).filter(o => o.value);
-function optionLabel(o, mode) {
-  const fore = o.dataset.fore || '';
-  const sur  = o.dataset.sur  || '';
-  const yr   = o.dataset.year || '';
-  const tl   = o.dataset.townland || '';
-  const co   = o.dataset.county || '';
-  const head = (mode === 'sur') ? (sur + ', ' + fore) : (fore + ' ' + sur);
-  const bits = [];
-  if (yr) bits.push('c.' + yr);
-  if (tl) bits.push(tl);
-  if (co) bits.push('Co. ' + co);
-  return head.trim() + (bits.length ? ' — ' + bits.join(', ') : '');
-}
-function applySort() {
-  const mode = sortSel.value;
-  let sorted = peopleOpts.slice();
-  if (mode === 'full') {
-    sorted.sort((a, b) => (a.dataset.fore + ' ' + a.dataset.sur).localeCompare(b.dataset.fore + ' ' + b.dataset.sur));
-  } else if (mode === 'sur') {
-    sorted.sort((a, b) => (a.dataset.sur + ' ' + a.dataset.fore).localeCompare(b.dataset.sur + ' ' + b.dataset.fore));
-  } else {
-    sorted.sort((a, b) => (+a.dataset.idx) - (+b.dataset.idx));
-  }
-  const cur = pick.value;
-  pick.innerHTML = '';
-  pick.appendChild(everyoneOpt);
-  sorted.forEach(o => { o.textContent = optionLabel(o, mode); pick.appendChild(o); });
-  pick.value = cur;
-}
-paintSortButtons();
-applySort();
-
-optSur.addEventListener('change', () => {
-  surPanel.style.display = optSur.checked ? 'block' : 'none';
-  renderPreview();
-});
-optNick.addEventListener('change', () => {
-  forePanel.style.display = optNick.checked ? 'block' : 'none';
-  renderPreview();
-});
-pick.addEventListener('change', onPickChange);
-document.querySelectorAll('input[name="use_site"]').forEach(cb => cb.addEventListener('change', updateCost));
-onPickChange();
-</script>
+</div>
 {% else %}
 <div class="state">
   <strong>State:</strong> <span id="st-state">{{ run.state }}</span><br>
@@ -555,7 +303,7 @@ onPickChange();
   </div>
 
   <form id="st-reset" method="post" action="{{ url_for('reset') }}" style="margin-top:1rem;display:{{ 'block' if run.state in ('done','error') else 'none' }}">
-    <button type="submit">New run</button>
+    <button type="submit" class="go">&#128269; Try another name</button>
   </form>
 </div>
 
@@ -831,7 +579,71 @@ def index():
     except Exception:
         people_rows = []
     sites = [{"key": k, "name": v.get("name", k)} for k, v in SITES.items()]
-    return render_template_string(INDEX_HTML, run=RUN, people=people_rows, sites=sites)
+    return render_template_string(INDEX_HTML, run=RUN, people=people_rows,
+                                  sites=sites, counties=IRISH_COUNTIES)
+
+
+IRISH_COUNTIES = [
+    "Antrim", "Armagh", "Carlow", "Cavan", "Clare", "Cork", "Derry", "Donegal",
+    "Down", "Dublin", "Fermanagh", "Galway", "Kerry", "Kildare", "Kilkenny",
+    "Laois", "Leitrim", "Limerick", "Longford", "Louth", "Mayo", "Meath",
+    "Monaghan", "Offaly", "Roscommon", "Sligo", "Tipperary", "Tyrone",
+    "Waterford", "Westmeath", "Wexford", "Wicklow",
+]
+
+
+@app.route("/quick-search", methods=["POST"])
+def quick_search():
+    with RUN_LOCK:
+        if RUN["state"] == "running":
+            return redirect(url_for("index"))
+
+    forename = (request.form.get("forename") or "").strip()
+    surname = (request.form.get("surname") or "").strip()
+    county = (request.form.get("county") or "").strip()
+    birth_year = (request.form.get("birth_year") or "").strip()
+    if not forename or not surname:
+        return redirect(url_for("index"))
+
+    with PEOPLE_LOCK:
+        rows = _read_rows()
+        key = (forename.lower(), surname.lower())
+        if not any((r.get("forename", "").lower(), r.get("surname", "").lower()) == key for r in rows):
+            new_row = {c: "" for c in CSV_COLUMNS}
+            new_row["forename"] = forename
+            new_row["surname"] = surname
+            new_row["county"] = county
+            new_row["birth_year_approx"] = birth_year
+            new_row["year_range"] = "5" if birth_year else ""
+            rows.append(new_row)
+            _write_rows(rows)
+
+    with RUN_LOCK:
+        RUN.update({
+            "state": "running",
+            "current": 0, "total": 0, "label": "",
+            "started": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "finished": None, "error": "",
+            "new_count": 0, "record_count": 0,
+        })
+
+    RUNTIME_FLAGS["soundex"] = False
+    RUNTIME_FLAGS["collapse_weak"] = True
+    scrape_settings.CENSUS_YEAR_FILTER = ""
+    scrape_settings.IG_EVENT_FILTER = ()
+
+    opts = {
+        "headless": True,
+        "no_cache": False,
+        "use_surnames": False,
+        "use_nicks": True,
+        "surname_picks": [],
+        "forename_picks": [],
+        "only": f"{forename} {surname}",
+        "skip": "",
+    }
+    threading.Thread(target=_worker, args=(opts,), daemon=True).start()
+    return redirect(url_for("index"))
 
 
 @app.route("/start", methods=["POST"])

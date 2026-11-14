@@ -26,15 +26,17 @@ Working list. Tick when done. Add free-form.
 - [ ] Import GEDCOM to seed `ancestors.csv`.
 
 ### Ideas — kid mode follow-ups
-- [ ] Nicknames default-on for kid mode: Michael → Mick/Mike automatic without opening variant panel.
 - [ ] Loading screen while scrape runs — bigger than current status page, kid-paced (animation + "we're asking the old books about X" messages).
-- [ ] "Try another name" button on done page that scrolls back to form, not full reset.
-- [ ] Spinner or sheep animation on submit so kid sees something happen immediately.
 
 ## Done
 
 ### Dedupe follow-up (Nov 2026)
 - [x] Semantic dedupe second pass in `runner.dedupe_records`: collapse by `(person, site, record_type, name_found, place, age_or_year)`, keep highest-scoring row. Fixes 91-copy IG birth bloat.
+
+### Kid-mode quick wins (Nov 2026)
+- [x] Nicknames default-on in `/quick-search` worker opts (`use_nicks=True`). Michael → Mick/Mike automatic.
+- [x] Sheep spinner + "Asking the old books…" on quick-search submit; button disables.
+- [x] "Try another name" button (styled `go`) replaces plain "New run" on done/error panel.
 
 ### Kid-mode landing (Nov 2026)
 - [x] Replace idle branch of `/` with themed hero form (forename/surname/county/birth_year only).
