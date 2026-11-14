@@ -26,6 +26,9 @@ Working list. Tick when done. Add free-form.
 
 ## Done
 
+### Scoring fix — forename mismatch penalty (Nov 2026)
+- [x] Wrong forename scores -4; correct forename (or any nickname/variant) scores +3. Prevents surname+county+year alone reaching "Possible".
+
 ### Search form & results improvements (Nov 2026)
 - [x] Exact year toggle on quick-search: "Approx (±5 years)" vs "Exact year" radio; writes `year_range=0`; fixed validator to accept 0.
 - [x] "What we found" button opens `results.html` directly; `/narrative` redirects there; duplicate button removed.
