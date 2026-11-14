@@ -13,6 +13,7 @@ from genealogy_core.models import Person, Record
 from . import settings
 from .browser import build_url, looks_like_captcha, polite_pause, safe_goto, wait_for_user_after_captcha
 from .cache import SearchCache
+from . import settings
 from .sites import CENSUS_YEARS, NAI_LINK_BASE, NAI_READY_JS, SITES
 
 
@@ -96,6 +97,7 @@ def _search_nai_one(page: Page, person: Person, surname: str, forename: str,
         link_el = row.query_selector("a[href]")
         href = link_el.get_attribute("href") if link_el else ""
         rec = parse_nai_row(cells, href, page.url, person, year, cfg["name"])
+        rec.name_used = f"{forename} {surname}".strip()
         records.append(rec)
 
     logger.info("[NAI %s] parsed %d rows for %s %s", year, len(records), surname, forename)
@@ -109,9 +111,11 @@ def search_nai_census(page: Page, person: Person, logger: logging.Logger,
                       state: dict, cache: SearchCache, use_nicknames: bool) -> list[Record]:
     """NAI census (1901, 1911, 1926). SPA that reads URL-fragment params."""
     records: list[Record] = []
+    year_filter = (settings.CENSUS_YEAR_FILTER or "").strip()
+    years = [year_filter] if year_filter in CENSUS_YEARS else CENSUS_YEARS
     for surname in person.all_surnames():
         for forename in person.all_forenames(use_nicknames):
-            for year in CENSUS_YEARS:
+            for year in years:
                 if state.get("dead"):
                     return records
                 records.extend(

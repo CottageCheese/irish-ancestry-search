@@ -8,6 +8,7 @@ NICKNAMES: dict[str, list[str]] = {
     "michael":   ["mick", "mickey", "mike"],
     "thomas":    ["tom", "tommy", "tam"],
     "daniel":    ["dan", "danny"],
+    "david":     ["dave", "davy", "davie", "dai"],
     "edward":    ["ed", "ted", "ned", "eddie"],
     "robert":    ["rob", "bob", "bobby", "robbie"],
     "richard":   ["rick", "dick", "richie"],

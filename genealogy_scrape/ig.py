@@ -136,6 +136,7 @@ def _search_ig_one(page: Page, person: Person, surname: str, forename: str,
 
         rec = parse_ig_item(summary, detail_bits, href, page.url,
                             person, forename, surname, cfg["name"], label)
+        rec.name_used = f"{forename} {surname}".strip()
         records.append(rec)
 
     cache.put(cache_key, records)
@@ -148,9 +149,11 @@ def search_irishgenealogy_civil(page: Page, person: Person, logger: logging.Logg
                                 use_nicknames: bool) -> list[Record]:
     """Search IG across all six event matrices for every name variant."""
     records: list[Record] = []
+    event_filter = settings.IG_EVENT_FILTER or ()
+    matrix = [r for r in IG_SEARCH_MATRIX if not event_filter or r[1] in event_filter]
     for surname in person.all_surnames():
         for forename in person.all_forenames(use_nicknames):
-            for mode, flag, label in IG_SEARCH_MATRIX:
+            for mode, flag, label in matrix:
                 if state.get("dead"):
                     return records
                 records.extend(

@@ -13,6 +13,7 @@ class Person:
     surname: str
     forename: str
     surname_variants: list[str] = field(default_factory=list)
+    forename_variants: list[str] = field(default_factory=list)
     birth_year_approx: int | None = None
     year_range: int = 5
     county: str = ""
@@ -28,6 +29,9 @@ class Person:
         return expand_surnames(names, use_soundex=RUNTIME_FLAGS.get("soundex", True))
 
     def all_forenames(self, use_nicknames: bool) -> list[str]:
+        if self.forename_variants:
+            names = [self.forename] + [v for v in self.forename_variants if v != self.forename]
+            return [n for n in names if n] or [""]
         if not use_nicknames:
             return [self.forename] if self.forename else [""]
         variants = expand_forename(self.forename)
@@ -63,6 +67,7 @@ class Record:
     thumbnail: str = ""
     user_notes: str = ""
     status: str = ""  # "" | "confirmed" | "rejected" — set by user via web UI
+    name_used: str = ""  # forename+surname variant actually queried (may differ from person's primary)
 
 
 def confidence_tier(score: int) -> str:

@@ -13,6 +13,10 @@ from . import settings
 
 _LAST_HIT: dict[str, float] = {}
 
+# Optional hook so a UI can show countdowns during polite pauses.
+# Signature: hook(host, seconds)
+PAUSE_HOOK = None  # type: ignore[assignment]
+
 
 def encode(value: str) -> str:
     return urllib.parse.quote_plus((value or "").strip())
@@ -44,6 +48,11 @@ def polite_pause(logger: logging.Logger, host: str | None = None) -> None:
     else:
         seconds = random.uniform(min_gap, max_gap)
     logger.info("Pausing %.1f seconds%s", seconds, f" (host={host})" if host else "")
+    if PAUSE_HOOK is not None:
+        try:
+            PAUSE_HOOK(host or "", seconds)
+        except Exception:
+            pass
     time.sleep(seconds)
     _LAST_HIT[host or "_global"] = time.monotonic()
 

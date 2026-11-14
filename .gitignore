@@ -13,6 +13,9 @@ venv/
 .vscode/
 .idea/
 
+# Private ancestor data (PII — may contain real names/dates)
+ancestors.csv
+
 # Scraper runtime artifacts
 run.log
 .search_cache.json

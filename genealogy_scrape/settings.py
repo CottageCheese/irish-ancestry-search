@@ -35,6 +35,17 @@ USER_AGENT = (
 )
 
 
+# NAI census year filter. Empty = all three years (1901, 1911, 1926).
+# Web UI sets this per-run.
+CENSUS_YEAR_FILTER: str = ""
+
+# IrishGenealogy.ie event filter. Empty tuple = all six events.
+# Values match the `flag` column of IG_SEARCH_MATRIX
+# (event-birth, event-marriage, event-death, event-baptism, event-burial).
+# Note "event-marriage" covers both civil + church marriage searches.
+IG_EVENT_FILTER: tuple[str, ...] = ()
+
+
 def set_max_results(n: int) -> None:
     """Allow the CLI to override MAX_RESULTS_PER_SEARCH at startup. Keeps
     the override visible to every scraper that reads the module attr.

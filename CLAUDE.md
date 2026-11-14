@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+At session start, check `BACKLOG.md` for pending work and in-progress phases.
+
 ## Commands
 
 ```bash
@@ -79,4 +81,4 @@ Script enforces 5-10s random delay per host (`polite_pause`). When adding a scra
 
 ## Files not tracked
 
-See `.gitignore`. Scraper outputs (`results.*`, `run.log`, `.search_cache.json`, `.storage_state.json`, `results/`, `notes.md`) are ignored. `ancestors.csv` **is** tracked (the sample header + example rows); real ancestor data should stay under this path or be kept private.
+See `.gitignore`. Scraper outputs (`results.*`, `run.log`, `.search_cache.json`, `.storage_state.json`, `results/`, `notes.md`) are ignored. `ancestors.csv` is **ignored** too (may contain real family PII); keep your real data at that path locally. A sample `ancestors.sample.csv` can be committed for new users.
