@@ -129,7 +129,7 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
         total = len(people)
         for idx, person in enumerate(people, start=1):
             if progress:
-                progress(idx, total, f"{person.label()} ({person.county})")
+                progress(idx - 1, total, f"{person.label()} ({person.county})")
             logger.info("====== Searching for: %s (%s) ======", person.label(), person.county)
             for site_key, fn in SEARCH_FUNCTIONS:
                 if site_key in skip_sites:

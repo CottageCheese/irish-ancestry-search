@@ -331,10 +331,11 @@ INDEX_HTML = """
   <div class="sheep-big" aria-hidden="true">🐑</div>
   <h2 class="loader-heading">Looking for <span id="loader-name">{{ run.person_name or 'your ancestor' }}</span>…</h2>
   <div class="loader-msg" id="loader-msg">Asking the old books…</div>
+  <div id="loader-step" style="font-size:.95rem;color:var(--moss-dark);margin:.1rem 0 .6rem;min-height:1.4em"></div>
 
   <div class="loader-progress-text">
     Checked <strong id="loader-current">{{ run.current }}</strong>
-    of <strong id="loader-total">{{ run.total or '?' }}</strong> places
+    of <strong id="loader-total">{{ run.total or '?' }}</strong> ancestors
   </div>
   <div class="loader-bar-wrap">
     <div class="loader-bar-fill" id="loader-bar" style="width:{{ (100 * run.current / run.total) if run.total else 0 }}%"></div>
@@ -486,6 +487,12 @@ async function tick() {
     const lc = document.getElementById('loader-current'); if (lc) lc.textContent = s.current;
     const lt = document.getElementById('loader-total'); if (lt) lt.textContent = s.total || '?';
     const lb = document.getElementById('loader-bar'); if (lb) lb.style.width = (s.total ? (100*s.current/s.total) : 0) + '%';
+    const ls = document.getElementById('loader-step');
+    if (ls) {
+      const SITE_LABELS = {'NAI 1901':'📜 Checking 1901 census…','NAI 1911':'📜 Checking 1911 census…','NAI 1926':'📜 Checking 1926 census…'};
+      const step = s.step || '';
+      ls.textContent = SITE_LABELS[step] || (step ? '🔍 Checking ' + step + '…' : '');
+    }
 
     if (s.state === 'running') {
       if (loaderScreen) loaderScreen.style.display = '';
