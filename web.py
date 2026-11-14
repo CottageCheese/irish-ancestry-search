@@ -25,6 +25,7 @@ from flask import Flask, Response, abort, jsonify, redirect, render_template_str
 from playwright.sync_api import sync_playwright
 
 from genealogy_core.nicknames import expand_forename
+from genealogy_core.render import slugify
 from genealogy_core.soundex import soundex
 from genealogy_core import (
     Record,
@@ -141,6 +142,14 @@ INDEX_HTML = """
   .bar > div { height: 100%; background: var(--moss); transition: width .3s; }
   a.btn { display: inline-block; margin:.4rem .3rem 0 0; padding:.5rem 1rem; background: var(--moss); color: white; text-decoration: none; border-radius: 6px; font-weight:600; }
   a.btn:hover { background: var(--moss-dark); }
+  .family-link {
+    display:inline-block; padding:.75rem 1.8rem;
+    background:#fffcf2; border:2px solid var(--gold);
+    border-radius:24px; font-size:1.15rem; font-weight:700;
+    color:var(--moss-dark); text-decoration:none;
+    transition:background .15s, border-color .15s, box-shadow .15s;
+  }
+  .family-link:hover { background:#fff3c0; border-color:var(--sepia); box-shadow:0 3px 10px rgba(0,0,0,.1); }
 </style>
 
 <h1>&#9752; Family Finder &#9752;</h1>
@@ -265,49 +274,11 @@ INDEX_HTML = """
 
 {% set known = people | selectattr('forename') | list %}
 {% if known %}
-<style>
-  .people-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:.6rem; margin-top:.6rem; }
-  .person-btn {
-    width:100%; text-align:left; background:#fffcf2; border:2px solid var(--cream-dark);
-    border-radius:8px; padding:.65rem .8rem; cursor:pointer; font:inherit;
-    transition:border-color .15s, background .15s;
-  }
-  .person-btn:hover { border-color:var(--gold); background:#fff8e6; }
-  .person-btn:active { background:var(--cream-dark); }
-  .person-name { display:block; font-weight:700; color:var(--moss-dark); font-size:1.05rem; }
-  .person-sub { display:block; font-size:.85rem; color:var(--sepia); margin-top:.15rem; }
-</style>
-<div class="hero" style="margin-top:.6rem">
-  <h2 style="margin:0 0 .2rem;font-size:1.2rem">&#128100; Search again for&hellip;</h2>
-  <p style="margin:.1rem 0 .6rem;font-size:.9rem;color:#666">People already in your list &mdash; tap one to search.</p>
-  <div class="people-grid" id="people-grid">
-    {% for p in known %}
-    <form method="post" action="{{ url_for('quick_search') }}" class="person-form" style="margin:0">
-      <input type="hidden" name="forename" value="{{ p.forename }}">
-      <input type="hidden" name="surname" value="{{ p.surname }}">
-      <input type="hidden" name="county" value="{{ p.county }}">
-      <input type="hidden" name="birth_year" value="{{ p.birth_year_approx }}">
-      <button type="submit" class="person-btn">
-        <span class="person-name">{{ p.forename }} {{ p.surname }}</span>
-        <span class="person-sub">
-          {%- if p.county %}{{ p.county }}{% endif %}
-          {%- if p.birth_year_approx %} &middot; b.&nbsp;~{{ p.birth_year_approx }}{% endif -%}
-        </span>
-      </button>
-    </form>
-    {% endfor %}
-  </div>
+<div style="text-align:center;margin-top:1.1rem">
+  <a href="{{ url_for('ancestors_page') }}" class="family-link">
+    &#128106; Our family so far ({{ known|length }}) &#8594;
+  </a>
 </div>
-<script>
-(function(){
-  document.querySelectorAll('.person-form').forEach(function(form){
-    form.addEventListener('submit', function(){
-      const btn = form.querySelector('.person-btn');
-      if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
-    });
-  });
-})();
-</script>
 {% endif %}
 
 {% else %}
@@ -433,6 +404,7 @@ INDEX_HTML = """
   <div id="st-done" style="display:{{ 'block' if run.state == 'done' else 'none' }}">
     <div><strong><span id="st-rc">{{ run.record_count }}</span></strong> unique record(s).
          <span id="st-new">{{ run.new_count }}</span> new since previous run.</div>
+    <a class="btn" href="{{ url_for('ancestors_page') }}">&#128106; Our family</a>
     <a class="btn" href="{{ url_for('narrative') }}" target="_blank">What we found</a>
     <a class="btn" href="{{ url_for('results_html') }}" target="_blank">Open results.html</a>
     <a class="btn" href="{{ url_for('download', name='results.csv') }}">Download CSV</a>
@@ -445,29 +417,6 @@ INDEX_HTML = """
     <button type="submit" class="go">&#128269; Try another name</button>
   </form>
 
-  {% set known = people | selectattr('forename') | list %}
-  {% if known %}
-  <div id="st-people" style="margin-top:1rem;display:{{ 'block' if run.state in ('done','error') else 'none' }}">
-    <div style="font-weight:600;color:var(--moss-dark);margin-bottom:.4rem">&#128100; Or search again for&hellip;</div>
-    <div class="people-grid">
-      {% for p in known %}
-      <form method="post" action="{{ url_for('quick_search') }}" class="person-form" style="margin:0">
-        <input type="hidden" name="forename" value="{{ p.forename }}">
-        <input type="hidden" name="surname" value="{{ p.surname }}">
-        <input type="hidden" name="county" value="{{ p.county }}">
-        <input type="hidden" name="birth_year" value="{{ p.birth_year_approx }}">
-        <button type="submit" class="person-btn">
-          <span class="person-name">{{ p.forename }} {{ p.surname }}</span>
-          <span class="person-sub">
-            {%- if p.county %}{{ p.county }}{% endif %}
-            {%- if p.birth_year_approx %} &middot; b.&nbsp;~{{ p.birth_year_approx }}{% endif -%}
-          </span>
-        </button>
-      </form>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
 </div>
 
 <script>
@@ -651,21 +600,17 @@ async function tick() {
     updatePause(s);
     const doneBlock = document.getElementById('st-done');
     const resetBlock = document.getElementById('st-reset');
-    const peopleBlock = document.getElementById('st-people');
     if (s.state === 'done') {
       doneBlock.style.display = 'block';
       resetBlock.style.display = 'block';
-      if (peopleBlock) peopleBlock.style.display = 'block';
       document.getElementById('st-rc').textContent = s.record_count;
       document.getElementById('st-new').textContent = s.new_count;
     } else if (s.state === 'error') {
       doneBlock.style.display = 'none';
       resetBlock.style.display = 'block';
-      if (peopleBlock) peopleBlock.style.display = 'block';
     } else {
       doneBlock.style.display = 'none';
       resetBlock.style.display = 'none';
-      if (peopleBlock) peopleBlock.style.display = 'none';
     }
     if (s.state === 'running') setTimeout(tick, 2000);
   } catch (e) { setTimeout(tick, 3000); }
@@ -993,6 +938,205 @@ TIER_COLOR = {
     "Likely": "#0a7d2b", "Possible": "#b57b00",
     "Weak": "#9a6f6f", "Manual": "#555",
 }
+
+AVATAR_PALETTES = [
+    ("#c8e6c9", "#1b5e20"),
+    ("#bbdefb", "#0d47a1"),
+    ("#e1bee7", "#4a148c"),
+    ("#ffe0b2", "#bf360c"),
+    ("#f8bbd0", "#880e4f"),
+    ("#b2dfdb", "#004d40"),
+]
+
+
+def _avatar(name: str) -> tuple[str, str]:
+    idx = sum(ord(c) for c in name) % len(AVATAR_PALETTES)
+    return AVATAR_PALETTES[idx]
+
+
+ANCESTORS_HTML = """
+<!doctype html>
+<meta charset="utf-8">
+<title>Our Family &mdash; Family Finder</title>
+<style>
+  :root {
+    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
+    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
+  }
+  * { box-sizing:border-box; }
+  body {
+    font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    max-width:960px; margin:0 auto; padding:1rem;
+    background:var(--cream); color:var(--ink); min-height:100vh;
+  }
+  .nav { margin-bottom:1.2rem; }
+  .nav a { color:var(--moss); text-decoration:none; font-size:1rem; font-weight:600; }
+  .nav a:hover { color:var(--moss-dark); text-decoration:underline; }
+  h1 { font-size:2.2rem; color:var(--moss-dark); margin:.2rem 0 .2rem; text-align:center; letter-spacing:.02em; }
+  .subtitle { text-align:center; color:var(--sepia); font-style:italic; margin:0 0 1.5rem; font-size:1.05rem; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:1rem; }
+  .card {
+    background:#fffcf2; border:2px solid var(--cream-dark); border-radius:12px;
+    padding:1.2rem 1rem 1rem; text-align:center; cursor:pointer;
+    text-decoration:none; color:var(--ink);
+    transition:border-color .15s, box-shadow .15s, transform .12s;
+    display:block;
+  }
+  .card:hover { border-color:var(--gold); box-shadow:0 5px 18px rgba(0,0,0,.13); transform:translateY(-3px); }
+  .avatar {
+    width:66px; height:66px; border-radius:50%; margin:0 auto .75rem;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.9rem; font-weight:700; border:3px solid rgba(0,0,0,.07);
+    flex-shrink:0;
+  }
+  .card-name { font-size:1.15rem; font-weight:700; color:var(--moss-dark); margin-bottom:.25rem; line-height:1.2; }
+  .card-sub { font-size:.88rem; color:var(--sepia); margin-bottom:.6rem; min-height:1.2em; }
+  .badge {
+    display:inline-block; padding:.22rem .75rem; border-radius:12px;
+    font-size:.82rem; font-weight:700;
+  }
+  .badge-confirmed { background:#d4edda; color:#155724; }
+  .badge-found { background:#d1ecf1; color:#0c5460; }
+  .badge-none { background:#f1f1f1; color:#888; font-weight:400; }
+  .empty { text-align:center; padding:3rem 1rem; color:var(--sepia); font-style:italic; font-size:1.1rem; }
+  .empty a { color:var(--moss); font-weight:700; text-decoration:none; }
+  .empty a:hover { text-decoration:underline; }
+</style>
+
+<div class="nav">
+  <a href="{{ url_for('index') }}">&#8592; Find someone</a>
+</div>
+
+<h1>&#128106; Our Family</h1>
+<p class="subtitle">Everyone we have been searching for</p>
+
+{% if people %}
+<div class="grid">
+  {% for p in people %}
+  <a class="card" href="{{ url_for('person_page', slug=p.slug) }}">
+    <div class="avatar" style="background:{{ p.avatar_bg }};color:{{ p.avatar_fg }}">
+      {{ p.forename[0]|upper }}
+    </div>
+    <div class="card-name">{{ p.forename }} {{ p.surname }}</div>
+    <div class="card-sub">
+      {%- if p.county %}{{ p.county }}{% endif %}
+      {%- if p.year %} &middot; b.&nbsp;~{{ p.year }}{% endif -%}
+    </div>
+    {% if p.confirmed > 0 %}
+      <span class="badge badge-confirmed">&#11088; {{ p.confirmed }} confirmed</span>
+    {% elif p.found > 0 %}
+      <span class="badge badge-found">&#128270; {{ p.found }} found</span>
+    {% else %}
+      <span class="badge badge-none">Not searched yet</span>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+  <p>No one here yet!</p>
+  <a href="{{ url_for('index') }}">Go find someone &#8594;</a>
+</div>
+{% endif %}
+"""
+
+
+PERSON_HTML = """
+<!doctype html>
+<meta charset="utf-8">
+<title>{{ person.forename }} {{ person.surname }} &mdash; Family Finder</title>
+<style>
+  :root {
+    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
+    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
+  }
+  * { box-sizing:border-box; }
+  body {
+    font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    max-width:860px; margin:0 auto; padding:1rem;
+    background:var(--cream); color:var(--ink); min-height:100vh;
+  }
+  .nav { margin-bottom:1rem; display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
+  .nav a { color:var(--moss); text-decoration:none; font-weight:600; }
+  .nav a:hover { text-decoration:underline; }
+  .hero-card {
+    background:#fffcf2; border:2px solid var(--gold); border-radius:12px;
+    padding:1.2rem 1.4rem; margin-bottom:1.2rem; display:flex; align-items:center; gap:1rem;
+  }
+  .avatar {
+    width:72px; height:72px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:2.1rem; font-weight:700; border:3px solid rgba(0,0,0,.07);
+  }
+  .hero-name { font-size:1.75rem; font-weight:700; color:var(--moss-dark); margin:0 0 .2rem; }
+  .hero-sub { color:var(--sepia); font-size:1rem; }
+  .tier { margin:1rem 0; }
+  .tier-head {
+    font-weight:700; font-size:1.05rem; margin-bottom:.35rem;
+    padding:.35rem .7rem; border-radius:6px; display:inline-block;
+  }
+  .tier-blurb { font-size:.88rem; color:#666; margin-bottom:.4rem; }
+  .rec-card {
+    background:#fff; border-left:4px solid #ccc; padding:.7rem 1rem;
+    margin:.4rem 0; border-radius:4px; font-size:.98rem; line-height:1.5;
+  }
+  a.src { color:var(--moss); font-size:.9rem; margin-left:.6rem; }
+  .badge-confirmed { font-size:.8rem; color:#155724; font-weight:700; margin-left:.5rem; }
+  .empty { text-align:center; padding:2rem; color:var(--sepia); font-style:italic; font-size:1.05rem; }
+  .search-btn {
+    display:inline-block; margin-top:1rem; padding:.65rem 1.5rem;
+    background:var(--moss); color:#fff; border-radius:8px; text-decoration:none;
+    font-weight:700; font-size:1rem;
+  }
+  .search-btn:hover { background:var(--moss-dark); }
+  .summary { color:var(--sepia); font-style:italic; margin:.2rem 0 1rem; }
+</style>
+
+<div class="nav">
+  <a href="{{ url_for('ancestors_page') }}">&#8592; Our family</a>
+  {% if total > 0 %}<a href="{{ url_for('results_html') }}">Full results &#8599;</a>{% endif %}
+</div>
+
+<div class="hero-card">
+  <div class="avatar" style="background:{{ person.avatar_bg }};color:{{ person.avatar_fg }}">
+    {{ person.forename[0]|upper }}
+  </div>
+  <div>
+    <div class="hero-name">{{ person.forename }} {{ person.surname }}</div>
+    <div class="hero-sub">
+      {%- if person.county %}{{ person.county }}{% endif %}
+      {%- if person.year %} &middot; born around {{ person.year }}{% endif -%}
+    </div>
+  </div>
+</div>
+
+{% if total == 0 %}
+<div class="empty">
+  <p>We have not searched for {{ person.forename }} yet.</p>
+  <a href="{{ url_for('index') }}" class="search-btn">&#128269; Search for {{ person.forename }}</a>
+</div>
+{% else %}
+<p class="summary">Found {{ total }} record(s) in the old books.</p>
+{% for tier in tier_order %}
+  {% set recs = tiers.get(tier, []) %}
+  {% if recs %}
+  <div class="tier">
+    <div class="tier-head" style="color:{{ tier_color[tier] }}">
+      {{ tier_stars[tier] }} {{ tier }} &mdash; {{ recs|length }} record(s)
+    </div>
+    <p class="tier-blurb">{{ tier_blurb[tier] }}</p>
+    {% for r in recs %}
+    <div class="rec-card" style="border-left-color:{{ tier_color[tier] }}">
+      {{ r.sentence|safe }}
+      {% if r.link %}<a class="src" href="{{ r.link }}" target="_blank">open source &#8599;</a>{% endif %}
+      {% if r.status == 'confirmed' %}<span class="badge-confirmed">&#10003; confirmed</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endfor %}
+{% endif %}
+"""
 
 
 def _narrate(rec: dict) -> str:
@@ -1377,6 +1521,113 @@ def people_delete(idx: int) -> Response:
         rows.pop(idx)
         _write_rows(rows)
     return Response(status=204)
+
+
+@app.route("/ancestors")
+def ancestors_page():
+    with PEOPLE_LOCK:
+        people_rows = _read_rows()
+    with CONFIRMS_LOCK:
+        confs = load_confirmations(CONFIRMS_FILE)
+
+    record_counts: dict[str, int] = {}
+    confirmed_counts: dict[str, int] = {}
+    results_csv_path = HERE / RESULTS_CSV
+    if results_csv_path.exists():
+        try:
+            recs = load_records_csv(results_csv_path)
+            for r in recs:
+                lbl = r.person_searched
+                record_counts[lbl] = record_counts.get(lbl, 0) + 1
+                if confs.get(record_key(r), {}).get("status") == "confirmed":
+                    confirmed_counts[lbl] = confirmed_counts.get(lbl, 0) + 1
+        except Exception:
+            pass
+
+    people_data = []
+    for row in people_rows:
+        forename = row.get("forename", "").strip()
+        surname = row.get("surname", "").strip()
+        if not forename or not surname:
+            continue
+        label = f"{forename} {surname}"
+        bg, fg = _avatar(label)
+        people_data.append({
+            "label": label,
+            "forename": forename,
+            "surname": surname,
+            "slug": slugify(label),
+            "county": row.get("county", "").strip(),
+            "year": row.get("birth_year_approx", "").strip(),
+            "found": record_counts.get(label, 0),
+            "confirmed": confirmed_counts.get(label, 0),
+            "avatar_bg": bg,
+            "avatar_fg": fg,
+        })
+    people_data.sort(key=lambda p: (-p["confirmed"], -p["found"], p["label"]))
+    return render_template_string(ANCESTORS_HTML, people=people_data)
+
+
+@app.route("/person/<slug>")
+def person_page(slug: str):
+    import json as _json
+    with PEOPLE_LOCK:
+        rows = _read_rows()
+
+    target = None
+    for row in rows:
+        forename = row.get("forename", "").strip()
+        surname = row.get("surname", "").strip()
+        if not forename or not surname:
+            continue
+        label = f"{forename} {surname}"
+        if slugify(label) == slug:
+            bg, fg = _avatar(label)
+            target = {
+                "label": label,
+                "forename": forename,
+                "surname": surname,
+                "county": row.get("county", "").strip(),
+                "year": row.get("birth_year_approx", "").strip(),
+                "avatar_bg": bg,
+                "avatar_fg": fg,
+            }
+            break
+    if target is None:
+        abort(404)
+
+    tiers: dict[str, list[dict]] = {t: [] for t in TIER_ORDER}
+    p = HERE / RESULTS_JSON
+    if p.exists():
+        try:
+            payload = _json.loads(p.read_text(encoding="utf-8"))
+            for entry in payload.get("people", []):
+                if entry.get("person") == target["label"]:
+                    for rec in entry.get("records", []):
+                        if rec.get("status") == "rejected":
+                            continue
+                        tier = rec.get("tier") or "Manual"
+                        if tier not in tiers:
+                            tiers[tier] = []
+                        tiers[tier].append({
+                            "sentence": _narrate(rec),
+                            "link": rec.get("link", ""),
+                            "status": rec.get("status", ""),
+                        })
+        except Exception:
+            pass
+
+    total = sum(len(v) for v in tiers.values())
+    return render_template_string(
+        PERSON_HTML,
+        person=target,
+        tiers=tiers,
+        total=total,
+        tier_order=TIER_ORDER,
+        tier_stars=TIER_STARS,
+        tier_blurb=TIER_BLURB,
+        tier_color=TIER_COLOR,
+    )
 
 
 if __name__ == "__main__":
