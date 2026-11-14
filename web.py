@@ -175,7 +175,7 @@ INDEX_HTML = """
       <div>
         <label for="forename">&#128100; First name</label>
         <input type="text" id="forename" name="forename" required placeholder="e.g. Mary" autofocus>
-        <div id="fore-variants" style="display:none;margin-top:.45rem">
+        <div id="fore-variants" style="visibility:hidden;margin-top:.45rem">
           <div style="font-size:.85rem;color:var(--sepia);margin-bottom:.3rem">
             &#128260; This name is also known as: <span id="fore-chips"></span>
           </div>
@@ -256,11 +256,11 @@ INDEX_HTML = """
           <label class="tog-btn" data-tip="&#127969; A list of who rented land in Ireland in the 1850s and 1860s. Great for finding whole families."><input type="checkbox" name="ig_event" value="griffiths">Land records</label>
         </div>
       </div>
-      <div id="rec-tip" style="display:none;margin-top:.4rem;margin-left:71px;padding:.4rem .7rem;background:#fffcf2;border-left:3px solid var(--gold);border-radius:0 6px 6px 0;font-size:.88rem;color:var(--ink)"></div>
+      <div id="rec-tip" style="visibility:hidden;margin-top:.4rem;margin-left:71px;padding:.4rem .7rem;background:#fffcf2;border-left:3px solid var(--gold);border-radius:0 6px 6px 0;font-size:.88rem;color:var(--ink)"></div>
       <div class="filter-hint">Pick some to search faster, or leave on <em>All</em> for everything.</div>
     </div>
 
-    <div id="search-quality" style="display:none;margin:.7rem 0 .2rem;padding:.55rem .8rem;border-radius:8px;background:#f4fdf4;border:1px solid #c0dfc0;font-size:.95rem"></div>
+    <div id="search-quality" style="visibility:hidden;margin:.7rem 0 .2rem;padding:.55rem .8rem;border-radius:8px;background:#f4fdf4;border:1px solid #c0dfc0;font-size:.95rem"></div>
     <style>
       .filter-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
       .filter-lbl { font-size:.92rem; font-weight:700; color:var(--moss-dark); min-width:65px; flex-shrink:0; }
@@ -360,9 +360,9 @@ INDEX_HTML = """
                    + 'background:#e8f4e8;color:var(--moss-dark);border:1px solid var(--moss);'
                    + 'margin:1px;font-size:.88rem">' + v + '</span>';
             }).join('');
-            foreVarDiv.style.display = 'block';
+            foreVarDiv.style.visibility = 'visible';
           } else {
-            foreVarDiv.style.display = 'none';
+            foreVarDiv.style.visibility = 'hidden';
           }
           updateQuality();
         });
@@ -374,14 +374,14 @@ INDEX_HTML = """
         document.querySelectorAll('#rec-btn-group [data-tip]').forEach(function(el){
           el.addEventListener('mouseenter', function(){
             recTip.innerHTML = el.dataset.tip;
-            recTip.style.display = 'block';
+            recTip.style.visibility = 'visible';
           });
-          el.addEventListener('mouseleave', function(){ recTip.style.display = 'none'; });
+          el.addEventListener('mouseleave', function(){ recTip.style.visibility = 'hidden'; });
           el.addEventListener('focus', function(){
             recTip.innerHTML = el.dataset.tip;
-            recTip.style.display = 'block';
+            recTip.style.visibility = 'visible';
           });
-          el.addEventListener('blur', function(){ recTip.style.display = 'none'; });
+          el.addEventListener('blur', function(){ recTip.style.visibility = 'hidden'; });
         });
       }
 
@@ -393,7 +393,7 @@ INDEX_HTML = """
         var sur  = (document.getElementById('surname').value || '').trim();
         var yr   = (document.getElementById('birth_year').value || '').trim();
         var cty  = (document.getElementById('county').value || '').trim();
-        if (!fore && !sur) { qualDiv.style.display = 'none'; return; }
+        if (!fore && !sur) { qualDiv.style.visibility = 'hidden'; return; }
         var score = 1 + (yr ? 1 : 0) + (cty ? 1 : 0);
         var stars = ['&#9733;','&#9733;','&#9733;'].map(function(s,i){
           return '<span style="color:'+(i<score?'#c9a04a':'#ccc')+';font-size:1.3em">'+s+'</span>';
@@ -404,7 +404,7 @@ INDEX_HTML = """
           ? '<strong>Getting there!</strong> Add a ' + (!yr ? 'birth year' : 'county') + ' to narrow it down.'
           : '<strong>Good start!</strong> Add a birth year and county for better results.';
         qualDiv.innerHTML = stars + '&nbsp; ' + msg;
-        qualDiv.style.display = 'block';
+        qualDiv.style.visibility = 'visible';
       }
       ['surname','birth_year','county'].forEach(function(id){
         var el = document.getElementById(id);
