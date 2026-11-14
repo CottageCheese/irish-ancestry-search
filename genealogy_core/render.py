@@ -152,6 +152,8 @@ _BASE_CSS = (
     ".rec-why li{margin:.1em 0}"
     ".rec-why .why-pos{color:#2a7d2a;font-weight:600}"
     ".rec-why .why-neg{color:#b43232;font-weight:600}"
+    ".rec-household{font-size:.85em;color:#444;margin:.3em 0;padding:.3em .6em;"
+    "background:#f5f0e8;border-radius:6px;border-left:3px solid #c7a46b}"
 )
 
 _DARK_CSS = (
@@ -177,6 +179,7 @@ _DARK_CSS = (
     "body.dark .rec-why ul.why-list{color:#bbb}"
     "body.dark .rec-why .why-pos{color:#8fd48f}"
     "body.dark .rec-why .why-neg{color:#e78a8a}"
+    "body.dark .rec-household{background:#2a2416;color:#c8b98a;border-left-color:#8b6f47}"
     "body.dark a{color:#6bb6ff}"
     ".rec-card.confirmed{background:#d7efd0!important}"
     ".rec-card.rejected{opacity:.35}"
@@ -440,6 +443,20 @@ def _hero_sentence(name: str, tiers: dict[str, int], total: int) -> str:
     return " ".join(bits)
 
 
+def _render_household(r: Record) -> str:
+    """Compact chip listing co-residents when household data is present."""
+    names = r.household
+    if not names:
+        return ""
+    MAX_SHOW = 4
+    shown = names[:MAX_SHOW]
+    extra = len(names) - MAX_SHOW
+    text = ", ".join(_esc(n) for n in shown)
+    if extra > 0:
+        text += f" <em>(+{extra} more)</em>"
+    return f"<div class='rec-household'>🏠 Lived with: {text}</div>"
+
+
 def _render_why(r: Record) -> str:
     """Expandable chip listing each score component and its signed delta.
     Empty when the record has no breakdown (manual rows, legacy cached data)."""
@@ -518,6 +535,7 @@ def _render_card(r: Record) -> str:
         f"<p class='rec-sentence'>{_narrate(r)}</p>"
         f"<div class='rec-meta'>{''.join(chips)}</div>"
         f"{_render_why(r)}"
+        f"{_render_household(r)}"
         f"{thumb}"
         f"{other}"
         f"{notes_html}"

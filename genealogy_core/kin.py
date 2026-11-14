@@ -19,7 +19,8 @@ def kin_cross_check(person: Person, rec: Record) -> str:
     record text. Tokens equal to the subject's own surname / forename are
     excluded to avoid trivial self-matches.
     """
-    haystack = ((rec.name_found or "") + " " + (rec.other_details or "")).lower()
+    household_text = " ".join(rec.household) if rec.household else ""
+    haystack = ((rec.name_found or "") + " " + (rec.other_details or "") + " " + household_text).lower()
     if not haystack.strip():
         return ""
     own = {(person.surname or "").lower(), (person.forename or "").lower()}

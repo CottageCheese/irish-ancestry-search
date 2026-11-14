@@ -176,6 +176,15 @@ def test_kin_cross_check_excludes_own_surname():
     assert kin_cross_check(_person(), r) == ""
 
 
+def test_kin_cross_check_uses_household():
+    """Father name in household list (not name_found/other_details) triggers kin match."""
+    r = _rec(name_found="John Furey", place="Ballinasloe",
+             other_details="")
+    r.household = ["Thomas Furey", "Mary Kelly"]
+    result = kin_cross_check(_person(), r)
+    assert "father" in result  # Thomas from household
+
+
 def test_annotate_adds_kin_bonus():
     r = _rec(name_found="John Furey", place="Ballinasloe",
              other_details="Thomas and Mary Kelly in same house")

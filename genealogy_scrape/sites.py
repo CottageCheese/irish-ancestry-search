@@ -7,6 +7,9 @@ touching any search logic.
 SITES: dict[str, dict] = {
     "nai_census": {
         "name": "National Archives of Ireland census",
+        # Selector for the household table on a census individual detail page.
+        # Each <tr> inside this table is one co-resident.
+        "household_table_row": "table tr",
         # Verified live 2026-11: SPA that reads URL-fragment params and
         # fetches JSON client-side. 1901 + 1911 share this endpoint.
         "search_url": (

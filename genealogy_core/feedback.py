@@ -48,6 +48,16 @@ def load_records_csv(path: Path) -> list[Record]:
                             kw["score_breakdown"] = {}
                     elif not isinstance(raw, dict):
                         kw["score_breakdown"] = {}
+                if "household" in kw:
+                    raw = kw["household"]
+                    if isinstance(raw, str) and raw.strip():
+                        try:
+                            parsed = json.loads(raw)
+                            kw["household"] = parsed if isinstance(parsed, list) else []
+                        except Exception:
+                            kw["household"] = []
+                    elif not isinstance(raw, list):
+                        kw["household"] = []
                 out.append(Record(**kw))
     except Exception:
         return []

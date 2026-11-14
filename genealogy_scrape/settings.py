@@ -46,6 +46,11 @@ CENSUS_YEAR_FILTER: str = ""
 IG_EVENT_FILTER: tuple[str, ...] = ()
 
 
+# Max household detail-page fetches per person-year search. Caps extra
+# page loads from household grouping. 0 = feature disabled.
+HOUSEHOLD_FETCH_MAX = 10
+
+
 def set_max_results(n: int) -> None:
     """Allow the CLI to override MAX_RESULTS_PER_SEARCH at startup. Keeps
     the override visible to every scraper that reads the module attr.

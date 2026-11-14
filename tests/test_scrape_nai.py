@@ -1,6 +1,6 @@
 """Pure parse_nai_row tests. No browser, fixture cell lists only."""
 from genealogy_core.models import Person
-from genealogy_scrape.nai import parse_nai_row
+from genealogy_scrape.nai import parse_nai_household, parse_nai_row
 
 
 def _person() -> Person:
@@ -49,3 +49,39 @@ def test_empty_cells_fallback():
     assert rec.name_found == ""
     assert rec.age_or_year == "1926"
     assert rec.place == "Dublin"
+
+
+def test_parse_household_excludes_subject():
+    rows = [
+        ["Furey", "John", "26", "Male", "Head"],
+        ["Furey", "Mary", "52", "Female", "Mother"],
+        ["Furey", "Thomas", "55", "Male", "Father"],
+        ["Kelly", "Bridget", "20", "Female", "Servant"],
+    ]
+    names = parse_nai_household(rows, "John Furey")
+    assert names == ["Mary Furey", "Thomas Furey", "Bridget Kelly"]
+
+
+def test_parse_household_dedupes_and_skips_empty():
+    rows = [
+        ["Furey", "Mary", "52"],
+        ["Furey", "Mary", "52"],  # duplicate
+        ["", "", ""],              # blank row
+        ["Kelly", "", ""],         # surname-only
+    ]
+    names = parse_nai_household(rows, "John Furey")
+    assert names == ["Mary Furey", "Kelly"]
+
+
+def test_parse_household_subject_match_case_insensitive():
+    rows = [
+        ["furey", "JOHN", "26"],
+        ["Furey", "Thomas", "55"],
+    ]
+    names = parse_nai_household(rows, "John Furey")
+    assert names == ["Thomas Furey"]
+
+
+def test_parse_household_empty_input():
+    assert parse_nai_household([], "John Furey") == []
+    assert parse_nai_household([[]], "John Furey") == []

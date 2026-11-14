@@ -284,10 +284,12 @@ def write_csv(records: list[Record], path: Path) -> None:
                 "kin_hits",
                 "is_new",
                 "score_breakdown",
+                "household",
             ]
         )
         for r in records:
             bd_json = json.dumps(r.score_breakdown, ensure_ascii=False) if r.score_breakdown else ""
+            hh_json = json.dumps(r.household, ensure_ascii=False) if r.household else ""
             writer.writerow(
                 [
                     r.person_searched,
@@ -303,6 +305,7 @@ def write_csv(records: list[Record], path: Path) -> None:
                     r.kin_hits,
                     "yes" if r.is_new else "",
                     bd_json,
+                    hh_json,
                 ]
             )
 

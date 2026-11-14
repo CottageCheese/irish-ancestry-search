@@ -17,6 +17,70 @@ from . import settings
 from .sites import CENSUS_YEARS, NAI_LINK_BASE, NAI_READY_JS, SITES
 
 
+def parse_nai_household(rows: list[list[str]], subject_name: str) -> list[str]:
+    """Build co-resident name list from a NAI detail page household table.
+
+    Each row is cell strings ordered like the results table (surname first,
+    firstname second). Rows matching the subject (case-insensitive forename
+    + surname both present) are dropped. Duplicates collapsed, order kept.
+    """
+    subject_l = (subject_name or "").lower().strip()
+    subject_parts = {p for p in subject_l.split() if p}
+    out: list[str] = []
+    seen: set[str] = set()
+    for cells in rows:
+        if not cells or len(cells) < 2:
+            continue
+        surname = (cells[0] or "").strip()
+        forename = (cells[1] or "").strip()
+        if not surname and not forename:
+            continue
+        name = f"{forename} {surname}".strip()
+        name_l = name.lower()
+        if not name_l or name_l in seen:
+            continue
+        name_parts = {p for p in name_l.split() if p}
+        if subject_parts and subject_parts.issubset(name_parts):
+            continue
+        seen.add(name_l)
+        out.append(name)
+    return out
+
+
+def fetch_nai_household(page: Page, detail_url: str, subject_name: str,
+                        cache: SearchCache, logger: logging.Logger) -> list[str]:
+    """Load a NAI census individual detail page and return co-resident names.
+
+    Returns [] on load failure or when household table absent. Results
+    cached under household|{detail_url} so repeat runs don't re-fetch.
+    """
+    cache_key = cache.key("nai_household", detail_url)
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached  # type: ignore[return-value]
+
+    cfg = SITES["nai_census"]
+    if not safe_goto(page, detail_url, logger):
+        logger.debug("[NAI household] failed to load %s", detail_url)
+        return []
+
+    rows_els = page.query_selector_all(cfg["household_table_row"])
+    rows: list[list[str]] = []
+    for row_el in rows_els:
+        tds = row_el.query_selector_all("td")
+        if not tds:
+            continue
+        cells = [(td.inner_text() or "").strip() for td in tds]
+        if any(cells):
+            rows.append(cells)
+
+    names = parse_nai_household(rows, subject_name)
+    logger.debug("[NAI household] %s → %d co-residents", detail_url, len(names))
+    cache.put(cache_key, names)
+    polite_pause(logger, "nai")
+    return names
+
+
 def parse_nai_row(cells: list[str], href: str, fallback_url: str,
                   person: Person, year: str, site_label: str) -> Record:
     """Build a Record from one NAI results table row.
@@ -86,8 +150,9 @@ def _search_nai_one(page: Page, person: Person, surname: str, forename: str,
         return []
 
     records: list[Record] = []
-    rows = page.query_selector_all(cfg["results_row"])
-    for row in rows[: settings.MAX_RESULTS_PER_SEARCH + 5]:
+    raw_rows = page.query_selector_all(cfg["results_row"])
+    hrefs: list[str] = []
+    for row in raw_rows[: settings.MAX_RESULTS_PER_SEARCH + 5]:
         tds = row.query_selector_all("td")
         if not tds:
             continue
@@ -99,8 +164,26 @@ def _search_nai_one(page: Page, person: Person, surname: str, forename: str,
         rec = parse_nai_row(cells, href, page.url, person, year, cfg["name"])
         rec.name_used = f"{forename} {surname}".strip()
         records.append(rec)
+        hrefs.append(rec.link)
 
     logger.info("[NAI %s] parsed %d rows for %s %s", year, len(records), surname, forename)
+
+    # Household grouping: fetch co-residents for the first HOUSEHOLD_FETCH_MAX
+    # records that have a real detail URL (not just the search page URL).
+    budget = settings.HOUSEHOLD_FETCH_MAX
+    if budget > 0:
+        search_url_prefix = page.url.split("#")[0]
+        fetched = 0
+        for rec in records:
+            if fetched >= budget:
+                break
+            detail = rec.link
+            if not detail or detail.startswith(search_url_prefix):
+                continue
+            rec.household = fetch_nai_household(
+                page, detail, rec.name_found, cache, logger
+            )
+            fetched += 1
 
     cache.put(cache_key, records)
     polite_pause(logger, "nai")

@@ -4,9 +4,6 @@ Working list. Tick when done. Add free-form.
 
 ## Open
 
-### Next up (2026-11-14)
-1. **Household grouping** — scraper coverage, ~3 hrs, strong data win on confirmed census hits.
-
 ### Ideas — scoring / matching
 - [ ] ~~Feedback bonus tuning~~ — deferred. Revisit only if a real run shows confirmed records ranking poorly.
 
@@ -14,7 +11,7 @@ Working list. Tick when done. Add free-form.
 - [ ] New site: RootsIreland parish records (paid, but searches are free).
 - [ ] New site: Catholic Parish Registers (NLI) — digitised scans, no index.
 - [ ] Handle 1821-1851 census fragments (held by NAI separately).
-- [ ] Household grouping: when a census row is found, also fetch other names living at same address and attach as kin suggestions.
+- [x] Household grouping: when a census row is found, also fetch other names living at same address and attach as kin suggestions.
 
 ### Ideas — UX / learning
 - [ ] Mini family tree per person: draw boxes for father/mother/spouse from `ancestors.csv`, highlight ones with confirmed records.
@@ -30,6 +27,13 @@ Working list. Tick when done. Add free-form.
 - [ ] Loading screen while scrape runs — bigger than current status page, kid-paced (animation + "we're asking the old books about X" messages).
 
 ## Done
+
+### Household grouping (Nov 2026)
+- [x] `fetch_nai_household` loads NAI detail page, extracts co-residents via `parse_nai_household` (pure fn, surname-first column order, subject excluded, deduped).
+- [x] `_search_nai_one` fetches household for first `HOUSEHOLD_FETCH_MAX` (default 10) records per search; cached under `nai_household|{url}`.
+- [x] `Record.household: list[str]` field; serialised as JSON in CSV; parsed back in `load_records_csv`.
+- [x] `kin_cross_check` haystack extended to include household names → auto-triggers existing +5 kin bonus.
+- [x] "🏠 Lived with: …" chip on card; truncates to 4 names + count; light/dark styled.
 
 ### Census age parser (Nov 2026)
 - [x] `_parse_age` + `_census_year` helpers in `scoring.py`; for Census rows compute implied birth year = `census_year - age`, match against `person.year_window()` with ±2y tolerance → `census_age: 3` bonus. Skips `year_window` path when census-age hits. 6 new tests.
