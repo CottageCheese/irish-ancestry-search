@@ -3,6 +3,7 @@ import re
 
 from .feedback import score_hint_bonus
 from .models import Person, Record
+from .nicknames import MALE_NAMES, FEMALE_NAMES
 from .scoring import score_record
 
 KIN_SPLIT = re.compile(r"[,\s;]+")
@@ -58,3 +59,12 @@ def annotate_records(person: Person, records: list[Record],
             r.score += bonus
             r.score_breakdown["feedback"] = bonus
             r.kin_hits = f"{r.kin_hits}; feedback:{reason}".lstrip("; ") if r.kin_hits else f"feedback:{reason}"
+
+    if person.sex in ("M", "F"):
+        opp = FEMALE_NAMES if person.sex == "M" else MALE_NAMES
+        for r in records:
+            if r.status:  # already user-set, don't override
+                continue
+            first = (r.name_found or "").split()[0].lower() if r.name_found else ""
+            if first and first in opp:
+                r.status = "rejected"

@@ -202,6 +202,21 @@ INDEX_HTML = """
         </div>
         <div class="hint">Pick <em>Exact</em> if you know the birth year; otherwise a guess is fine.</div>
       </div>
+      <div>
+        <label>Sex</label>
+        <div style="display:flex;gap:.9rem;margin-top:.35rem;font-size:.85rem">
+          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
+            <input type="radio" name="sex" value=""> Unknown
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
+            <input type="radio" name="sex" value="M"> Male
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
+            <input type="radio" name="sex" value="F"> Female
+          </label>
+        </div>
+        <div class="hint">Helps filter out records clearly the wrong sex.</div>
+      </div>
     </div>
 
     <div style="margin-top:.7rem;border-top:1px solid var(--cream-dark);padding-top:.6rem">
@@ -376,6 +391,7 @@ INDEX_HTML = """
   <div class="loader-bar-wrap">
     <div class="loader-bar-fill" id="loader-bar" style="width:{{ (100 * run.current / run.total) if run.total else 0 }}%"></div>
   </div>
+  <div id="loader-live" style="font-size:1rem;color:var(--moss-dark);margin:.4rem 0;min-height:1.4em"></div>
 
   <div class="loader-pause" id="loader-pause">
     ⏳ Being polite — waiting <strong id="loader-pause-remain">0</strong>s
@@ -546,6 +562,8 @@ async function tick() {
     document.getElementById('st-total').textContent = s.total;
     document.getElementById('st-label').textContent = s.label || '—';
     document.getElementById('st-live').textContent = s.live_records;
+    var loaderLive = document.getElementById('loader-live');
+    if (loaderLive && s.live_records > 0) loaderLive.textContent = s.live_records + ' record' + (s.live_records === 1 ? '' : 's') + ' found so far';
     document.getElementById('st-site').textContent = s.last_site || '—';
     const stepEl = document.getElementById('st-step'); if (stepEl) stepEl.textContent = s.step || '—';
     document.getElementById('st-bar').style.width = (s.total ? (100 * s.current / s.total) : 0) + '%';
@@ -812,6 +830,9 @@ def quick_search():
     county = (request.form.get("county") or "").strip()
     birth_year = (request.form.get("birth_year") or "").strip()
     year_mode = (request.form.get("year_mode") or "approx").strip().lower()
+    sex = (request.form.get("sex") or "").strip().upper()
+    if sex not in ("M", "F"):
+        sex = ""
     if not forename or not surname:
         return redirect(url_for("index"))
 
@@ -828,6 +849,7 @@ def quick_search():
                 new_row["year_range"] = "0" if year_mode == "exact" else "5"
             else:
                 new_row["year_range"] = ""
+            new_row["sex"] = sex
             rows.append(new_row)
             _write_rows(rows)
 
@@ -1482,7 +1504,7 @@ def api_preview() -> Response:
 CSV_COLUMNS = [
     "surname", "forename", "surname_variants", "birth_year_approx",
     "year_range", "county", "townland", "townland_variants",
-    "father", "mother", "spouse", "notes",
+    "father", "mother", "spouse", "notes", "sex",
 ]
 PEOPLE_LOCK = threading.Lock()
 

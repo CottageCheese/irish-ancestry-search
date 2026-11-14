@@ -36,6 +36,19 @@ NICKNAMES: dict[str, list[str]] = {
     "winifred":  ["winnie", "una"],
 }
 
+MALE_NAMES: frozenset[str] = frozenset(
+    k for k in ("john","james","william","patrick","michael","thomas","daniel",
+                "david","edward","robert","richard","joseph","peter","francis",
+                "charles","george","henry","cornelius","denis","bartholomew","timothy")
+    for k in ([k] + NICKNAMES.get(k, []))
+)
+
+FEMALE_NAMES: frozenset[str] = frozenset(
+    k for k in ("mary","margaret","catherine","elizabeth","bridget","ellen",
+                "anne","sarah","johanna","honora","eileen","winifred")
+    for k in ([k] + NICKNAMES.get(k, []))
+)
+
 
 def expand_forename(name: str) -> list[str]:
     """Return the forename plus every known nickname/variant. Walks both

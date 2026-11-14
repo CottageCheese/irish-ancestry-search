@@ -23,6 +23,7 @@ class Person:
     mother: str = ""
     spouse: str = ""
     notes: str = ""
+    sex: str = ""  # "M", "F", or "" (unknown)
 
     def all_surnames(self) -> list[str]:
         names = [self.surname] + list(self.surname_variants)

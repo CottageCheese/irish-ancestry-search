@@ -195,6 +195,10 @@ def read_people(path: Path, logger: logging.Logger | None = None) -> list[Person
                 warn(f"row {i} ({surname},{forename}): county={county!r} does not match "
                      "a known Irish county; passing through anyway")
 
+            sex = (row.get("sex") or "").strip().upper()
+            if sex not in ("M", "F"):
+                sex = ""
+
             people.append(
                 Person(
                     surname=surname,
@@ -209,6 +213,7 @@ def read_people(path: Path, logger: logging.Logger | None = None) -> list[Person
                     mother=(row.get("mother") or "").strip(),
                     spouse=(row.get("spouse") or "").strip(),
                     notes=(row.get("notes") or "").strip(),
+                    sex=sex,
                 )
             )
     if skipped and logger:
