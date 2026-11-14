@@ -236,6 +236,16 @@ INDEX_HTML = """
     </div>
 
     <div style="margin-top:.7rem;border-top:1px solid var(--cream-dark);padding-top:.6rem">
+      <div style="display:flex;gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap">
+        <button type="button" id="preset-census" onclick="applyPreset('census')"
+          style="padding:.3rem .9rem;border-radius:20px;border:2px solid var(--moss);background:var(--moss);color:#fff;cursor:pointer;font:inherit;font-size:.88rem;font-weight:600">
+          ⚡ Census only <span style="font-weight:400;opacity:.85">(3 searches)</span>
+        </button>
+        <button type="button" id="preset-full" onclick="applyPreset('full')"
+          style="padding:.3rem .9rem;border-radius:20px;border:2px solid var(--cream-dark);background:#fff;color:var(--sepia);cursor:pointer;font:inherit;font-size:.88rem">
+          🔍 Full search <span style="opacity:.7">(9+ searches)</span>
+        </button>
+      </div>
       <div class="filter-row">
         <span class="filter-lbl">Census</span>
         <div class="btn-group">
@@ -413,6 +423,34 @@ INDEX_HTML = """
         if (el && el.tagName === 'SELECT') el.addEventListener('change', updateQuality);
       });
 
+      // --- Search presets ---
+      function applyPreset(mode) {
+        // census checkboxes
+        document.querySelectorAll('input[name="census_year"]').forEach(cb => { cb.checked = true; });
+        document.querySelectorAll('.tog-btn:has(input[name="census_year"])').forEach(el => el.classList.add('active'));
+        // ig_event checkboxes
+        var igCbs = document.querySelectorAll('input[name="ig_event"]');
+        igCbs.forEach(cb => { cb.checked = (mode === 'full'); });
+        document.querySelectorAll('.tog-btn:has(input[name="ig_event"])').forEach(el => {
+          el.classList.toggle('active', mode === 'full');
+        });
+        // All buttons
+        document.querySelectorAll('.all-btn[data-group="census_year"]').forEach(b => b.classList.add('active'));
+        var igAll = document.querySelector('.all-btn[data-group="ig_event"]');
+        if (igAll) igAll.classList.toggle('active', mode === 'full');
+        // preset button styles
+        var pc = document.getElementById('preset-census');
+        var pf = document.getElementById('preset-full');
+        if (mode === 'census') {
+          pc.style.background = 'var(--moss)'; pc.style.borderColor = 'var(--moss)'; pc.style.color = '#fff';
+          pf.style.background = '#fff'; pf.style.borderColor = 'var(--cream-dark)'; pf.style.color = 'var(--sepia)';
+        } else {
+          pf.style.background = 'var(--moss)'; pf.style.borderColor = 'var(--moss)'; pf.style.color = '#fff';
+          pc.style.background = '#fff'; pc.style.borderColor = 'var(--cream-dark)'; pc.style.color = 'var(--sepia)';
+        }
+        updateQuality();
+      }
+
       // --- Birth year helper ---
       var yhBtn = document.getElementById('year-helper-btn');
       var yhDiv = document.getElementById('year-helper');
@@ -513,20 +551,23 @@ INDEX_HTML = """
 
   <div class="sheep-big" aria-hidden="true">🐑</div>
   <h2 class="loader-heading">Looking for <span id="loader-name">{{ run.person_name or 'your ancestor' }}</span>…</h2>
-  <div class="loader-msg" id="loader-msg">Asking the old books…</div>
-  <div id="loader-step" style="font-size:.95rem;color:var(--moss-dark);margin:.1rem 0 .6rem;min-height:1.4em"></div>
+  <div class="loader-msg" id="loader-msg" style="transition:opacity .4s">Getting ready…</div>
+  <div id="loader-step-desc" style="font-size:.88rem;color:var(--sepia);margin:.2rem 0 .7rem;min-height:1.2em;font-style:italic"></div>
 
-  <div class="loader-progress-text">
+  <div id="loader-checklist" style="margin:.6rem auto;max-width:460px;text-align:left;font-size:.92rem;line-height:1.9"></div>
+
+  <div id="loader-live" style="font-size:1rem;color:var(--moss-dark);margin:.5rem 0;min-height:1.4em;font-weight:600"></div>
+
+  <div class="loader-pause" id="loader-pause">
+    ⏳ Being polite — waiting <strong id="loader-pause-remain">0</strong>s before next request
+  </div>
+
+  <div class="loader-progress-text" style="margin-top:.5rem">
     Checked <strong id="loader-current">{{ run.current }}</strong>
     of <strong id="loader-total">{{ run.total or '?' }}</strong> ancestors
   </div>
   <div class="loader-bar-wrap">
     <div class="loader-bar-fill" id="loader-bar" style="width:{{ (100 * run.current / run.total) if run.total else 0 }}%"></div>
-  </div>
-  <div id="loader-live" style="font-size:1rem;color:var(--moss-dark);margin:.4rem 0;min-height:1.4em"></div>
-
-  <div class="loader-pause" id="loader-pause">
-    ⏳ Being polite — waiting <strong id="loader-pause-remain">0</strong>s
   </div>
 
   <form id="cancel-form" style="margin-top:1.2rem">
@@ -586,26 +627,47 @@ INDEX_HTML = """
 </div>
 
 <script>
-const LOADER_MSGS = [
-  'Asking the old books\u2026',
-  'Checking the census from 1901\u2026',
-  'Looking at church records\u2026',
-  'Searching the 1911 census\u2026',
-  'Flicking through old birth records\u2026',
-  'Checking who lived nearby\u2026',
-  'Looking at marriage records\u2026',
-  'Searching the 1926 census\u2026',
-  'Checking old land records\u2026',
-  'Nearly there, keep going\u2026',
-];
-let _msgIdx = 0;
+const STEP_INFO = {
+  'NAI 1901': { icon: '📜', label: '1901 census', msg: 'Flipping through the 1901 census…', desc: 'A list of everyone living in Ireland — over 4 million people!' },
+  'NAI 1911': { icon: '📜', label: '1911 census', msg: 'Checking the 1911 census…', desc: 'Ten years later — families change a lot in a decade.' },
+  'NAI 1926': { icon: '📜', label: '1926 census', msg: 'Looking at the 1926 census…', desc: 'This one even records how many years people were married!' },
+  'IG Civil-Birth': { icon: '🍼', label: 'birth records', msg: 'Searching birth records…', desc: 'Official government records kept since 1864.' },
+  'IG Civil-Marriage': { icon: '💍', label: 'marriage records', msg: 'Checking marriage records…', desc: 'Official government records since 1845.' },
+  'IG Civil-Death': { icon: '📋', label: 'death records', msg: 'Looking through death records…', desc: 'Official government records kept since 1864.' },
+  'IG Church-Baptism': { icon: '⛪', label: 'church baptisms', msg: 'Checking church baptism records…', desc: 'Churches kept these for hundreds of years — much older than government records!' },
+  'IG Church-Marriage': { icon: '⛪', label: 'church weddings', msg: 'Looking at church wedding records…', desc: 'A separate set of records from the official ones.' },
+  'IG Church-Burial': { icon: '⛪', label: 'church burials', msg: 'Searching burial records…', desc: 'Sometimes the only place a person\'s name was ever written down.' },
+};
+let _stepLog = [];
+let _lastSeenStep = '';
 let _msgTimer = null;
-function rotateMsg() {
-  _msgIdx = (_msgIdx + 1) % LOADER_MSGS.length;
-  const el = document.getElementById('loader-msg');
-  if (!el) return;
-  el.style.opacity = '0';
-  setTimeout(() => { el.textContent = LOADER_MSGS[_msgIdx]; el.style.opacity = '1'; }, 400);
+
+function updateLoaderStep(step) {
+  if (!step || step === _lastSeenStep) return;
+  // mark previous as done
+  const prev = _stepLog.find(s => s.key === _lastSeenStep);
+  if (prev) prev.done = true;
+  _lastSeenStep = step;
+  const info = STEP_INFO[step];
+  if (!info) return;
+  if (!_stepLog.find(s => s.key === step)) _stepLog.push({ key: step, icon: info.icon, label: info.label, done: false });
+  const msgEl = document.getElementById('loader-msg');
+  const descEl = document.getElementById('loader-step-desc');
+  if (msgEl) { msgEl.style.opacity = '0'; setTimeout(() => { msgEl.textContent = info.msg; msgEl.style.opacity = '1'; }, 200); }
+  if (descEl) { descEl.style.opacity = '0'; setTimeout(() => { descEl.textContent = info.desc; descEl.style.opacity = '1'; }, 200); }
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const el = document.getElementById('loader-checklist');
+  if (!el || !_stepLog.length) return;
+  el.innerHTML = _stepLog.map(s => {
+    const badge = s.done
+      ? '<span style="color:#4a7c3a;font-weight:700">✓</span>'
+      : '<span style="display:inline-block;animation:sheep-bounce .8s infinite ease-in-out">🔍</span>';
+    const color = s.done ? 'color:#4a7c3a' : 'color:var(--ink);font-weight:600';
+    return `<div style="${color}">${badge} ${s.icon} ${s.label}</div>`;
+  }).join('');
 }
 
 let PAUSE = null;
@@ -674,21 +736,15 @@ async function tick() {
     const lc = document.getElementById('loader-current'); if (lc) lc.textContent = s.current;
     const lt = document.getElementById('loader-total'); if (lt) lt.textContent = s.total || '?';
     const lb = document.getElementById('loader-bar'); if (lb) lb.style.width = (s.total ? (100*s.current/s.total) : 0) + '%';
-    const ls = document.getElementById('loader-step');
-    if (ls) {
-      const SITE_LABELS = {'NAI 1901':'📜 Checking 1901 census…','NAI 1911':'📜 Checking 1911 census…','NAI 1926':'📜 Checking 1926 census…'};
-      const step = s.step || '';
-      ls.textContent = SITE_LABELS[step] || (step ? '🔍 Checking ' + step + '…' : '');
-    }
+    updateLoaderStep(s.step || '');
 
     if (s.state === 'running') {
       if (loaderScreen) loaderScreen.style.display = '';
       if (statusPanel) statusPanel.style.display = 'none';
-      if (!_msgTimer) _msgTimer = setInterval(rotateMsg, 3200);
     } else {
       if (loaderScreen) loaderScreen.style.display = 'none';
       if (statusPanel) statusPanel.style.display = '';
-      if (_msgTimer) { clearInterval(_msgTimer); _msgTimer = null; }
+      _stepLog = []; _lastSeenStep = '';
     }
 
     document.getElementById('st-state').textContent = s.state;
@@ -697,7 +753,9 @@ async function tick() {
     document.getElementById('st-label').textContent = s.label || '—';
     document.getElementById('st-live').textContent = s.live_records;
     var loaderLive = document.getElementById('loader-live');
-    if (loaderLive && s.live_records > 0) loaderLive.textContent = s.live_records + ' record' + (s.live_records === 1 ? '' : 's') + ' found so far';
+    if (loaderLive) loaderLive.innerHTML = s.live_records > 0
+      ? '🎉 Found <strong>' + s.live_records + '</strong> record' + (s.live_records === 1 ? '' : 's') + ' so far!'
+      : 'Nothing found yet — still looking…';
     document.getElementById('st-site').textContent = s.last_site || '—';
     const stepEl = document.getElementById('st-step'); if (stepEl) stepEl.textContent = s.step || '—';
     document.getElementById('st-bar').style.width = (s.total ? (100 * s.current / s.total) : 0) + '%';

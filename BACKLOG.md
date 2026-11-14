@@ -26,6 +26,15 @@ Working list. Tick when done. Add free-form.
 
 ## Done
 
+### Loading screen & stop button (Nov 2026)
+- [x] Layout shift fix: fore-variants, rec-tip, search-quality use `visibility:hidden` not `display:none` — nothing moves when typing.
+- [x] Stop button now cancels between sites (not just between people) — single-person quick search responds immediately.
+- [x] On cancel: partial results saved to JSON/summary, cache flushed, state goes to `done` not `error`; yellow "stopped early" banner shown.
+- [x] Loading screen driven by actual step (`s.step`) — per-step kid-friendly message + italic description replaces random rotating messages.
+- [x] Live checklist builds up as steps complete: ✓ done in green, 🔍 spinning for current step.
+- [x] Record counter shows "🎉 Found N records so far!" or "Nothing found yet — still looking…".
+- [x] ⚡ Census only / 🔍 Full search preset buttons above filters — one click configures all toggles (3 vs 9+ searches).
+
 ### Scoring fix — forename mismatch penalty (Nov 2026)
 - [x] Wrong forename scores -4; correct forename (or any nickname/variant) scores +3. Prevents surname+county+year alone reaching "Possible".
 
@@ -70,6 +79,14 @@ Working list. Tick when done. Add free-form.
 
 ### Dedupe follow-up (Nov 2026)
 - [x] Semantic dedupe second pass in `runner.dedupe_records`: collapse by `(person, site, record_type, name_found, place, age_or_year)`, keep highest-scoring row. Fixes 91-copy IG birth bloat.
+
+### Kid-friendly form polish (Nov 2026)
+- [x] Sex field moved above county/year; replaced radios with emoji pill buttons (👦 Boy/Man · 👧 Girl/Woman · 🤷 Don't know).
+- [x] Emoji labels on all form fields (👤 First name, 👪 Last name, 🗺️ Where in Ireland?, 🎂 When were they born?).
+- [x] Record type tooltips: hover/focus any Records button → golden one-sentence kid-friendly explanation panel.
+- [x] Search quality stars: live ⭐☆☆→⭐⭐⭐ as fields filled, with nudge hint ("Add a birth year to narrow it down").
+- [x] Birth year helper: 🎲 "Help me guess" button → generation picker (Parent/Grandparent/Great-grandparent/Further back) fills year automatically.
+- [x] Births button moved before Baptisms in record filter.
 
 ### Nickname variant UI (Nov 2026)
 - [x] Typing a first name on "Who do you want to find?" shows nickname chips (e.g. William → will · bill · billy · liam) using embedded NICKNAMES dict in JS.
