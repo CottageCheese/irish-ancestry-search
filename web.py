@@ -218,15 +218,15 @@ INDEX_HTML = """
         <span class="filter-lbl">Records</span>
         <div class="btn-group">
           <button type="button" class="tog-btn all-btn" data-group="ig_event">All</button>
+          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-baptism">Baptisms</label>
           <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-birth">Births</label>
           <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-marriage">Marriages</label>
           <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-death">Deaths</label>
-          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-baptism">Baptisms</label>
           <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-burial">Burials</label>
           <label class="tog-btn"><input type="checkbox" name="ig_event" value="griffiths">Land records</label>
         </div>
       </div>
-      <div class="filter-hint">Pick some to search faster, or leave on <em>All</em> for everything.</div>
+      <div class="filter-hint">Pick some to search faster, or leave on <em>All</em> for everything. Civil registration of births, marriages &amp; deaths started in Ireland in <strong>1864</strong> (marriages 1845). Church baptism &amp; burial records go back further.</div>
     </div>
     <style>
       .filter-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
