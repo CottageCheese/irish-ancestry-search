@@ -4,7 +4,26 @@ Working list. Tick when done. Add free-form.
 
 ## Open
 
+### Ideas — scoring / matching
 - [ ] ~~Feedback bonus tuning~~ — deferred. Revisit only if a real run shows confirmed records ranking poorly.
+- [ ] "Why this score?" expandable chip on each card — list which bits matched (surname / soundex / year / county / kin). Needs `score_record` to return a breakdown, not just an int.
+- [ ] Age-field parser for census rows: convert "26" (age in 1901) → implied birth year ~1875, feed into year-window check.
+
+### Ideas — scraper coverage
+- [ ] New site: RootsIreland parish records (paid, but searches are free).
+- [ ] New site: Catholic Parish Registers (NLI) — digitised scans, no index.
+- [ ] Handle 1821-1851 census fragments (held by NAI separately).
+- [ ] Household grouping: when a census row is found, also fetch other names living at same address and attach as kin suggestions.
+
+### Ideas — UX / learning
+- [ ] Mini family tree per person: draw boxes for father/mother/spouse from `ancestors.csv`, highlight ones with confirmed records.
+- [ ] Mobile layout: cards stack better; conf-buttons full-width on <600px.
+- [ ] Read-aloud mode: speech-synthesis button on each card so a young user can hear the sentence.
+- [ ] Printable one-pager per ancestor: strip JS/filters, just confirmed records + sources.
+
+### Ideas — data
+- [ ] "Export my family tree" button — build a GEDCOM from confirmed records across all ancestors with inferred relationships.
+- [ ] Import GEDCOM to seed `ancestors.csv`.
 
 ## Done
 
