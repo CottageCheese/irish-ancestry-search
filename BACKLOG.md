@@ -26,6 +26,11 @@ Working list. Tick when done. Add free-form.
 
 ## Done
 
+### Late-1800s Irish cottage scene (Nov 2026)
+- [x] Both SVG scenes (loader 800×200, ancestors banner 800×130) redrawn: whitewashed limewashed walls, thatched roof with fan-texture lines + ridge, stone chimney at gable with smoke curl, split half-door (dutch), four-pane deep-set windows, stone foundation base.
+- [x] Added drystone field wall (grey stones), turf/peat stack, haycock, hawthorn tree, brown hen with red comb, woollier sheep (wool-curl circles + face).
+- [x] Softer Irish sky gradient (blue → warm cream) with cloud wisps; paler sun with halo ring. Dropped the floating book emoji.
+
 ### Loader step sync fix (Nov 2026)
 - [x] `_StepHandler` relaxed — updates `RUN["step"]` on any `_STEP_RE` match, not only lines containing " -> " or "cache hit".
 - [x] STEP_INFO keys corrected: log tags use spaces (`IG Civil Birth`) not dashes (`IG Civil-Birth`); loader was bailing on `!info` so screen stuck on "Getting ready…".

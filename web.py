@@ -520,49 +520,169 @@ INDEX_HTML = """
     <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="lsky" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#cfe6f2"/><stop offset="100%" stop-color="#f4ecd8"/>
+          <stop offset="0%" stop-color="#b8d2dc"/><stop offset="60%" stop-color="#dcd6c0"/><stop offset="100%" stop-color="#f0e8d0"/>
         </linearGradient>
         <linearGradient id="lh1" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#6ca84a"/><stop offset="100%" stop-color="#4a7c3a"/>
+          <stop offset="0%" stop-color="#6b8a4a"/><stop offset="100%" stop-color="#4a6a3a"/>
         </linearGradient>
         <linearGradient id="lh2" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#8bbd5d"/><stop offset="100%" stop-color="#5d8f3d"/>
+          <stop offset="0%" stop-color="#85a556"/><stop offset="100%" stop-color="#5d8f3d"/>
+        </linearGradient>
+        <linearGradient id="lthatch" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#d4b06b"/><stop offset="100%" stop-color="#9c7a3e"/>
+        </linearGradient>
+        <linearGradient id="lwall" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#fbf7ec"/><stop offset="100%" stop-color="#e4d8bc"/>
         </linearGradient>
       </defs>
       <rect width="800" height="200" fill="url(#lsky)"/>
-      <path d="M0 150 Q200 80 400 130 T800 110 L800 200 L0 200 Z" fill="url(#lh1)"/>
-      <path d="M0 170 Q150 130 350 160 T800 150 L800 200 L0 200 Z" fill="url(#lh2)"/>
-      <g transform="translate(540,120)">
-        <rect x="0" y="20" width="70" height="45" fill="#d9c9a0" stroke="#8b6f47" stroke-width="2"/>
-        <polygon points="-5,20 35,-5 75,20" fill="#6b4a2a" stroke="#4a3220" stroke-width="2"/>
-        <rect x="26" y="40" width="14" height="25" fill="#4a3220"/>
-        <rect x="8" y="28" width="12" height="12" fill="#f4ecd8" stroke="#8b6f47"/>
-        <rect x="50" y="28" width="12" height="12" fill="#f4ecd8" stroke="#8b6f47"/>
-        <rect x="46" y="-5" width="8" height="18" fill="#8b6f47"/>
-        <path d="M46 -3 Q48 -8 50 -5" fill="none" stroke="#999" stroke-width="2"/>
+      <!-- cloud wisps -->
+      <ellipse cx="180" cy="40" rx="45" ry="7" fill="#fff" opacity=".55"/>
+      <ellipse cx="520" cy="55" rx="55" ry="6" fill="#fff" opacity=".45"/>
+      <!-- distant hills -->
+      <path d="M0 130 Q200 75 400 115 T800 100 L800 200 L0 200 Z" fill="url(#lh1)" opacity=".9"/>
+      <path d="M0 150 Q180 120 400 140 T800 135 L800 200 L0 200 Z" fill="url(#lh2)"/>
+      <!-- near field -->
+      <path d="M0 162 L800 155 L800 200 L0 200 Z" fill="#7aa54d"/>
+      <!-- drystone wall -->
+      <rect x="0" y="158" width="800" height="5" fill="#9c9684"/>
+      <g fill="#b5b09e" stroke="#6b6b5a" stroke-width=".3">
+        <rect x="20" y="158" width="18" height="5"/>
+        <rect x="55" y="158" width="14" height="5"/>
+        <rect x="85" y="158" width="20" height="5"/>
+        <rect x="125" y="158" width="16" height="5"/>
+        <rect x="160" y="158" width="22" height="5"/>
+        <rect x="200" y="158" width="14" height="5"/>
+        <rect x="345" y="158" width="20" height="5"/>
+        <rect x="390" y="158" width="14" height="5"/>
+        <rect x="425" y="158" width="18" height="5"/>
+        <rect x="465" y="158" width="22" height="5"/>
+        <rect x="705" y="158" width="18" height="5"/>
+        <rect x="745" y="158" width="20" height="5"/>
       </g>
-      <g transform="translate(120,130)">
-        <ellipse cx="0" cy="30" rx="30" ry="18" fill="#2f5a22"/>
-        <ellipse cx="-15" cy="22" rx="20" ry="18" fill="#3a6b2a"/>
-        <ellipse cx="15" cy="22" rx="20" ry="18" fill="#3a6b2a"/>
-        <rect x="-4" y="30" width="8" height="18" fill="#5a3a20"/>
+      <!-- haycock -->
+      <g transform="translate(70,140)">
+        <ellipse cx="0" cy="20" rx="24" ry="4" fill="#8a6d3a" opacity=".6"/>
+        <path d="M-24 20 Q-18 -4 0 -12 Q18 -4 24 20 Z" fill="#c9a961" stroke="#8a6d3a" stroke-width=".6"/>
+        <path d="M-14 12 L2 -4" stroke="#8a6d3a" stroke-width=".6"/>
+        <path d="M-6 16 L10 2" stroke="#8a6d3a" stroke-width=".6"/>
+        <path d="M12 12 L4 -6" stroke="#8a6d3a" stroke-width=".6"/>
+        <path d="M-10 18 Q0 -10 14 10" stroke="#a88a4a" stroke-width=".5" fill="none"/>
       </g>
-      <g transform="translate(230,163)">
-        <ellipse cx="0" cy="0" rx="16" ry="10" fill="#f5f0e4"/>
-        <circle cx="-14" cy="-2" r="7" fill="#4a3a28"/>
-        <circle cx="-16" cy="-4" r="1.8" fill="#000"/>
-        <rect x="-7" y="8" width="4" height="6" fill="#4a3a28"/>
-        <rect x="5" y="8" width="4" height="6" fill="#4a3a28"/>
+      <!-- hawthorn tree -->
+      <g transform="translate(445,118)">
+        <rect x="-3" y="18" width="6" height="28" fill="#4a3220"/>
+        <ellipse cx="0" cy="10" rx="20" ry="18" fill="#5a7a3a"/>
+        <ellipse cx="-11" cy="2" rx="12" ry="12" fill="#6a8a4a"/>
+        <ellipse cx="11" cy="4" rx="13" ry="12" fill="#6a8a4a"/>
+        <ellipse cx="0" cy="-4" rx="10" ry="10" fill="#7a9a5a"/>
       </g>
-      <g transform="translate(310,170)">
-        <ellipse cx="0" cy="0" rx="13" ry="9" fill="#f5f0e4"/>
-        <circle cx="-11" cy="-2" r="6" fill="#4a3a28"/>
-        <circle cx="-13" cy="-4" r="1.5" fill="#000"/>
-        <rect x="-5" y="7" width="3" height="5" fill="#4a3a28"/>
-        <rect x="4" y="7" width="3" height="5" fill="#4a3a28"/>
+      <!-- cottage -->
+      <g transform="translate(515,110)">
+        <!-- stone base -->
+        <rect x="-2" y="58" width="114" height="10" fill="#9c9684" stroke="#5a5a4a" stroke-width=".5"/>
+        <!-- whitewashed walls -->
+        <rect x="0" y="22" width="110" height="38" fill="url(#lwall)" stroke="#a89a78" stroke-width="1"/>
+        <!-- thatched roof -->
+        <path d="M-12 24 L55 -8 L122 24 L110 30 L0 30 Z" fill="url(#lthatch)" stroke="#6b4a2a" stroke-width="1"/>
+        <!-- thatch stroke texture (fan from ridge) -->
+        <g stroke="#8a6d3a" stroke-width=".35" opacity=".8">
+          <line x1="-6" y1="24" x2="55" y2="-6"/>
+          <line x1="8" y1="24" x2="55" y2="-6"/>
+          <line x1="22" y1="24" x2="55" y2="-6"/>
+          <line x1="36" y1="24" x2="55" y2="-6"/>
+          <line x1="50" y1="24" x2="55" y2="-6"/>
+          <line x1="60" y1="24" x2="55" y2="-6"/>
+          <line x1="74" y1="24" x2="55" y2="-6"/>
+          <line x1="88" y1="24" x2="55" y2="-6"/>
+          <line x1="102" y1="24" x2="55" y2="-6"/>
+          <line x1="116" y1="24" x2="55" y2="-6"/>
+        </g>
+        <!-- ridge -->
+        <line x1="-12" y1="24" x2="122" y2="24" stroke="#6b4a2a" stroke-width="1.5"/>
+        <line x1="-12" y1="27" x2="122" y2="27" stroke="#8a6d3a" stroke-width=".5"/>
+        <!-- stone chimney at gable -->
+        <rect x="95" y="-12" width="12" height="22" fill="#9c9684" stroke="#5a5a4a" stroke-width=".6"/>
+        <line x1="95" y1="-4" x2="107" y2="-4" stroke="#5a5a4a" stroke-width=".3"/>
+        <line x1="95" y1="2" x2="107" y2="2" stroke="#5a5a4a" stroke-width=".3"/>
+        <rect x="93" y="-14" width="16" height="4" fill="#6b4a2a"/>
+        <!-- smoke -->
+        <path d="M101 -16 Q96 -24 101 -32 Q106 -40 100 -50" fill="none" stroke="#c8c8bb" stroke-width="2.6" opacity=".7" stroke-linecap="round"/>
+        <path d="M101 -16 Q98 -22 102 -28" fill="none" stroke="#dedbd0" stroke-width="2" opacity=".55" stroke-linecap="round"/>
+        <!-- half-door (split dutch) -->
+        <rect x="47" y="34" width="18" height="26" fill="#6b3a1a" stroke="#3a1810" stroke-width=".6"/>
+        <line x1="47" y1="47" x2="65" y2="47" stroke="#2a1008" stroke-width=".8"/>
+        <rect x="48" y="35" width="16" height="11" fill="#7a4a24"/>
+        <rect x="48" y="48" width="16" height="11" fill="#5a2a14"/>
+        <circle cx="61" cy="52" r=".9" fill="#f4ecd8"/>
+        <!-- small-paned windows -->
+        <g transform="translate(14,32)">
+          <rect x="-1" y="-1" width="18" height="16" fill="#5a3a20"/>
+          <rect width="16" height="14" fill="#2a3a46"/>
+          <line x1="8" y1="0" x2="8" y2="14" stroke="#e8dcc0" stroke-width=".7"/>
+          <line x1="0" y1="7" x2="16" y2="7" stroke="#e8dcc0" stroke-width=".7"/>
+        </g>
+        <g transform="translate(80,32)">
+          <rect x="-1" y="-1" width="18" height="16" fill="#5a3a20"/>
+          <rect width="16" height="14" fill="#2a3a46"/>
+          <line x1="8" y1="0" x2="8" y2="14" stroke="#e8dcc0" stroke-width=".7"/>
+          <line x1="0" y1="7" x2="16" y2="7" stroke="#e8dcc0" stroke-width=".7"/>
+        </g>
       </g>
-      <circle cx="680" cy="40" r="22" fill="#f6d35e" opacity=".85"/>
-      <text x="400" y="70" text-anchor="middle" font-size="38" opacity=".7">📖</text>
+      <!-- turf stack -->
+      <g transform="translate(650,158)">
+        <rect x="0" y="0" width="46" height="18" fill="#5a3a20" stroke="#3a2210" stroke-width=".5"/>
+        <rect x="0" y="0" width="46" height="4" fill="#6a4a30"/>
+        <g stroke="#3a2210" stroke-width=".35">
+          <line x1="10" y1="0" x2="10" y2="18"/>
+          <line x1="20" y1="0" x2="20" y2="18"/>
+          <line x1="30" y1="0" x2="30" y2="18"/>
+          <line x1="38" y1="0" x2="38" y2="18"/>
+          <line x1="0" y1="6" x2="46" y2="6"/>
+          <line x1="0" y1="12" x2="46" y2="12"/>
+        </g>
+      </g>
+      <!-- sheep 1 (fluffy wool curls) -->
+      <g transform="translate(225,167)">
+        <ellipse cx="0" cy="0" rx="18" ry="10" fill="#f0e8d8"/>
+        <circle cx="-13" cy="-3" r="5.5" fill="#f5efe0"/>
+        <circle cx="-6" cy="-8" r="6" fill="#f5efe0"/>
+        <circle cx="2" cy="-9" r="6" fill="#f5efe0"/>
+        <circle cx="10" cy="-7" r="5.5" fill="#f5efe0"/>
+        <circle cx="15" cy="-2" r="4.5" fill="#f5efe0"/>
+        <ellipse cx="-18" cy="-1" rx="6" ry="5" fill="#3a2a1a"/>
+        <circle cx="-20" cy="-3" r="1.1" fill="#fff"/>
+        <ellipse cx="-22" cy="-5" rx="2" ry="3" fill="#2a1a0a" transform="rotate(-20 -22 -5)"/>
+        <rect x="-8" y="8" width="3" height="7" fill="#3a2a1a"/>
+        <rect x="5" y="8" width="3" height="7" fill="#3a2a1a"/>
+      </g>
+      <!-- sheep 2 -->
+      <g transform="translate(305,173)">
+        <ellipse cx="0" cy="0" rx="14" ry="8" fill="#f0e8d8"/>
+        <circle cx="-10" cy="-2" r="4.5" fill="#f5efe0"/>
+        <circle cx="-4" cy="-6" r="5" fill="#f5efe0"/>
+        <circle cx="4" cy="-6" r="5" fill="#f5efe0"/>
+        <circle cx="10" cy="-2" r="4" fill="#f5efe0"/>
+        <ellipse cx="-14" cy="-1" rx="5" ry="4" fill="#3a2a1a"/>
+        <circle cx="-16" cy="-2.5" r=".9" fill="#fff"/>
+        <rect x="-6" y="6" width="2.5" height="5" fill="#3a2a1a"/>
+        <rect x="4" y="6" width="2.5" height="5" fill="#3a2a1a"/>
+      </g>
+      <!-- hen -->
+      <g transform="translate(385,180)">
+        <ellipse cx="0" cy="0" rx="8" ry="5.5" fill="#8a4a2a"/>
+        <path d="M-8 -1 Q-5 3 -8 4" fill="#6a3a1a"/>
+        <circle cx="7" cy="-4" r="3" fill="#8a4a2a"/>
+        <path d="M5 -6 L7 -9 L9 -7 Z" fill="#c43828"/>
+        <path d="M6 -7 L8 -10 L10 -7" fill="#c43828"/>
+        <path d="M9 -4 L12 -3 L9 -3 Z" fill="#f6b53e"/>
+        <circle cx="8" cy="-4" r=".6" fill="#000"/>
+        <rect x="-2" y="4" width="1.2" height="4" fill="#f6b53e"/>
+        <rect x="1" y="4" width="1.2" height="4" fill="#f6b53e"/>
+      </g>
+      <!-- sun -->
+      <circle cx="710" cy="42" r="20" fill="#f6d35e" opacity=".75"/>
+      <circle cx="710" cy="42" r="28" fill="none" stroke="#f6d35e" stroke-width="1" opacity=".3"/>
     </svg>
   </div>
 
@@ -1319,47 +1439,124 @@ ANCESTORS_HTML = """
 <svg class="scene" viewBox="0 0 800 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
     <linearGradient id="asky" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0%" stop-color="#cfe6f2"/><stop offset="100%" stop-color="#f4ecd8"/>
+      <stop offset="0%" stop-color="#b8d2dc"/><stop offset="60%" stop-color="#dcd6c0"/><stop offset="100%" stop-color="#f0e8d0"/>
     </linearGradient>
     <linearGradient id="ah1" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0%" stop-color="#6ca84a"/><stop offset="100%" stop-color="#4a7c3a"/>
+      <stop offset="0%" stop-color="#6b8a4a"/><stop offset="100%" stop-color="#4a6a3a"/>
     </linearGradient>
     <linearGradient id="ah2" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0%" stop-color="#8bbd5d"/><stop offset="100%" stop-color="#5d8f3d"/>
+      <stop offset="0%" stop-color="#85a556"/><stop offset="100%" stop-color="#5d8f3d"/>
+    </linearGradient>
+    <linearGradient id="athatch" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#d4b06b"/><stop offset="100%" stop-color="#9c7a3e"/>
+    </linearGradient>
+    <linearGradient id="awall" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#fbf7ec"/><stop offset="100%" stop-color="#e4d8bc"/>
     </linearGradient>
   </defs>
   <rect width="800" height="130" fill="url(#asky)"/>
-  <path d="M0 95 Q200 50 400 80 T800 70 L800 130 L0 130 Z" fill="url(#ah1)"/>
-  <path d="M0 110 Q150 85 350 105 T800 98 L800 130 L0 130 Z" fill="url(#ah2)"/>
-  <g transform="translate(560,78)">
-    <rect x="0" y="14" width="52" height="34" fill="#d9c9a0" stroke="#8b6f47" stroke-width="1.5"/>
-    <polygon points="-4,14 26,-4 56,14" fill="#6b4a2a" stroke="#4a3220" stroke-width="1.5"/>
-    <rect x="20" y="28" width="10" height="20" fill="#4a3220"/>
-    <rect x="6" y="20" width="9" height="9" fill="#f4ecd8" stroke="#8b6f47"/>
-    <rect x="38" y="20" width="9" height="9" fill="#f4ecd8" stroke="#8b6f47"/>
+  <ellipse cx="200" cy="25" rx="40" ry="5" fill="#fff" opacity=".5"/>
+  <ellipse cx="500" cy="35" rx="48" ry="5" fill="#fff" opacity=".4"/>
+  <path d="M0 85 Q200 45 400 75 T800 68 L800 130 L0 130 Z" fill="url(#ah1)" opacity=".9"/>
+  <path d="M0 100 Q180 78 400 95 T800 90 L800 130 L0 130 Z" fill="url(#ah2)"/>
+  <path d="M0 108 L800 103 L800 130 L0 130 Z" fill="#7aa54d"/>
+  <!-- drystone wall -->
+  <rect x="0" y="106" width="800" height="3" fill="#9c9684"/>
+  <g fill="#b5b09e">
+    <rect x="30" y="106" width="14" height="3"/>
+    <rect x="60" y="106" width="12" height="3"/>
+    <rect x="90" y="106" width="16" height="3"/>
+    <rect x="310" y="106" width="14" height="3"/>
+    <rect x="345" y="106" width="18" height="3"/>
+    <rect x="690" y="106" width="16" height="3"/>
+    <rect x="735" y="106" width="14" height="3"/>
   </g>
-  <g transform="translate(80,88)">
-    <ellipse cx="0" cy="20" rx="22" ry="14" fill="#2f5a22"/>
-    <ellipse cx="-10" cy="14" rx="15" ry="13" fill="#3a6b2a"/>
-    <ellipse cx="10" cy="14" rx="15" ry="13" fill="#3a6b2a"/>
-    <rect x="-3" y="20" width="6" height="12" fill="#5a3a20"/>
+  <!-- haycock -->
+  <g transform="translate(50,94)">
+    <path d="M-16 14 Q-12 -4 0 -9 Q12 -4 16 14 Z" fill="#c9a961" stroke="#8a6d3a" stroke-width=".5"/>
+    <path d="M-8 9 L0 -2" stroke="#8a6d3a" stroke-width=".4"/>
+    <path d="M6 10 L2 -3" stroke="#8a6d3a" stroke-width=".4"/>
   </g>
-  <g transform="translate(185,108)">
-    <ellipse cx="0" cy="0" rx="12" ry="7" fill="#f5f0e4"/>
-    <circle cx="-10" cy="-2" r="5" fill="#4a3a28"/>
-    <circle cx="-11" cy="-3" r="1.3" fill="#000"/>
-    <rect x="-5" y="6" width="3" height="4" fill="#4a3a28"/>
-    <rect x="3" y="6" width="3" height="4" fill="#4a3a28"/>
+  <!-- hawthorn -->
+  <g transform="translate(470,78)">
+    <rect x="-2" y="12" width="4" height="18" fill="#4a3220"/>
+    <ellipse cx="0" cy="6" rx="14" ry="13" fill="#5a7a3a"/>
+    <ellipse cx="-8" cy="0" rx="9" ry="9" fill="#6a8a4a"/>
+    <ellipse cx="8" cy="2" rx="10" ry="9" fill="#6a8a4a"/>
   </g>
-  <g transform="translate(255,114)">
-    <ellipse cx="0" cy="0" rx="11" ry="7" fill="#f5f0e4"/>
-    <circle cx="-9" cy="-2" r="5" fill="#4a3a28"/>
-    <circle cx="-10" cy="-3" r="1.2" fill="#000"/>
-    <rect x="-4" y="6" width="3" height="4" fill="#4a3a28"/>
-    <rect x="3" y="6" width="3" height="4" fill="#4a3a28"/>
+  <!-- cottage -->
+  <g transform="translate(550,72)">
+    <rect x="-1" y="40" width="74" height="6" fill="#9c9684"/>
+    <rect x="0" y="16" width="72" height="26" fill="url(#awall)" stroke="#a89a78" stroke-width=".8"/>
+    <path d="M-8 18 L36 -4 L80 18 L72 22 L0 22 Z" fill="url(#athatch)" stroke="#6b4a2a" stroke-width=".8"/>
+    <g stroke="#8a6d3a" stroke-width=".3" opacity=".8">
+      <line x1="-4" y1="18" x2="36" y2="-2"/>
+      <line x1="6" y1="18" x2="36" y2="-2"/>
+      <line x1="16" y1="18" x2="36" y2="-2"/>
+      <line x1="26" y1="18" x2="36" y2="-2"/>
+      <line x1="40" y1="18" x2="36" y2="-2"/>
+      <line x1="50" y1="18" x2="36" y2="-2"/>
+      <line x1="60" y1="18" x2="36" y2="-2"/>
+      <line x1="70" y1="18" x2="36" y2="-2"/>
+    </g>
+    <line x1="-8" y1="18" x2="80" y2="18" stroke="#6b4a2a" stroke-width="1"/>
+    <rect x="60" y="-9" width="8" height="15" fill="#9c9684" stroke="#5a5a4a" stroke-width=".4"/>
+    <rect x="59" y="-10" width="10" height="3" fill="#6b4a2a"/>
+    <path d="M64 -12 Q61 -18 64 -24 Q67 -30 63 -36" fill="none" stroke="#c8c8bb" stroke-width="2" opacity=".7" stroke-linecap="round"/>
+    <rect x="30" y="24" width="12" height="18" fill="#6b3a1a" stroke="#3a1810" stroke-width=".4"/>
+    <line x1="30" y1="33" x2="42" y2="33" stroke="#2a1008" stroke-width=".6"/>
+    <rect x="9" y="22" width="12" height="10" fill="#2a3a46" stroke="#5a3a20"/>
+    <line x1="15" y1="22" x2="15" y2="32" stroke="#e8dcc0" stroke-width=".5"/>
+    <line x1="9" y1="27" x2="21" y2="27" stroke="#e8dcc0" stroke-width=".5"/>
+    <rect x="51" y="22" width="12" height="10" fill="#2a3a46" stroke="#5a3a20"/>
+    <line x1="57" y1="22" x2="57" y2="32" stroke="#e8dcc0" stroke-width=".5"/>
+    <line x1="51" y1="27" x2="63" y2="27" stroke="#e8dcc0" stroke-width=".5"/>
   </g>
-  <circle cx="700" cy="28" r="18" fill="#f6d35e" opacity=".85"/>
-  <text x="400" y="55" text-anchor="middle" font-size="28" opacity=".55">&#128214;</text>
+  <!-- turf stack -->
+  <g transform="translate(660,108)">
+    <rect x="0" y="0" width="34" height="12" fill="#5a3a20" stroke="#3a2210" stroke-width=".3"/>
+    <g stroke="#3a2210" stroke-width=".3">
+      <line x1="8" y1="0" x2="8" y2="12"/>
+      <line x1="17" y1="0" x2="17" y2="12"/>
+      <line x1="26" y1="0" x2="26" y2="12"/>
+      <line x1="0" y1="6" x2="34" y2="6"/>
+    </g>
+  </g>
+  <!-- sheep 1 -->
+  <g transform="translate(185,112)">
+    <ellipse cx="0" cy="0" rx="13" ry="7" fill="#f0e8d8"/>
+    <circle cx="-9" cy="-2" r="4" fill="#f5efe0"/>
+    <circle cx="-3" cy="-5" r="4.5" fill="#f5efe0"/>
+    <circle cx="4" cy="-5" r="4.5" fill="#f5efe0"/>
+    <circle cx="9" cy="-2" r="4" fill="#f5efe0"/>
+    <ellipse cx="-13" cy="-1" rx="4.5" ry="4" fill="#3a2a1a"/>
+    <circle cx="-14" cy="-2" r=".9" fill="#fff"/>
+    <rect x="-5" y="5" width="2" height="4" fill="#3a2a1a"/>
+    <rect x="3" y="5" width="2" height="4" fill="#3a2a1a"/>
+  </g>
+  <!-- sheep 2 -->
+  <g transform="translate(250,118)">
+    <ellipse cx="0" cy="0" rx="10" ry="6" fill="#f0e8d8"/>
+    <circle cx="-6" cy="-3" r="3.5" fill="#f5efe0"/>
+    <circle cx="0" cy="-5" r="4" fill="#f5efe0"/>
+    <circle cx="6" cy="-3" r="3.5" fill="#f5efe0"/>
+    <ellipse cx="-10" cy="-1" rx="4" ry="3.5" fill="#3a2a1a"/>
+    <circle cx="-11" cy="-2" r=".8" fill="#fff"/>
+    <rect x="-4" y="4" width="2" height="4" fill="#3a2a1a"/>
+    <rect x="3" y="4" width="2" height="4" fill="#3a2a1a"/>
+  </g>
+  <!-- hen -->
+  <g transform="translate(330,122)">
+    <ellipse cx="0" cy="0" rx="6" ry="4" fill="#8a4a2a"/>
+    <circle cx="5" cy="-3" r="2.3" fill="#8a4a2a"/>
+    <path d="M4 -5 L6 -7 L8 -5 Z" fill="#c43828"/>
+    <path d="M7 -3 L9 -2 L7 -2 Z" fill="#f6b53e"/>
+    <circle cx="6" cy="-3" r=".5" fill="#000"/>
+    <rect x="-1" y="3" width="1" height="3" fill="#f6b53e"/>
+    <rect x="1" y="3" width="1" height="3" fill="#f6b53e"/>
+  </g>
+  <circle cx="710" cy="26" r="16" fill="#f6d35e" opacity=".75"/>
+  <circle cx="710" cy="26" r="22" fill="none" stroke="#f6d35e" stroke-width=".8" opacity=".3"/>
 </svg>
 
 <div class="page-body">
