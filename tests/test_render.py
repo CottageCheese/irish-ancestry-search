@@ -151,6 +151,14 @@ def test_record_icon_griffiths():
     assert "🏡" in out
 
 
+def test_results_html_includes_welcome_tour():
+    out = render_results_html([_rec(score=12)], stamp="t")
+    assert "tour-overlay" in out
+    assert "Welcome" in out
+    assert "help-btn" in out
+    assert "tour_seen" in out  # localStorage key
+
+
 def test_index_lists_people_and_counts():
     recs = [
         _rec(person_searched="John Furey", score=12),

@@ -5,9 +5,6 @@ Working list. Tick when done. Add free-form.
 ## Open
 
 - [ ] ~~Feedback bonus tuning~~ — deferred. Revisit only if a real run shows confirmed records ranking poorly.
-- [ ] Commit `ancestors.sample.csv` with placeholder header + a few fake rows so new users have a template (real `ancestors.csv` is now gitignored).
-- [ ] Perf check: `results.html` card DOM at ~2000 records (100 people × 20). If sluggish, fall back to per-person pages above a threshold or virtualise.
-- [ ] Learning-mode toggle: hover tooltips on card icons already explain each record type; consider a "First time?" overlay that highlights UI parts on first visit.
 
 ## Done
 
@@ -45,6 +42,9 @@ Working list. Tick when done. Add free-form.
 - [x] GitHub Actions CI running pytest on push.
 - [x] Mermaid architecture diagram in README.
 - [x] Untrack `ancestors.csv` (PII); gitignore it.
+- [x] `ancestors.sample.csv` template for new users; README copy step.
+- [x] Perf bench on 2000 cards (18ms server render, 2.3 MB HTML); auto-switch to per-person pages above 1500 records.
+- [x] First-visit welcome tour overlay with `?` help button and `localStorage` dismiss.
 
 ### Foundation
 - [x] Extract scrapers into `genealogy_scrape/`.

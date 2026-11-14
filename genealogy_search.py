@@ -755,7 +755,13 @@ def main() -> int:
     if confs:
         apply_confirmations(records, confs)
     write_csv(records, results_csv_path)
-    if args.per_person:
+    # Card-based results.html gets heavy around ~1500 records in a browser;
+    # auto-switch to the per-person index above that threshold.
+    auto_split = len(records) > 1500
+    if args.per_person or auto_split:
+        if auto_split and not args.per_person:
+            logger.info("Record count %d > 1500; auto-switching to per-person pages.",
+                        len(records))
         rel_map = write_per_person_pages(records, here / RESULTS_PEOPLE_DIR)
         write_html_index(records, rel_map, here / RESULTS_HTML)
         logger.info("Wrote %d per-person pages under %s/", len(rel_map), RESULTS_PEOPLE_DIR)

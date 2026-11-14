@@ -117,8 +117,16 @@ Chromium browser (about 150 MB) that the script will drive.
 
 ### 4. Edit `ancestors.csv`
 
+`ancestors.csv` is gitignored (it may contain real family data). Copy the
+sample to get started:
+
+```bash
+cp ancestors.sample.csv ancestors.csv    # Mac/Linux
+copy ancestors.sample.csv ancestors.csv  # Windows
+```
+
 Open `ancestors.csv` in Excel, Numbers, or any text editor. You will see a
-header row and two example rows:
+header row and example rows:
 
 ```csv
 surname,forename,surname_variants,birth_year_approx,year_range,county,notes

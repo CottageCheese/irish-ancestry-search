@@ -155,6 +155,21 @@ _DARK_CSS = (
     "100%{transform:translate(var(--tx),var(--ty)) rotate(360deg);opacity:0}}"
     ".confetti{position:absolute;pointer-events:none;font-size:1.2em;animation:confettiFly .8s ease-out forwards}"
     ".rec-actions{position:relative}"
+    ".tour-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;"
+    "display:flex;align-items:center;justify-content:center;padding:1em}"
+    ".tour-box{background:#fff;border-radius:12px;max-width:520px;padding:1.5em 1.8em;"
+    "box-shadow:0 10px 40px rgba(0,0,0,.3);line-height:1.5}"
+    "body.dark .tour-box{background:#2a2a2a;color:#eee}"
+    ".tour-box h3{margin:0 0 .5em;font-size:1.4em}"
+    ".tour-box ul{padding-left:1.2em;margin:.5em 0}"
+    ".tour-box li{margin:.4em 0}"
+    ".tour-box .tour-btn{display:inline-block;margin-top:1em;padding:.5em 1.2em;"
+    "background:#2a7d2a;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600}"
+    ".tour-box .tour-btn:hover{background:#1e5c1e}"
+    ".help-btn{position:fixed;bottom:1em;right:1em;width:40px;height:40px;"
+    "border-radius:50%;background:#8b6f47;color:#fff;border:0;font-size:1.2em;"
+    "cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2);z-index:999}"
+    ".help-btn:hover{background:#6d5637}"
 )
 
 _HTML_SCRIPT = (
@@ -210,8 +225,37 @@ _HTML_SCRIPT = (
     "else r.text().then(function(t){alert('Save failed: '+t);});})"
     ".catch(function(e){alert('Save failed (offline?): '+e);});});});"
     "document.querySelectorAll('.person-block').forEach(updateProgress);"
+    "function showTour(){"
+    "var ov=document.getElementById('tour');if(ov)ov.style.display='flex';}"
+    "function hideTour(){"
+    "var ov=document.getElementById('tour');if(ov)ov.style.display='none';"
+    "try{localStorage.setItem('tour_seen','1');}catch(e){}}"
+    "var tourBtn=document.getElementById('tour-close');"
+    "if(tourBtn)tourBtn.onclick=hideTour;"
+    "var helpBtn=document.getElementById('help-btn');"
+    "if(helpBtn)helpBtn.onclick=showTour;"
+    "try{if(!localStorage.getItem('tour_seen'))showTour();}catch(e){}"
     "})();"
     "</script>"
+)
+
+
+_TOUR_HTML = (
+    "<div id='tour' class='tour-overlay' style='display:none'>"
+    "<div class='tour-box'>"
+    "<h3>🌳 Welcome!</h3>"
+    "<p>Here's how to use this page:</p>"
+    "<ul>"
+    "<li><strong>⭐ Stars</strong> show how likely each record matches. ★★★ = very likely.</li>"
+    "<li><strong>🔎 Open the record</strong> takes you to the original source.</li>"
+    "<li><strong>👍 That's them</strong> saves a confirmation. <strong>👎 Not them</strong> rejects it.</li>"
+    "<li>The progress bar at the top of each person fills as you confirm records.</li>"
+    "<li>Use the <strong>filter box</strong> to find a name, place or year fast.</li>"
+    "<li>Hover the emoji on each card for a fact about that record type.</li>"
+    "</ul>"
+    "<button type='button' id='tour-close' class='tour-btn'>Got it — let's explore 🚀</button>"
+    "</div></div>"
+    "<button type='button' id='help-btn' title='Show the welcome tour again'>?</button>"
 )
 
 
@@ -509,6 +553,7 @@ def render_results_html(records: list[Record], stamp: str,
         parts.append(render_person_table(recs, collapse_weak=collapse_weak))
         parts.append("</div>")
 
+    parts.append(_TOUR_HTML)
     parts.append(_HTML_SCRIPT)
     parts.append("</body></html>")
     return "\n".join(parts)
@@ -525,6 +570,7 @@ def render_person_page(name: str, recs: list[Record], stamp: str,
     parts.append(_person_hero(name, recs))
     parts.append(render_person_table(recs, collapse_weak=collapse_weak))
     parts.append("</div>")
+    parts.append(_TOUR_HTML)
     parts.append(_HTML_SCRIPT)
     parts.append("</body></html>")
     return "\n".join(parts)
@@ -555,6 +601,7 @@ def render_index(records: list[Record], rel_map: dict[str, str], stamp: str) -> 
             f"</li>"
         )
     parts.append("</ul>")
+    parts.append(_TOUR_HTML)
     parts.append(_HTML_SCRIPT)
     parts.append("</body></html>")
     return "\n".join(parts)
