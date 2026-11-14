@@ -173,18 +173,19 @@ INDEX_HTML = """
 
   <form method="post" action="{{ url_for('quick_search') }}">
     <div class="two-col">
-      <div>
+      <div style="position:relative">
         <label for="forename">&#128100; First name</label>
         <input type="text" id="forename" name="forename" required placeholder="e.g. Mary" autofocus>
-        <div id="fore-variants" style="visibility:hidden;margin-top:.45rem">
-          <div style="font-size:.85rem;color:var(--sepia);margin-bottom:.3rem">
-            &#128260; This name is also known as: <span id="fore-chips"></span>
+        <div id="fore-variants" style="display:none;position:absolute;top:calc(100% + 10px);left:0;right:0;z-index:20;background:#fff;border:2px solid var(--moss);border-radius:10px;padding:.6rem .8rem;box-shadow:0 4px 14px rgba(74,124,58,.18)">
+          <div aria-hidden="true" style="position:absolute;top:-8px;left:24px;width:14px;height:14px;background:#fff;border-left:2px solid var(--moss);border-top:2px solid var(--moss);transform:rotate(45deg)"></div>
+          <div style="font-size:.9rem;color:var(--moss-dark);margin-bottom:.35rem;font-weight:600">
+            &#10024; Also called: <span id="fore-chips"></span>
           </div>
-          <label style="font-size:.88rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem">
+          <label style="font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;color:var(--ink)">
             <input type="checkbox" name="use_nicks" value="1" id="use-nicks-cb" checked>
-            Search all these names too &#10024;
+            Search for these names too
           </label>
-          <div class="hint">Leave this ticked to find records where a nickname was used.</div>
+          <div class="hint" style="margin-top:.2rem">Finds records even if they wrote a different version of the name.</div>
         </div>
       </div>
       <div>
@@ -342,6 +343,9 @@ INDEX_HTML = """
       var foreInput = document.getElementById('forename');
       var foreVarDiv = document.getElementById('fore-variants');
       var foreChips = document.getElementById('fore-chips');
+      var _foreHasVariants = false;
+      function _showVariants() { if (_foreHasVariants) foreVarDiv.style.display = 'block'; }
+      function _hideVariants() { foreVarDiv.style.display = 'none'; }
       if (foreInput && foreVarDiv && foreChips) {
         foreInput.addEventListener('input', function(){
           var val = this.value.trim();
@@ -352,11 +356,17 @@ INDEX_HTML = """
                    + 'background:#e8f4e8;color:var(--moss-dark);border:1px solid var(--moss);'
                    + 'margin:1px;font-size:.88rem">' + v + '</span>';
             }).join('');
-            foreVarDiv.style.visibility = 'visible';
+            _foreHasVariants = true;
+            _showVariants();
           } else {
-            foreVarDiv.style.visibility = 'hidden';
+            _foreHasVariants = false;
+            _hideVariants();
           }
           updateQuality();
+        });
+        foreInput.addEventListener('focus', _showVariants);
+        document.addEventListener('click', function(e){
+          if (!foreVarDiv.contains(e.target) && e.target !== foreInput) _hideVariants();
         });
       }
 
