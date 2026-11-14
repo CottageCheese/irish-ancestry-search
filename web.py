@@ -160,12 +160,9 @@ INDEX_HTML = """
 
 {% set known = people | selectattr('forename') | list %}
 {% if known %}
-<div style="text-align:center;margin:.4rem 0 .8rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+<div style="text-align:center;margin:.4rem 0 .8rem">
   <a href="{{ url_for('ancestors_page') }}" class="family-link">
     &#128106; Our family so far ({{ known|length }}) &#8594;
-  </a>
-  <a href="{{ url_for('scrapbook_page') }}" class="family-link">
-    &#128214; My scrapbook &#8594;
   </a>
 </div>
 {% endif %}
@@ -1548,21 +1545,39 @@ ANCESTORS_HTML = """
     display:flex; justify-content:center; gap:1.2rem; flex-wrap:wrap;
   }
   .summary-bar span { display:inline-flex; align-items:center; gap:.3rem; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:1rem; }
-  .card {
-    background:#fffcf2; border:2px solid var(--cream-dark); border-radius:12px;
-    padding:0; text-align:center; position:relative;
-    transition:border-color .15s, box-shadow .15s, transform .12s;
-    display:block;
+  .filter-tabs { display:flex; gap:.4rem; justify-content:center; margin:0 0 1rem; flex-wrap:wrap; }
+  .filter-tabs button {
+    cursor:pointer; padding:.35rem 1rem; border-radius:20px; font-size:.9rem;
+    border:2px solid var(--cream-dark); background:#fff; color:var(--sepia);
+    font-family:inherit; font-weight:600; transition:all .12s;
   }
-  .card:hover { border-color:var(--gold); box-shadow:0 5px 18px rgba(0,0,0,.13); transform:translateY(-3px); }
+  .filter-tabs button:hover { border-color:var(--gold); }
+  .filter-tabs button.active { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:1.1rem; }
+  .card {
+    background:#fffcf2; border:2px solid var(--cream-dark); border-radius:14px;
+    padding:0; text-align:center; position:relative;
+    transition:border-color .15s, box-shadow .15s, transform .14s;
+    display:block;
+    transform:rotate(var(--tilt, 0deg));
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+  }
+  .card:nth-child(3n) { --tilt:-.5deg; }
+  .card:nth-child(3n+1) { --tilt:.4deg; }
+  .card:hover { border-color:var(--gold); box-shadow:0 8px 20px rgba(0,0,0,.18); transform:rotate(0deg) translateY(-3px); }
   .card-confirmed {
     border-color:var(--gold);
-    box-shadow:0 2px 10px rgba(201,160,74,.25);
+    box-shadow:0 2px 10px rgba(201,160,74,.3);
   }
   .card-inner {
     display:block; text-decoration:none; color:var(--ink);
-    padding:1.2rem 1rem 1rem;
+    padding:1.1rem 1rem 1rem;
+  }
+  .ribbon {
+    display:inline-block; font-size:.7rem; letter-spacing:.08em;
+    text-transform:uppercase; font-weight:700; color:var(--sepia);
+    background:#fff6dc; padding:.1rem .5rem; border-radius:10px;
+    margin-bottom:.35rem;
   }
   .card-del {
     position:absolute; top:.35rem; right:.4rem;
@@ -1717,8 +1732,6 @@ ANCESTORS_HTML = """
 <div class="page-body">
 <div class="nav">
   <a href="{{ url_for('index') }}">&#8592; Find someone</a>
-  &nbsp;&middot;&nbsp;
-  <a href="{{ url_for('scrapbook_page') }}">&#128214; My scrapbook</a>
 </div>
 
 <h1>&#128106; Our Family</h1>
@@ -1733,13 +1746,20 @@ ANCESTORS_HTML = """
   {% if n_found %}<span>&#128270; {{ n_found }} with records</span>{% endif %}
   {% if n_none %}<span>&#8203;&#128100; {{ n_none }} not yet searched</span>{% endif %}
 </div>
-<div class="grid">
+<div class="filter-tabs" id="filter-tabs">
+  <button data-filter="all" class="active">All ({{ people|length }})</button>
+  <button data-filter="found">&#128214; Found ({{ n_confirmed + n_found }})</button>
+</div>
+<div class="grid" id="ancestor-grid">
   {% for p in people %}
-  <div class="card{% if p.confirmed > 0 %} card-confirmed{% endif %}">
+  <div class="card{% if p.confirmed > 0 %} card-confirmed{% endif %}"
+       data-found="{{ 1 if p.found > 0 else 0 }}"
+       style="background:{{ p.tint }}">
     <a class="card-inner" href="{{ url_for('person_page', slug=p.slug) }}">
       <div class="avatar" style="background:{{ p.avatar_bg }};color:{{ p.avatar_fg }}">
-        {{ p.forename[0]|upper }}
+        {{ p.silhouette }}
       </div>
+      <div class="ribbon">{{ p.era }}</div>
       <div class="card-name">{{ p.forename }} {{ p.surname }}</div>
       <div class="card-sub">
         {%- if p.county %}{{ p.county }}{% endif %}
@@ -1760,6 +1780,23 @@ ANCESTORS_HTML = """
   </div>
   {% endfor %}
 </div>
+<script>
+  (function(){
+    var tabs = document.querySelectorAll('#filter-tabs button');
+    var cards = document.querySelectorAll('#ancestor-grid .card');
+    tabs.forEach(function(t){
+      t.addEventListener('click', function(){
+        var f = t.dataset.filter;
+        tabs.forEach(function(x){ x.classList.remove('active'); });
+        t.classList.add('active');
+        cards.forEach(function(c){
+          var show = (f === 'all') || c.dataset.found === '1';
+          c.style.display = show ? '' : 'none';
+        });
+      });
+    });
+  })();
+</script>
 {% else %}
 <div class="empty">
   <p>No one here yet!</p>
@@ -1769,109 +1806,6 @@ ANCESTORS_HTML = """
 </div>
 """
 
-
-SCRAPBOOK_HTML = """
-<!doctype html>
-<meta charset="utf-8">
-<title>My Scrapbook &mdash; Family Finder</title>
-<style>
-  :root {
-    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
-    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
-  }
-  * { box-sizing:border-box; }
-  body {
-    font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    max-width:980px; margin:0 auto; padding:1rem;
-    background:var(--cream); color:var(--ink); min-height:100vh;
-  }
-  .nav a { color:var(--moss); text-decoration:none; font-size:1rem; font-weight:600; }
-  .nav a:hover { color:var(--moss-dark); text-decoration:underline; }
-  h1 { font-size:2.2rem; color:var(--moss-dark); margin:.4rem 0 .1rem; text-align:center; letter-spacing:.02em; }
-  .subtitle { text-align:center; color:var(--sepia); font-style:italic; margin:0 0 .3rem; font-size:1.05rem; }
-  .count-bar { text-align:center; color:var(--sepia); margin:0 0 1.2rem; font-size:.95rem; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:1.1rem; }
-  .card {
-    border:2px solid var(--cream-dark); border-radius:14px;
-    padding:1rem .9rem 1rem; text-align:center; position:relative;
-    transition:transform .14s, box-shadow .14s, border-color .14s;
-    text-decoration:none; color:var(--ink);
-    box-shadow:0 2px 6px rgba(0,0,0,.08);
-    transform:rotate(var(--tilt, 0deg));
-  }
-  .card:nth-child(3n) { --tilt:-.6deg; }
-  .card:nth-child(3n+1) { --tilt:.5deg; }
-  .card:hover { transform:rotate(0deg) translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,.18); border-color:var(--gold); }
-  .card.confirmed { border-color:var(--gold); box-shadow:0 2px 10px rgba(201,160,74,.3); }
-  .portrait {
-    width:88px; height:88px; margin:0 auto .5rem;
-    border-radius:50%; background:#fffcf2;
-    border:3px solid rgba(0,0,0,.08);
-    display:flex; align-items:center; justify-content:center;
-    font-size:2.6rem; line-height:1;
-  }
-  .ribbon {
-    display:inline-block; font-size:.72rem; letter-spacing:.08em;
-    text-transform:uppercase; font-weight:700; color:var(--sepia);
-    background:#fff6dc; padding:.12rem .55rem; border-radius:10px;
-    margin-bottom:.4rem;
-  }
-  .name { font-size:1.2rem; font-weight:700; color:var(--moss-dark); margin:.15rem 0 .25rem; line-height:1.15; }
-  .meta { font-size:.88rem; color:var(--sepia); margin-bottom:.55rem; min-height:1.2em; }
-  .badges { display:flex; gap:.35rem; justify-content:center; flex-wrap:wrap; }
-  .badge {
-    display:inline-flex; align-items:center; gap:.2rem;
-    padding:.22rem .55rem; border-radius:12px;
-    font-size:.78rem; font-weight:700;
-  }
-  .b-found { background:#d1ecf1; color:#0c5460; }
-  .b-conf { background:#d4edda; color:#155724; }
-  .empty { text-align:center; padding:3rem 1rem; color:var(--sepia); font-style:italic; font-size:1.1rem; }
-  .empty a { color:var(--moss); font-weight:700; text-decoration:none; }
-  .empty a:hover { text-decoration:underline; }
-</style>
-
-<div class="nav">
-  <a href="{{ url_for('index') }}">&larr; Home</a>
-  &nbsp;·&nbsp;
-  <a href="{{ url_for('ancestors_page') }}">All ancestors</a>
-</div>
-
-<h1>&#128214; My Scrapbook</h1>
-<p class="subtitle">Ancestors you&rsquo;ve found so far.</p>
-<p class="count-bar">
-  {{ people|length }} found
-  {% if confirmed_total %}&nbsp;·&nbsp; {{ confirmed_total }} confirmed &#127942;{% endif %}
-</p>
-
-{% if people %}
-<div class="grid">
-  {% for p in people %}
-  <a class="card {% if p.confirmed %}confirmed{% endif %}"
-     href="{{ url_for('person_page', slug=p.slug) }}"
-     style="background:{{ p.tint }}">
-    <div class="portrait">{{ p.silhouette }}</div>
-    <div class="ribbon">{{ p.era }}</div>
-    <div class="name">{{ p.forename }} {{ p.surname }}</div>
-    <div class="meta">
-      {% if p.year %}b. {{ p.year }}{% endif %}
-      {% if p.year and p.county %} &middot; {% endif %}
-      {% if p.county %}{{ p.county }}{% endif %}
-    </div>
-    <div class="badges">
-      <span class="badge b-found">&#128220; {{ p.found }}</span>
-      {% if p.confirmed %}<span class="badge b-conf">&#127942; {{ p.confirmed }}</span>{% endif %}
-    </div>
-  </a>
-  {% endfor %}
-</div>
-{% else %}
-<div class="empty">
-  <p>Scrapbook&rsquo;s empty &mdash; no ancestors found yet.</p>
-  <a href="{{ url_for('index') }}">Go find your first one &#8594;</a>
-</div>
-{% endif %}
-"""
 
 
 PERSON_HTML = """
@@ -2060,8 +1994,6 @@ PERSON_HTML = """
 
 <div class="nav">
   <a href="{{ url_for('ancestors_page') }}">&#8592; Our family</a>
-  &nbsp;&middot;&nbsp;
-  <a href="{{ url_for('scrapbook_page') }}">&#128214; My scrapbook</a>
 </div>
 
 <div class="hero-card">
@@ -2590,17 +2522,22 @@ def ancestors_page():
             continue
         label = f"{forename} {surname}"
         bg, fg = _avatar(label)
+        year = row.get("birth_year_approx", "").strip()
+        tint, era = _era_for_year(year)
         people_data.append({
             "label": label,
             "forename": forename,
             "surname": surname,
             "slug": slugify(label),
             "county": row.get("county", "").strip(),
-            "year": row.get("birth_year_approx", "").strip(),
+            "year": year,
             "found": record_counts.get(label, 0),
             "confirmed": confirmed_counts.get(label, 0),
             "avatar_bg": bg,
             "avatar_fg": fg,
+            "tint": tint,
+            "era": era,
+            "silhouette": _silhouette(row.get("sex", "")),
         })
     people_data.sort(key=lambda p: (-p["confirmed"], -p["found"], p["label"]))
     return render_template_string(ANCESTORS_HTML, people=people_data)
@@ -2611,15 +2548,21 @@ def _era_for_year(year_str: str) -> tuple[str, str]:
         y = int(str(year_str).strip()[:4])
     except (ValueError, TypeError):
         return ("#fffcf2", "Long ago")
-    if y < 1850:
-        return ("#f0e4cc", "Pre-Famine Ireland")
+    if y < 1845:
+        return ("#f0e4cc", "Before the Famine")
+    if y <= 1852:
+        return ("#e8dcc0", "The Great Hunger")
     if y < 1880:
-        return ("#ece0bf", "Victorian era")
-    if y < 1910:
-        return ("#e3dcc1", "Edwardian era")
-    if y < 1930:
-        return ("#dde5d9", "Early 1900s")
-    return ("#d6e0da", "Between the wars")
+        return ("#ece0bf", "After the Famine")
+    if y < 1900:
+        return ("#e3dcc1", "Land War Ireland")
+    if y < 1917:
+        return ("#dce5c8", "Home Rule era")
+    if y < 1923:
+        return ("#cfe0c5", "Rising & Revolution")
+    if y < 1949:
+        return ("#d4e4cc", "Irish Free State")
+    return ("#cfe0d1", "Republic of Ireland")
 
 
 def _silhouette(sex: str) -> str:
@@ -2629,59 +2572,6 @@ def _silhouette(sex: str) -> str:
     if s == "F":
         return "\U0001F469"  # woman
     return "\U0001F464"  # bust silhouette
-
-
-@app.route("/scrapbook")
-def scrapbook_page():
-    with PEOPLE_LOCK:
-        people_rows = _read_rows()
-    with CONFIRMS_LOCK:
-        confs = load_confirmations(CONFIRMS_FILE)
-
-    record_counts: dict[str, int] = {}
-    confirmed_counts: dict[str, int] = {}
-    results_csv_path = HERE / RESULTS_CSV
-    if results_csv_path.exists():
-        try:
-            recs = load_records_csv(results_csv_path)
-            for r in recs:
-                lbl = r.person_searched
-                record_counts[lbl] = record_counts.get(lbl, 0) + 1
-                if confs.get(record_key(r), {}).get("status") == "confirmed":
-                    confirmed_counts[lbl] = confirmed_counts.get(lbl, 0) + 1
-        except Exception:
-            pass
-
-    people = []
-    confirmed_total = 0
-    for row in people_rows:
-        forename = row.get("forename", "").strip()
-        surname = row.get("surname", "").strip()
-        if not forename or not surname:
-            continue
-        label = f"{forename} {surname}"
-        found = record_counts.get(label, 0)
-        if found == 0:
-            continue
-        confirmed = confirmed_counts.get(label, 0)
-        confirmed_total += confirmed
-        year = row.get("birth_year_approx", "").strip()
-        tint, era = _era_for_year(year)
-        people.append({
-            "label": label,
-            "forename": forename,
-            "surname": surname,
-            "slug": slugify(label),
-            "county": row.get("county", "").strip(),
-            "year": year,
-            "found": found,
-            "confirmed": confirmed,
-            "tint": tint,
-            "era": era,
-            "silhouette": _silhouette(row.get("sex", "")),
-        })
-    people.sort(key=lambda p: (-p["confirmed"], -p["found"], p["label"]))
-    return render_template_string(SCRAPBOOK_HTML, people=people, confirmed_total=confirmed_total)
 
 
 @app.route("/ancestors/<slug>/delete", methods=["POST"])
