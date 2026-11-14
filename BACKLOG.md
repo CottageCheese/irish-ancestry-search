@@ -26,6 +26,14 @@ Working list. Tick when done. Add free-form.
 
 ## Done
 
+### Search form & results improvements (Nov 2026)
+- [x] Exact year toggle on quick-search: "Approx (±5 years)" vs "Exact year" radio; writes `year_range=0`; fixed validator to accept 0.
+- [x] "What we found" button opens `results.html` directly; `/narrative` redirects there; duplicate button removed.
+- [x] Records filter: chronological order (Baptisms → Births → Marriages → Deaths → Burials → Land records); hint text: civil registration started 1864 (marriages 1845).
+- [x] M/F/Unknown sex radio on quick-search form; stored in `ancestors.csv`; auto-rejects obvious wrong-sex records in `annotate_records` using MALE_NAMES/FEMALE_NAMES sets built from NICKNAMES.
+- [x] Live record count ("N records found so far") shown on animated loader screen during search.
+- [x] "Reject rest" button per person in `results.html`: one click rejects all non-Likely, non-confirmed records for that person.
+
 ### Quick-search filter polish (Nov 2026)
 - [x] "All" chip prepended to Census + Records filter rows; default-active, deactivates when any sibling is ticked, clears siblings on click.
 - [x] Hint line under filters: "Pick some to search faster, or leave on *All* for everything."
