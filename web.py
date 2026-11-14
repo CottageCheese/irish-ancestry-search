@@ -160,9 +160,12 @@ INDEX_HTML = """
 
 {% set known = people | selectattr('forename') | list %}
 {% if known %}
-<div style="text-align:center;margin:.4rem 0 .8rem">
+<div style="text-align:center;margin:.4rem 0 .8rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
   <a href="{{ url_for('ancestors_page') }}" class="family-link">
     &#128106; Our family so far ({{ known|length }}) &#8594;
+  </a>
+  <a href="{{ url_for('scrapbook_page') }}" class="family-link">
+    &#128214; My scrapbook &#8594;
   </a>
 </div>
 {% endif %}
@@ -226,16 +229,29 @@ INDEX_HTML = """
             <button type="button" class="gen-btn" data-year="1840" data-range="15">Further back (born ~1820&ndash;1860)</button>
           </div>
         </div>
-        <input type="number" id="birth_year" name="birth_year" min="1700" max="1950" placeholder="e.g. 1875">
-        <div style="margin-top:.35rem;display:flex;gap:.9rem;flex-wrap:wrap;font-size:.85rem">
-          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
-            <input type="radio" name="year_mode" value="approx" checked> About right (&plusmn;5 years)
-          </label>
-          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
-            <input type="radio" name="year_mode" value="exact"> Exact year
-          </label>
+        <div style="font-size:.85rem;color:var(--sepia);margin-bottom:.3rem">Tap a decade:</div>
+        <div id="decade-row" class="btn-group" style="margin-bottom:.5rem">
+          <button type="button" class="decade-btn" data-year="1825">1820s</button>
+          <button type="button" class="decade-btn" data-year="1835">1830s</button>
+          <button type="button" class="decade-btn" data-year="1845">1840s</button>
+          <button type="button" class="decade-btn" data-year="1855">1850s</button>
+          <button type="button" class="decade-btn" data-year="1865">1860s</button>
+          <button type="button" class="decade-btn" data-year="1875">1870s</button>
+          <button type="button" class="decade-btn" data-year="1885">1880s</button>
+          <button type="button" class="decade-btn" data-year="1895">1890s</button>
+          <button type="button" class="decade-btn" data-year="1905">1900s</button>
+          <button type="button" class="decade-btn" data-year="1915">1910s</button>
+          <button type="button" class="decade-btn" data-year="1925">1920s</button>
+          <button type="button" class="decade-btn" data-year="1935">1930s</button>
+          <button type="button" class="decade-btn" data-year="1945">1940s</button>
         </div>
-        <div class="hint">Not sure of the exact year? A rough guess is fine.</div>
+        <div style="display:flex;gap:.5rem;align-items:center;font-size:.85rem;flex-wrap:wrap">
+          <span style="color:var(--sepia)">&#128170; Know exact year?</span>
+          <input type="number" id="exact_year" min="1700" max="1950" placeholder="e.g. 1875" style="width:7rem">
+        </div>
+        <input type="hidden" id="birth_year" name="birth_year">
+        <input type="hidden" id="year_mode" name="year_mode" value="approx">
+        <div class="hint">A decade is plenty &mdash; we&rsquo;ll search a few years either side.</div>
       </div>
     </div>
 
@@ -311,6 +327,13 @@ INDEX_HTML = """
         font-family:inherit; transition:all .12s;
       }
       .gen-btn:hover { background:var(--gold); color:#fff; }
+      .decade-btn {
+        cursor:pointer; padding:.35rem .7rem; border-radius:16px; font-size:.9rem;
+        border:2px solid var(--cream-dark); background:#fff; color:var(--sepia);
+        font-family:inherit; font-weight:600; transition:all .12s;
+      }
+      .decade-btn:hover { border-color:var(--gold); }
+      .decade-btn.selected { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
     </style>
 
     <button type="submit" class="go" id="qs-btn">&#127808; Find them!</button>
@@ -417,7 +440,7 @@ INDEX_HTML = """
         qualDiv.innerHTML = stars + '&nbsp; ' + msg;
         qualDiv.style.visibility = 'visible';
       }
-      ['surname','birth_year','county'].forEach(function(id){
+      ['surname','county'].forEach(function(id){
         var el = document.getElementById(id);
         if (el) el.addEventListener('input', updateQuality);
         if (el && el.tagName === 'SELECT') el.addEventListener('change', updateQuality);
@@ -499,7 +522,38 @@ INDEX_HTML = """
       if (foreInput) foreInput.addEventListener('input', updateSearchCount);
       updateSearchCount();
 
-      // --- Birth year helper ---
+      // --- Birth year: decade chips + exact ---
+      var hiddenYear = document.getElementById('birth_year');
+      var hiddenMode = document.getElementById('year_mode');
+      var exactInput = document.getElementById('exact_year');
+      var decadeBtns = document.querySelectorAll('.decade-btn');
+      function pickDecade(btn){
+        decadeBtns.forEach(function(x){ x.classList.remove('selected'); });
+        btn.classList.add('selected');
+        hiddenYear.value = btn.dataset.year;
+        hiddenMode.value = 'approx';
+        if (exactInput) exactInput.value = '';
+        updateQuality();
+      }
+      decadeBtns.forEach(function(b){
+        b.addEventListener('click', function(){ pickDecade(b); });
+      });
+      if (exactInput) {
+        exactInput.addEventListener('input', function(){
+          var v = exactInput.value.trim();
+          if (v) {
+            decadeBtns.forEach(function(x){ x.classList.remove('selected'); });
+            hiddenYear.value = v;
+            hiddenMode.value = 'exact';
+          } else {
+            hiddenYear.value = '';
+            hiddenMode.value = 'approx';
+          }
+          updateQuality();
+        });
+      }
+
+      // --- "Help me guess" generation shortcut ---
       var yhBtn = document.getElementById('year-helper-btn');
       var yhDiv = document.getElementById('year-helper');
       if (yhBtn && yhDiv) {
@@ -509,10 +563,9 @@ INDEX_HTML = """
         yhDiv.querySelectorAll('.gen-btn').forEach(function(b){
           b.addEventListener('click', function(){
             var yr = parseInt(b.dataset.year);
-            var yInput = document.getElementById('birth_year');
-            if (yInput) { yInput.value = yr; updateQuality(); }
-            var approx = form.querySelector('input[name="year_mode"][value="approx"]');
-            if (approx) approx.checked = true;
+            var decade = Math.floor(yr / 10) * 10 + 5;
+            var match = document.querySelector('.decade-btn[data-year="' + decade + '"]');
+            if (match) pickDecade(match);
             yhDiv.style.display = 'none';
           });
         });
@@ -1664,6 +1717,8 @@ ANCESTORS_HTML = """
 <div class="page-body">
 <div class="nav">
   <a href="{{ url_for('index') }}">&#8592; Find someone</a>
+  &nbsp;&middot;&nbsp;
+  <a href="{{ url_for('scrapbook_page') }}">&#128214; My scrapbook</a>
 </div>
 
 <h1>&#128106; Our Family</h1>
@@ -1712,6 +1767,110 @@ ANCESTORS_HTML = """
 </div>
 {% endif %}
 </div>
+"""
+
+
+SCRAPBOOK_HTML = """
+<!doctype html>
+<meta charset="utf-8">
+<title>My Scrapbook &mdash; Family Finder</title>
+<style>
+  :root {
+    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
+    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
+  }
+  * { box-sizing:border-box; }
+  body {
+    font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    max-width:980px; margin:0 auto; padding:1rem;
+    background:var(--cream); color:var(--ink); min-height:100vh;
+  }
+  .nav a { color:var(--moss); text-decoration:none; font-size:1rem; font-weight:600; }
+  .nav a:hover { color:var(--moss-dark); text-decoration:underline; }
+  h1 { font-size:2.2rem; color:var(--moss-dark); margin:.4rem 0 .1rem; text-align:center; letter-spacing:.02em; }
+  .subtitle { text-align:center; color:var(--sepia); font-style:italic; margin:0 0 .3rem; font-size:1.05rem; }
+  .count-bar { text-align:center; color:var(--sepia); margin:0 0 1.2rem; font-size:.95rem; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:1.1rem; }
+  .card {
+    border:2px solid var(--cream-dark); border-radius:14px;
+    padding:1rem .9rem 1rem; text-align:center; position:relative;
+    transition:transform .14s, box-shadow .14s, border-color .14s;
+    text-decoration:none; color:var(--ink);
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+    transform:rotate(var(--tilt, 0deg));
+  }
+  .card:nth-child(3n) { --tilt:-.6deg; }
+  .card:nth-child(3n+1) { --tilt:.5deg; }
+  .card:hover { transform:rotate(0deg) translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,.18); border-color:var(--gold); }
+  .card.confirmed { border-color:var(--gold); box-shadow:0 2px 10px rgba(201,160,74,.3); }
+  .portrait {
+    width:88px; height:88px; margin:0 auto .5rem;
+    border-radius:50%; background:#fffcf2;
+    border:3px solid rgba(0,0,0,.08);
+    display:flex; align-items:center; justify-content:center;
+    font-size:2.6rem; line-height:1;
+  }
+  .ribbon {
+    display:inline-block; font-size:.72rem; letter-spacing:.08em;
+    text-transform:uppercase; font-weight:700; color:var(--sepia);
+    background:#fff6dc; padding:.12rem .55rem; border-radius:10px;
+    margin-bottom:.4rem;
+  }
+  .name { font-size:1.2rem; font-weight:700; color:var(--moss-dark); margin:.15rem 0 .25rem; line-height:1.15; }
+  .meta { font-size:.88rem; color:var(--sepia); margin-bottom:.55rem; min-height:1.2em; }
+  .badges { display:flex; gap:.35rem; justify-content:center; flex-wrap:wrap; }
+  .badge {
+    display:inline-flex; align-items:center; gap:.2rem;
+    padding:.22rem .55rem; border-radius:12px;
+    font-size:.78rem; font-weight:700;
+  }
+  .b-found { background:#d1ecf1; color:#0c5460; }
+  .b-conf { background:#d4edda; color:#155724; }
+  .empty { text-align:center; padding:3rem 1rem; color:var(--sepia); font-style:italic; font-size:1.1rem; }
+  .empty a { color:var(--moss); font-weight:700; text-decoration:none; }
+  .empty a:hover { text-decoration:underline; }
+</style>
+
+<div class="nav">
+  <a href="{{ url_for('index') }}">&larr; Home</a>
+  &nbsp;·&nbsp;
+  <a href="{{ url_for('ancestors_page') }}">All ancestors</a>
+</div>
+
+<h1>&#128214; My Scrapbook</h1>
+<p class="subtitle">Ancestors you&rsquo;ve found so far.</p>
+<p class="count-bar">
+  {{ people|length }} found
+  {% if confirmed_total %}&nbsp;·&nbsp; {{ confirmed_total }} confirmed &#127942;{% endif %}
+</p>
+
+{% if people %}
+<div class="grid">
+  {% for p in people %}
+  <a class="card {% if p.confirmed %}confirmed{% endif %}"
+     href="{{ url_for('person_page', slug=p.slug) }}"
+     style="background:{{ p.tint }}">
+    <div class="portrait">{{ p.silhouette }}</div>
+    <div class="ribbon">{{ p.era }}</div>
+    <div class="name">{{ p.forename }} {{ p.surname }}</div>
+    <div class="meta">
+      {% if p.year %}b. {{ p.year }}{% endif %}
+      {% if p.year and p.county %} &middot; {% endif %}
+      {% if p.county %}{{ p.county }}{% endif %}
+    </div>
+    <div class="badges">
+      <span class="badge b-found">&#128220; {{ p.found }}</span>
+      {% if p.confirmed %}<span class="badge b-conf">&#127942; {{ p.confirmed }}</span>{% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+  <p>Scrapbook&rsquo;s empty &mdash; no ancestors found yet.</p>
+  <a href="{{ url_for('index') }}">Go find your first one &#8594;</a>
+</div>
+{% endif %}
 """
 
 
@@ -1901,6 +2060,8 @@ PERSON_HTML = """
 
 <div class="nav">
   <a href="{{ url_for('ancestors_page') }}">&#8592; Our family</a>
+  &nbsp;&middot;&nbsp;
+  <a href="{{ url_for('scrapbook_page') }}">&#128214; My scrapbook</a>
 </div>
 
 <div class="hero-card">
@@ -2443,6 +2604,84 @@ def ancestors_page():
         })
     people_data.sort(key=lambda p: (-p["confirmed"], -p["found"], p["label"]))
     return render_template_string(ANCESTORS_HTML, people=people_data)
+
+
+def _era_for_year(year_str: str) -> tuple[str, str]:
+    try:
+        y = int(str(year_str).strip()[:4])
+    except (ValueError, TypeError):
+        return ("#fffcf2", "Long ago")
+    if y < 1850:
+        return ("#f0e4cc", "Pre-Famine Ireland")
+    if y < 1880:
+        return ("#ece0bf", "Victorian era")
+    if y < 1910:
+        return ("#e3dcc1", "Edwardian era")
+    if y < 1930:
+        return ("#dde5d9", "Early 1900s")
+    return ("#d6e0da", "Between the wars")
+
+
+def _silhouette(sex: str) -> str:
+    s = (sex or "").strip().upper()
+    if s == "M":
+        return "\U0001F468"  # man
+    if s == "F":
+        return "\U0001F469"  # woman
+    return "\U0001F464"  # bust silhouette
+
+
+@app.route("/scrapbook")
+def scrapbook_page():
+    with PEOPLE_LOCK:
+        people_rows = _read_rows()
+    with CONFIRMS_LOCK:
+        confs = load_confirmations(CONFIRMS_FILE)
+
+    record_counts: dict[str, int] = {}
+    confirmed_counts: dict[str, int] = {}
+    results_csv_path = HERE / RESULTS_CSV
+    if results_csv_path.exists():
+        try:
+            recs = load_records_csv(results_csv_path)
+            for r in recs:
+                lbl = r.person_searched
+                record_counts[lbl] = record_counts.get(lbl, 0) + 1
+                if confs.get(record_key(r), {}).get("status") == "confirmed":
+                    confirmed_counts[lbl] = confirmed_counts.get(lbl, 0) + 1
+        except Exception:
+            pass
+
+    people = []
+    confirmed_total = 0
+    for row in people_rows:
+        forename = row.get("forename", "").strip()
+        surname = row.get("surname", "").strip()
+        if not forename or not surname:
+            continue
+        label = f"{forename} {surname}"
+        found = record_counts.get(label, 0)
+        if found == 0:
+            continue
+        confirmed = confirmed_counts.get(label, 0)
+        confirmed_total += confirmed
+        year = row.get("birth_year_approx", "").strip()
+        tint, era = _era_for_year(year)
+        people.append({
+            "label": label,
+            "forename": forename,
+            "surname": surname,
+            "slug": slugify(label),
+            "county": row.get("county", "").strip(),
+            "year": year,
+            "found": found,
+            "confirmed": confirmed,
+            "tint": tint,
+            "era": era,
+            "silhouette": _silhouette(row.get("sex", "")),
+        })
+    people.sort(key=lambda p: (-p["confirmed"], -p["found"], p["label"]))
+    return render_template_string(SCRAPBOOK_HTML, people=people, confirmed_total=confirmed_total)
 
 
 @app.route("/ancestors/<slug>/delete", methods=["POST"])
