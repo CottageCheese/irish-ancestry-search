@@ -88,6 +88,7 @@ RUN: dict = {
     "pause_until": 0.0,
     "server_now": 0.0,
     "step": "",
+    "person_name": "",    # first person being searched (shown in loading heading)
 }
 RUN_LOCK = threading.Lock()
 
@@ -261,7 +262,89 @@ INDEX_HTML = """
   </div>
 </div>
 {% else %}
-<div class="state">
+
+<style>
+  .loader-wrap { text-align:center; padding:1rem 0 2rem; }
+  .loader-scene svg { width:100%; max-width:700px; height:auto; border-radius:12px; }
+  .loader-heading { font-size:2rem; color:var(--moss-dark); margin:.8rem 0 .3rem; }
+  .loader-msg { font-size:1.25rem; color:var(--sepia); font-style:italic; min-height:1.8em; margin:.2rem 0 .8rem; transition:opacity .4s; }
+  .loader-progress-text { color:var(--sepia); font-size:1rem; margin-bottom:.4rem; }
+  .loader-bar-wrap { max-width:500px; margin:0 auto .4rem; height:14px; background:var(--cream-dark); border-radius:7px; overflow:hidden; }
+  .loader-bar-fill { height:100%; background:var(--moss); border-radius:7px; transition:width .4s; }
+  .loader-pause { margin:.8rem auto; max-width:460px; padding:.5rem .8rem; background:#fff6d8; border-left:4px solid #e0a800; border-radius:6px; font-size:.95rem; display:none; }
+  .sheep-big { font-size:3.5rem; display:inline-block; animation:sheep-bounce 1.1s infinite ease-in-out; }
+  @keyframes sheep-bounce { 0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)} }
+</style>
+
+<div class="loader-wrap" id="loader-screen" style="{{ 'display:none' if run.state != 'running' else '' }}">
+  <div class="loader-scene" aria-hidden="true">
+    <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lsky" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#cfe6f2"/><stop offset="100%" stop-color="#f4ecd8"/>
+        </linearGradient>
+        <linearGradient id="lh1" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#6ca84a"/><stop offset="100%" stop-color="#4a7c3a"/>
+        </linearGradient>
+        <linearGradient id="lh2" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#8bbd5d"/><stop offset="100%" stop-color="#5d8f3d"/>
+        </linearGradient>
+      </defs>
+      <rect width="800" height="200" fill="url(#lsky)"/>
+      <path d="M0 150 Q200 80 400 130 T800 110 L800 200 L0 200 Z" fill="url(#lh1)"/>
+      <path d="M0 170 Q150 130 350 160 T800 150 L800 200 L0 200 Z" fill="url(#lh2)"/>
+      <g transform="translate(540,120)">
+        <rect x="0" y="20" width="70" height="45" fill="#d9c9a0" stroke="#8b6f47" stroke-width="2"/>
+        <polygon points="-5,20 35,-5 75,20" fill="#6b4a2a" stroke="#4a3220" stroke-width="2"/>
+        <rect x="26" y="40" width="14" height="25" fill="#4a3220"/>
+        <rect x="8" y="28" width="12" height="12" fill="#f4ecd8" stroke="#8b6f47"/>
+        <rect x="50" y="28" width="12" height="12" fill="#f4ecd8" stroke="#8b6f47"/>
+        <rect x="46" y="-5" width="8" height="18" fill="#8b6f47"/>
+        <path d="M46 -3 Q48 -8 50 -5" fill="none" stroke="#999" stroke-width="2"/>
+      </g>
+      <g transform="translate(120,130)">
+        <ellipse cx="0" cy="30" rx="30" ry="18" fill="#2f5a22"/>
+        <ellipse cx="-15" cy="22" rx="20" ry="18" fill="#3a6b2a"/>
+        <ellipse cx="15" cy="22" rx="20" ry="18" fill="#3a6b2a"/>
+        <rect x="-4" y="30" width="8" height="18" fill="#5a3a20"/>
+      </g>
+      <g transform="translate(230,163)">
+        <ellipse cx="0" cy="0" rx="16" ry="10" fill="#f5f0e4"/>
+        <circle cx="-14" cy="-2" r="7" fill="#4a3a28"/>
+        <circle cx="-16" cy="-4" r="1.8" fill="#000"/>
+        <rect x="-7" y="8" width="4" height="6" fill="#4a3a28"/>
+        <rect x="5" y="8" width="4" height="6" fill="#4a3a28"/>
+      </g>
+      <g transform="translate(310,170)">
+        <ellipse cx="0" cy="0" rx="13" ry="9" fill="#f5f0e4"/>
+        <circle cx="-11" cy="-2" r="6" fill="#4a3a28"/>
+        <circle cx="-13" cy="-4" r="1.5" fill="#000"/>
+        <rect x="-5" y="7" width="3" height="5" fill="#4a3a28"/>
+        <rect x="4" y="7" width="3" height="5" fill="#4a3a28"/>
+      </g>
+      <circle cx="680" cy="40" r="22" fill="#f6d35e" opacity=".85"/>
+      <text x="400" y="70" text-anchor="middle" font-size="38" opacity=".7">📖</text>
+    </svg>
+  </div>
+
+  <div class="sheep-big" aria-hidden="true">🐑</div>
+  <h2 class="loader-heading">Looking for <span id="loader-name">{{ run.person_name or 'your ancestor' }}</span>…</h2>
+  <div class="loader-msg" id="loader-msg">Asking the old books…</div>
+
+  <div class="loader-progress-text">
+    Checked <strong id="loader-current">{{ run.current }}</strong>
+    of <strong id="loader-total">{{ run.total or '?' }}</strong> places
+  </div>
+  <div class="loader-bar-wrap">
+    <div class="loader-bar-fill" id="loader-bar" style="width:{{ (100 * run.current / run.total) if run.total else 0 }}%"></div>
+  </div>
+
+  <div class="loader-pause" id="loader-pause">
+    ⏳ Being polite — waiting <strong id="loader-pause-remain">0</strong>s
+  </div>
+</div>
+
+<div class="state" id="status-panel" style="{{ 'display:none' if run.state == 'running' else '' }}">
   <strong>State:</strong> <span id="st-state">{{ run.state }}</span><br>
   <strong>Progress:</strong> <span id="st-current">{{ run.current }}</span> / <span id="st-total">{{ run.total }}</span>
   &mdash; <span id="st-label">{{ run.label }}</span>
@@ -308,7 +391,29 @@ INDEX_HTML = """
 </div>
 
 <script>
-let PAUSE = null;  // {host, seconds, until_client_ms}
+const LOADER_MSGS = [
+  'Asking the old books\u2026',
+  'Checking the census from 1901\u2026',
+  'Looking at church records\u2026',
+  'Searching the 1911 census\u2026',
+  'Flicking through old birth records\u2026',
+  'Checking who lived nearby\u2026',
+  'Looking at marriage records\u2026',
+  'Searching the 1926 census\u2026',
+  'Checking old land records\u2026',
+  'Nearly there, keep going\u2026',
+];
+let _msgIdx = 0;
+let _msgTimer = null;
+function rotateMsg() {
+  _msgIdx = (_msgIdx + 1) % LOADER_MSGS.length;
+  const el = document.getElementById('loader-msg');
+  if (!el) return;
+  el.style.opacity = '0';
+  setTimeout(() => { el.textContent = LOADER_MSGS[_msgIdx]; el.style.opacity = '1'; }, 400);
+}
+
+let PAUSE = null;
 function updatePause(s) {
   const dbg = document.getElementById('st-debug');
   if (dbg) dbg.textContent = `dbg: state=${s.state} host=${s.pause_host||'-'} secs=${s.pause_seconds||0} until=${s.pause_until||0} now=${s.server_now||0} remain=${((s.pause_until||0)-(s.server_now||0)).toFixed(2)}`;
@@ -326,14 +431,31 @@ function updatePause(s) {
 }
 function renderPause() {
   const panel = document.getElementById('st-pause');
-  if (!PAUSE) { panel.style.display = 'none'; return; }
+  const loaderPause = document.getElementById('loader-pause');
+  if (!PAUSE) {
+    if (panel) panel.style.display = 'none';
+    if (loaderPause) loaderPause.style.display = 'none';
+    return;
+  }
   const remain = Math.max(0, (PAUSE.until - Date.now()) / 1000);
-  if (remain <= 0) { panel.style.display = 'none'; PAUSE = null; return; }
-  panel.style.display = 'block';
-  document.getElementById('st-pause-remain').textContent = remain.toFixed(1);
-  document.getElementById('st-pause-host').textContent = PAUSE.host;
-  const pct = PAUSE.seconds > 0 ? (100 * (PAUSE.seconds - remain) / PAUSE.seconds) : 100;
-  document.getElementById('st-pause-bar').style.width = Math.min(100, pct) + '%';
+  if (remain <= 0) {
+    if (panel) panel.style.display = 'none';
+    if (loaderPause) loaderPause.style.display = 'none';
+    PAUSE = null;
+    return;
+  }
+  if (panel) {
+    panel.style.display = 'block';
+    document.getElementById('st-pause-remain').textContent = remain.toFixed(1);
+    document.getElementById('st-pause-host').textContent = PAUSE.host;
+    const pct = PAUSE.seconds > 0 ? (100 * (PAUSE.seconds - remain) / PAUSE.seconds) : 100;
+    document.getElementById('st-pause-bar').style.width = Math.min(100, pct) + '%';
+  }
+  if (loaderPause) {
+    loaderPause.style.display = 'block';
+    const lpr = document.getElementById('loader-pause-remain');
+    if (lpr) lpr.textContent = Math.ceil(remain);
+  }
 }
 setInterval(renderPause, 100);
 
@@ -343,6 +465,25 @@ async function tick() {
       fetch('{{ url_for("status_json") }}').then(r => r.json()),
       fetch('{{ url_for("log_json") }}').then(r => r.json()),
     ]);
+
+    const loaderScreen = document.getElementById('loader-screen');
+    const statusPanel = document.getElementById('status-panel');
+    const loaderName = document.getElementById('loader-name');
+    if (loaderName && s.person_name) loaderName.textContent = s.person_name;
+    const lc = document.getElementById('loader-current'); if (lc) lc.textContent = s.current;
+    const lt = document.getElementById('loader-total'); if (lt) lt.textContent = s.total || '?';
+    const lb = document.getElementById('loader-bar'); if (lb) lb.style.width = (s.total ? (100*s.current/s.total) : 0) + '%';
+
+    if (s.state === 'running') {
+      if (loaderScreen) loaderScreen.style.display = '';
+      if (statusPanel) statusPanel.style.display = 'none';
+      if (!_msgTimer) _msgTimer = setInterval(rotateMsg, 3200);
+    } else {
+      if (loaderScreen) loaderScreen.style.display = 'none';
+      if (statusPanel) statusPanel.style.display = '';
+      if (_msgTimer) { clearInterval(_msgTimer); _msgTimer = null; }
+    }
+
     document.getElementById('st-state').textContent = s.state;
     document.getElementById('st-current').textContent = s.current;
     document.getElementById('st-total').textContent = s.total;
@@ -625,6 +766,7 @@ def quick_search():
             "started": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "finished": None, "error": "",
             "new_count": 0, "record_count": 0,
+            "person_name": f"{forename} {surname}".strip(),
         })
 
     RUNTIME_FLAGS["soundex"] = False
@@ -658,6 +800,7 @@ def start():
             "started": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "finished": None, "error": "",
             "new_count": 0, "record_count": 0,
+            "person_name": "",
         })
 
     upload = request.files.get("csv")
@@ -716,6 +859,7 @@ def reset():
             "current": 0, "total": 0, "label": "",
             "started": None, "finished": None, "error": "",
             "new_count": 0, "record_count": 0,
+            "person_name": "",
         })
     return redirect(url_for("index"))
 
