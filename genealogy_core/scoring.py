@@ -78,8 +78,12 @@ def score_record(person: Person, rec: Record) -> tuple[int, dict[str, int]]:
     details_l = (rec.other_details or "").lower()
     haystack = name_l + " | " + place_l + " | " + details_l
 
-    if person.forename and person.forename.lower() in name_l:
-        breakdown["forename"] = 3
+    if person.forename:
+        all_fnames = person.all_forenames(use_nicknames=True)
+        if any(fn and fn.lower() in name_l for fn in all_fnames):
+            breakdown["forename"] = 3
+        elif name_l:
+            breakdown["forename_mismatch"] = -4
     if person.surname and person.surname.lower() in name_l:
         breakdown["surname_primary"] = 3
     else:
