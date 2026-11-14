@@ -190,9 +190,17 @@ INDEX_HTML = """
         </select>
       </div>
       <div>
-        <label for="birth_year">Born around (year)</label>
+        <label for="birth_year">Birth year</label>
         <input type="number" id="birth_year" name="birth_year" min="1700" max="1950" placeholder="e.g. 1875">
-        <div class="hint">A guess is fine. We search 5 years either side.</div>
+        <div style="margin-top:.35rem;display:flex;gap:.9rem;flex-wrap:wrap;font-size:.85rem">
+          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
+            <input type="radio" name="year_mode" value="approx" checked> Approx (&plusmn;5 years)
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:.3rem;cursor:pointer">
+            <input type="radio" name="year_mode" value="exact"> Exact year
+          </label>
+        </div>
+        <div class="hint">Pick <em>Exact</em> if you know the birth year; otherwise a guess is fine.</div>
       </div>
     </div>
 
@@ -414,8 +422,7 @@ INDEX_HTML = """
     <div><strong><span id="st-rc">{{ run.record_count }}</span></strong> unique record(s).
          <span id="st-new">{{ run.new_count }}</span> new since previous run.</div>
     <a class="btn" href="{{ url_for('ancestors_page') }}">&#128106; Our family</a>
-    <a class="btn" href="{{ url_for('narrative') }}" target="_blank">What we found</a>
-    <a class="btn" href="{{ url_for('results_html') }}" target="_blank">Open results.html</a>
+    <a class="btn" href="{{ url_for('results_html') }}" target="_blank">What we found</a>
     <a class="btn" href="{{ url_for('download', name='results.csv') }}">Download CSV</a>
     <a class="btn" href="{{ url_for('download', name='results.json') }}">Download JSON</a>
     <a class="btn" href="{{ url_for('download', name='run.log') }}">run.log</a>
@@ -804,6 +811,7 @@ def quick_search():
     surname = (request.form.get("surname") or "").strip()
     county = (request.form.get("county") or "").strip()
     birth_year = (request.form.get("birth_year") or "").strip()
+    year_mode = (request.form.get("year_mode") or "approx").strip().lower()
     if not forename or not surname:
         return redirect(url_for("index"))
 
@@ -816,7 +824,10 @@ def quick_search():
             new_row["surname"] = surname
             new_row["county"] = county
             new_row["birth_year_approx"] = birth_year
-            new_row["year_range"] = "5" if birth_year else ""
+            if birth_year:
+                new_row["year_range"] = "0" if year_mode == "exact" else "5"
+            else:
+                new_row["year_range"] = ""
             rows.append(new_row)
             _write_rows(rows)
 
@@ -1323,6 +1334,10 @@ NARRATIVE_HTML = """
 
 @app.route("/narrative")
 def narrative():
+    return redirect(url_for("results_html"))
+
+
+def _narrative_legacy():
     """Kid-friendly 'What we found' panel: cards grouped by confidence tier."""
     import json as _json
     p = HERE / RESULTS_JSON
