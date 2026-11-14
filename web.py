@@ -212,6 +212,8 @@ INDEX_HTML = """
           <option value="">(any county)</option>
           {% for c in counties %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
         </select>
+        <input type="text" id="townland" name="townland" placeholder="Townland or village (optional) — e.g. Pollsillagh" autocomplete="off" style="margin-top:.4rem">
+        <div class="hint">Know a townland or village? Shortest unique part works best. Leave blank if unsure.</div>
       </div>
       <div>
         <label for="birth_year">&#127874; When were they born? <button type="button" id="year-helper-btn" style="font-size:.78rem;cursor:pointer;border:1px solid var(--gold);background:#fffcf2;color:var(--sepia);border-radius:10px;padding:1px 8px;font-family:inherit;margin-left:.3rem">&#127922; Help me guess</button></label>
@@ -1232,6 +1234,7 @@ def quick_search():
     forename = (request.form.get("forename") or "").strip()
     surname = (request.form.get("surname") or "").strip()
     county = (request.form.get("county") or "").strip()
+    townland = (request.form.get("townland") or "").strip()
     birth_year = (request.form.get("birth_year") or "").strip()
     year_mode = (request.form.get("year_mode") or "approx").strip().lower()
     sex = (request.form.get("sex") or "").strip().upper()
@@ -1243,11 +1246,13 @@ def quick_search():
     with PEOPLE_LOCK:
         rows = _read_rows()
         key = (forename.lower(), surname.lower())
-        if not any((r.get("forename", "").lower(), r.get("surname", "").lower()) == key for r in rows):
+        existing = next((r for r in rows if (r.get("forename","").lower(), r.get("surname","").lower()) == key), None)
+        if existing is None:
             new_row = {c: "" for c in CSV_COLUMNS}
             new_row["forename"] = forename
             new_row["surname"] = surname
             new_row["county"] = county
+            new_row["townland"] = townland
             new_row["birth_year_approx"] = birth_year
             if birth_year:
                 new_row["year_range"] = "0" if year_mode == "exact" else "5"
@@ -1256,6 +1261,14 @@ def quick_search():
             new_row["sex"] = sex
             rows.append(new_row)
             _write_rows(rows)
+        else:
+            changed = False
+            if townland and existing.get("townland","").strip() != townland:
+                existing["townland"] = townland; changed = True
+            if county and existing.get("county","").strip() != county:
+                existing["county"] = county; changed = True
+            if changed:
+                _write_rows(rows)
 
     with RUN_LOCK:
         RUN.update({
