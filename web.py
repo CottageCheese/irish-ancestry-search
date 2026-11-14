@@ -648,12 +648,13 @@ const STEP_INFO = {
   'NAI 1901': { icon: '📜', label: '1901 census', msg: 'Flipping through the 1901 census…', desc: 'A list of everyone living in Ireland — over 4 million people!' },
   'NAI 1911': { icon: '📜', label: '1911 census', msg: 'Checking the 1911 census…', desc: 'Ten years later — families change a lot in a decade.' },
   'NAI 1926': { icon: '📜', label: '1926 census', msg: 'Looking at the 1926 census…', desc: 'This one even records how many years people were married!' },
-  'IG Civil-Birth': { icon: '🍼', label: 'birth records', msg: 'Searching birth records…', desc: 'Official government records kept since 1864.' },
-  'IG Civil-Marriage': { icon: '💍', label: 'marriage records', msg: 'Checking marriage records…', desc: 'Official government records since 1845.' },
-  'IG Civil-Death': { icon: '📋', label: 'death records', msg: 'Looking through death records…', desc: 'Official government records kept since 1864.' },
-  'IG Church-Baptism': { icon: '⛪', label: 'church baptisms', msg: 'Checking church baptism records…', desc: 'Churches kept these for hundreds of years — much older than government records!' },
-  'IG Church-Marriage': { icon: '⛪', label: 'church weddings', msg: 'Looking at church wedding records…', desc: 'A separate set of records from the official ones.' },
-  'IG Church-Burial': { icon: '⛪', label: 'church burials', msg: 'Searching burial records…', desc: 'Sometimes the only place a person\'s name was ever written down.' },
+  'IG Civil Birth': { icon: '🍼', label: 'birth records', msg: 'Searching birth records…', desc: 'Official government records kept since 1864.' },
+  'IG Civil Marriage': { icon: '💍', label: 'marriage records', msg: 'Checking marriage records…', desc: 'Official government records since 1845.' },
+  'IG Civil Death': { icon: '📋', label: 'death records', msg: 'Looking through death records…', desc: 'Official government records kept since 1864.' },
+  'IG Church Baptism': { icon: '⛪', label: 'church baptisms', msg: 'Checking church baptism records…', desc: 'Churches kept these for hundreds of years — much older than government records!' },
+  'IG Church Marriage': { icon: '⛪', label: 'church weddings', msg: 'Looking at church wedding records…', desc: 'A separate set of records from the official ones.' },
+  'IG Church Burial': { icon: '⛪', label: 'church burials', msg: 'Searching burial records…', desc: 'Sometimes the only place a person\'s name was ever written down.' },
+  'Griffith': { icon: '🗺️', label: "Griffith's Valuation", msg: "Looking at Griffith's Valuation…", desc: 'A huge land survey from the 1850s — who owned or rented what.' },
 };
 let _stepLog = [];
 let _lastSeenStep = '';
@@ -908,9 +909,8 @@ class _StepHandler(logging.Handler):
         if not m:
             return
         tag = m.group(1)
-        if " -> " in msg or "cache hit" in msg:
-            with RUN_LOCK:
-                RUN["step"] = tag
+        with RUN_LOCK:
+            RUN["step"] = tag
 
 
 def _build_hints() -> dict[str, dict]:

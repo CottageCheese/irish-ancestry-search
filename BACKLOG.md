@@ -26,6 +26,11 @@ Working list. Tick when done. Add free-form.
 
 ## Done
 
+### Loader step sync fix (Nov 2026)
+- [x] `_StepHandler` relaxed — updates `RUN["step"]` on any `_STEP_RE` match, not only lines containing " -> " or "cache hit".
+- [x] STEP_INFO keys corrected: log tags use spaces (`IG Civil Birth`) not dashes (`IG Civil-Birth`); loader was bailing on `!info` so screen stuck on "Getting ready…".
+- [x] Griffith entry added to STEP_INFO.
+
 ### Loading screen & stop button (Nov 2026)
 - [x] Layout shift fix: fore-variants, rec-tip, search-quality use `visibility:hidden` not `display:none` — nothing moves when typing.
 - [x] Stop button now cancels between sites (not just between people) — single-person quick search responds immediately.
