@@ -26,6 +26,12 @@ Working list. Tick when done. Add free-form.
 
 ## Done
 
+### Quick-search filter polish (Nov 2026)
+- [x] "All" chip prepended to Census + Records filter rows; default-active, deactivates when any sibling is ticked, clears siblings on click.
+- [x] Hint line under filters: "Pick some to search faster, or leave on *All* for everything."
+- [x] Server-side `skip_sites` derivation in `/quick-search`: when any filter is set, unselected site groups are genuinely skipped (fixes census-only run still firing all six IG matrices because `IG_EVENT_FILTER=()` means "no filter").
+- [x] Browser smoke test at `scripts/browser_smoke.py` (untracked) verifies All-chip toggling + multi-select behaviour.
+
 ### Navigation & home page (Nov 2026)
 - [x] `/ancestors` page: card grid with avatar initials, pastel colours, confirmed/found badges, sorted by confirmed count.
 - [x] `/person/<slug>` page: per-person records grouped by confidence tier, back nav to `/ancestors`.
