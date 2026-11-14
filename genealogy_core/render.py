@@ -477,30 +477,7 @@ def _html_head(title: str) -> list[str]:
 
 def _html_controls() -> str:
     return (
-        "<div class='name-search'>"
-        "<div class='name-search-title'>🔍 Who do you want to find?</div>"
-        "<div class='name-search-row'>"
-        "<div class='name-input-wrap'>"
-        "<label class='name-label' for='ns-fore'>👤 First name</label>"
-        "<input class='name-input' id='ns-fore' type='text' placeholder='e.g. William' autocomplete='off'>"
-        "</div>"
-        "<div class='name-input-wrap'>"
-        "<label class='name-label' for='ns-sur'>👪 Last name</label>"
-        "<input class='name-input' id='ns-sur' type='text' placeholder='e.g. Furey' autocomplete='off'>"
-        "</div>"
-        "<button class='btn-ns-clear' id='ns-clear' type='button'>✖ Show everyone</button>"
-        "</div>"
-        "<div class='ns-variants' id='ns-variants' style='display:none'>"
-        "<span class='ns-variants-label'>Also known as:</span>"
-        "<span id='ns-chips'></span>"
-        "<label class='ns-toggle-label'>"
-        "<input type='checkbox' id='ns-use-variants'>"
-        " Look for all these names too \u2728"
-        "</label>"
-        "</div>"
-        "</div>"
         "<div class='controls'>"
-        "<input class='filter' id='filter' placeholder='Find a name, place or year...' type='search'>"
         "<button class='dark-toggle' id='dm' type='button'>\U0001f319 Toggle dark mode</button>"
         "<label style='margin-left:.4em'>"
         "<input type='checkbox' id='hr'> Hide rejected</label>"
@@ -769,7 +746,6 @@ def render_results_html(records: list[Record], stamp: str,
 
     parts.append(_TOUR_HTML)
     parts.append(_HTML_SCRIPT)
-    parts.append(_name_search_script())
     parts.append("</body></html>")
     return "\n".join(parts)
 
@@ -787,7 +763,6 @@ def render_person_page(name: str, recs: list[Record], stamp: str,
     parts.append("</div>")
     parts.append(_TOUR_HTML)
     parts.append(_HTML_SCRIPT)
-    parts.append(_name_search_script())
     parts.append("</body></html>")
     return "\n".join(parts)
 

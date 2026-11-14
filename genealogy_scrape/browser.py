@@ -17,6 +17,24 @@ _LAST_HIT: dict[str, float] = {}
 # Signature: hook(host, seconds)
 PAUSE_HOOK = None  # type: ignore[assignment]
 
+# Optional hook returning True when the current run should abort.
+CANCEL_CHECK = None  # type: ignore[assignment]
+
+
+class CancelledError(Exception):
+    """Raised when CANCEL_CHECK signals abort mid-run."""
+
+
+def _check_cancel() -> None:
+    if CANCEL_CHECK is not None:
+        try:
+            if CANCEL_CHECK():
+                raise CancelledError("Search cancelled by user")
+        except CancelledError:
+            raise
+        except Exception:
+            pass
+
 
 def encode(value: str) -> str:
     return urllib.parse.quote_plus((value or "").strip())
@@ -53,7 +71,13 @@ def polite_pause(logger: logging.Logger, host: str | None = None) -> None:
             PAUSE_HOOK(host or "", seconds)
         except Exception:
             pass
-    time.sleep(seconds)
+    deadline = time.monotonic() + seconds
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        _check_cancel()
+        time.sleep(min(0.2, remaining))
     _LAST_HIT[host or "_global"] = time.monotonic()
 
 
@@ -155,6 +179,7 @@ def safe_goto(page: Page, url: str, logger: logging.Logger) -> bool:
     Retries on transient failures (timeouts, HTTP 5xx) up to
     `settings.RETRY_ATTEMPTS` extra times with exponential backoff.
     """
+    _check_cancel()
     total = 1 + max(0, settings.RETRY_ATTEMPTS)
     for attempt in range(1, total + 1):
         ok, transient = _attempt_goto(page, url, logger)

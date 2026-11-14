@@ -127,11 +127,14 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
 
     try:
         total = len(people)
+        from . import browser as _br
         for idx, person in enumerate(people, start=1):
+            _br._check_cancel()
             if progress:
                 progress(idx - 1, total, f"{person.label()} ({person.county})")
             logger.info("====== Searching for: %s (%s) ======", person.label(), person.county)
             for site_key, fn in SEARCH_FUNCTIONS:
+                _br._check_cancel()
                 if progress:
                     progress(idx - 1, total, f"{person.label()} ({person.county})")
                 if site_key in skip_sites:
@@ -148,6 +151,8 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
                     annotate_records(person, found, hints=person_hints)
                     logger.info("[%s] %d records for %s", site_key, len(found), person.label())
                     all_records.extend(found)
+                except _br.CancelledError:
+                    raise
                 except Exception as exc:
                     logger.exception("[%s] failed for %s: %s", site_key, person.label(), exc)
                     found = []
@@ -163,6 +168,8 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
                 incremental_save(snapshot)
             cache.save()
             logger.info("Incremental save: %d unique records so far", len(snapshot))
+            if progress:
+                progress(idx, total, f"{person.label()} ({person.county})")
     finally:
         if storage_path:
             try:

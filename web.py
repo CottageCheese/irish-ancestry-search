@@ -90,6 +90,7 @@ RUN: dict = {
     "pause_until": 0.0,
     "server_now": 0.0,
     "step": "",
+    "current_query": "",  # e.g. "Furey William" — surname + forename variant in flight
     "person_name": "",    # first person being searched (shown in loading heading)
     "cancel_requested": False,
     "stopped": False,
@@ -182,7 +183,7 @@ INDEX_HTML = """
             &#10024; Also called: <span id="fore-chips"></span>
           </div>
           <label style="font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;color:var(--ink)">
-            <input type="checkbox" name="use_nicks" value="1" id="use-nicks-cb" checked>
+            <input type="checkbox" name="use_nicks" value="1" id="use-nicks-cb">
             Search for these names too
           </label>
           <div class="hint" style="margin-top:.2rem">Finds records even if they wrote a different version of the name.</div>
@@ -249,6 +250,12 @@ INDEX_HTML = """
         </button>
       </div>
       <div id="search-count" style="font-size:.85rem;color:var(--moss-dark);margin-bottom:.5rem;padding:.3rem .6rem;background:#f4fdf4;border-radius:6px;border-left:3px solid var(--moss)"></div>
+      <div id="fast-offer" style="display:none;font-size:.88rem;margin-bottom:.5rem;padding:.5rem .7rem;background:#fff6d8;border-left:3px solid #e0a800;border-radius:6px">
+        ⚡ That is a lot of searches. Each one takes 5–10s pause.
+        <button type="button" id="fast-btn" style="margin-left:.5rem;padding:.3rem .7rem;border-radius:16px;border:2px solid var(--moss);background:#fff;color:var(--moss-dark);cursor:pointer;font:inherit;font-size:.85rem;font-weight:600">
+          Fast search — exact name only
+        </button>
+      </div>
       <div class="filter-row">
         <span class="filter-lbl">📜 Census</span>
         <div class="btn-group">
@@ -444,17 +451,36 @@ INDEX_HTML = """
           .map(function(cb){ return cb.value; });
         var igN = igChecked.filter(function(v){ return v !== 'griffiths'; }).length;
         var griff = igChecked.indexOf('griffiths') >= 0 ? 1 : 0;
-        var total = censusN + igN + griff;
-        if (total === 0) {
+        var sites = censusN + igN + griff;
+        if (sites === 0) {
           cEl.innerHTML = '<strong style="color:#b00">Nothing ticked</strong> — pick at least one to search.';
           return;
         }
+        var nicksCb = document.getElementById('use-nicks-cb');
+        var foreVal = (foreInput && foreInput.value || '').trim();
+        var nameCount = 1;
+        if (nicksCb && nicksCb.checked && foreVal) {
+          nameCount = Math.max(1, expandFore(foreVal).length);
+        }
+        var total = sites * nameCount;
         var parts = [];
         if (censusN) parts.push(censusN + ' census');
         if (igN) parts.push(igN + ' record type' + (igN === 1 ? '' : 's'));
         if (griff) parts.push('land records');
-        cEl.innerHTML = '<strong>' + total + '</strong> search' + (total === 1 ? '' : 'es') + ' will run: ' + parts.join(' + ');
+        var namesSuffix = nameCount > 1
+          ? ' &times; ' + nameCount + ' name variants'
+          : '';
+        cEl.innerHTML = '<strong>' + total + '</strong> search' + (total === 1 ? '' : 'es') + ' will run: ' + parts.join(' + ') + namesSuffix;
+        var offer = document.getElementById('fast-offer');
+        if (offer) offer.style.display = (total >= 15) ? 'block' : 'none';
       }
+      var fastBtn = document.getElementById('fast-btn');
+      if (fastBtn) fastBtn.addEventListener('click', function(){
+        var cb = document.getElementById('use-nicks-cb');
+        if (cb) cb.checked = false;
+        updateSearchCount();
+        form.requestSubmit();
+      });
       form.querySelectorAll('input[name="census_year"], input[name="ig_event"]').forEach(function(cb){
         cb.addEventListener('change', function(){
           // user manually toggled → both presets deselected
@@ -466,6 +492,9 @@ INDEX_HTML = """
           updateSearchCount();
         });
       });
+      var nicksCb = document.getElementById('use-nicks-cb');
+      if (nicksCb) nicksCb.addEventListener('change', updateSearchCount);
+      if (foreInput) foreInput.addEventListener('input', updateSearchCount);
       updateSearchCount();
 
       // --- Birth year helper ---
@@ -690,13 +719,14 @@ INDEX_HTML = """
   <h2 class="loader-heading">Looking for <span id="loader-name">{{ run.person_name or 'your ancestor' }}</span>…</h2>
   <div class="loader-msg" id="loader-msg" style="transition:opacity .4s">Getting ready…</div>
   <div id="loader-step-desc" style="font-size:.88rem;color:var(--sepia);margin:.2rem 0 .7rem;min-height:1.2em;font-style:italic"></div>
+  <div id="loader-query" style="font-size:.95rem;color:var(--moss-dark);margin:.1rem 0 .4rem;min-height:1.2em;font-weight:600"></div>
 
   <div id="loader-checklist" style="margin:.6rem auto;max-width:460px;text-align:left;font-size:.92rem;line-height:1.9"></div>
 
   <div id="loader-live" style="font-size:1rem;color:var(--moss-dark);margin:.5rem 0;min-height:1.4em;font-weight:600"></div>
 
   <div class="loader-pause" id="loader-pause">
-    ⏳ Being polite — waiting <strong id="loader-pause-remain">0</strong>s before next request
+    ⏳ Being polite — waiting <strong id="loader-pause-remain">0</strong>s before next <span id="loader-pause-what">request</span>
   </div>
 
   <div class="loader-progress-text" style="margin-top:.5rem">
@@ -773,7 +803,7 @@ const STEP_INFO = {
   'IG Civil Death': { icon: '📋', label: 'death records', msg: 'Looking through death records…', desc: 'Official government records kept since 1864.' },
   'IG Church Baptism': { icon: '⛪', label: 'church baptisms', msg: 'Checking church baptism records…', desc: 'Churches kept these for hundreds of years — much older than government records!' },
   'IG Church Marriage': { icon: '⛪', label: 'church weddings', msg: 'Looking at church wedding records…', desc: 'A separate set of records from the official ones.' },
-  'IG Church Burial': { icon: '⛪', label: 'church burials', msg: 'Searching burial records…', desc: 'Sometimes the only place a person\'s name was ever written down.' },
+  'IG Church Burial': { icon: '⛪', label: 'church burials', msg: 'Searching burial records…', desc: "Sometimes the only place a person's name was ever written down." },
   'Griffith': { icon: '🗺️', label: "Griffith's Valuation", msg: "Looking at Griffith's Valuation…", desc: 'A huge land survey from the 1850s — who owned or rented what.' },
 };
 let _stepLog = [];
@@ -850,6 +880,11 @@ function renderPause() {
     loaderPause.style.display = 'block';
     const lpr = document.getElementById('loader-pause-remain');
     if (lpr) lpr.textContent = Math.ceil(remain);
+    const lpw = document.getElementById('loader-pause-what');
+    if (lpw) {
+      const info = STEP_INFO[_lastSeenStep];
+      lpw.textContent = info ? (info.label + ' search') : (PAUSE.host ? (PAUSE.host + ' request') : 'request');
+    }
   }
 }
 setInterval(renderPause, 100);
@@ -874,6 +909,8 @@ async function tick() {
     const lc = document.getElementById('loader-current'); if (lc) lc.textContent = s.current;
     const lt = document.getElementById('loader-total'); if (lt) lt.textContent = s.total || '?';
     const lb = document.getElementById('loader-bar'); if (lb) lb.style.width = (s.total ? (100*s.current/s.total) : 0) + '%';
+    const lq = document.getElementById('loader-query');
+    if (lq) lq.textContent = s.current_query ? 'Trying name: ' + s.current_query : '';
     updateLoaderStep(s.step || '');
 
     if (s.state === 'running') {
@@ -1017,6 +1054,7 @@ def _pause(host: str, seconds: float) -> None:
 
 import re as _re
 _STEP_RE = _re.compile(r"\[(NAI \d+|IG [^\]]+|Griff[^\]]*)\]")
+_QUERY_RE = _re.compile(r"(?:cache hit: |parsed \d+ rows for |-> https?://\S+.*?surname__icontains=|for )([A-Za-z][A-Za-z'\- ]+?)(?:\s+->|\s*$| \()")
 
 
 class _StepHandler(logging.Handler):
@@ -1026,11 +1064,22 @@ class _StepHandler(logging.Handler):
         except Exception:
             return
         m = _STEP_RE.search(msg)
-        if not m:
+        tag = m.group(1) if m else None
+        q = None
+        qm = _re.search(r"(?:cache hit:|parsed \d+ rows for) ([A-Za-z][A-Za-z\- ]+?)(?:\s*\(|$)", msg)
+        if qm:
+            q = qm.group(1).strip()
+        else:
+            qm2 = _re.search(r"\]\s+([A-Z][A-Za-z\-]+ [A-Za-z\-]+)\s+->", msg)
+            if qm2:
+                q = qm2.group(1).strip()
+        if tag is None and q is None:
             return
-        tag = m.group(1)
         with RUN_LOCK:
-            RUN["step"] = tag
+            if tag:
+                RUN["step"] = tag
+            if q:
+                RUN["current_query"] = q
 
 
 def _build_hints() -> dict[str, dict]:
@@ -1050,6 +1099,7 @@ def _build_hints() -> dict[str, dict]:
 def _worker(opts: dict) -> None:
     logger = setup_logging(HERE / LOG_FILE)
     scrape_browser.PAUSE_HOOK = _pause
+    scrape_browser.CANCEL_CHECK = lambda: RUN.get("cancel_requested", False)
     sh = _StepHandler()
     sh.setLevel(logging.INFO)
     logging.getLogger("genealogy").addHandler(sh)
@@ -1077,6 +1127,10 @@ def _worker(opts: dict) -> None:
                 p.forename_variants = list(fore_picks)
 
         skip_sites = {s.strip() for s in opts["skip"].split(",") if s.strip()}
+        with RUN_LOCK:
+            RUN["total"] = len(people)
+            if not RUN.get("label") and people:
+                RUN["label"] = people[0].label()
         cache = SearchCache(HERE / CACHE_FILE, enabled=not opts["no_cache"])
 
         results_csv_path = HERE / RESULTS_CSV
@@ -1118,7 +1172,7 @@ def _worker(opts: dict) -> None:
             RUN["record_count"] = len(records)
             RUN["new_count"] = new_count
             RUN["finished"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    except _CancelledError:
+    except (_CancelledError, scrape_browser.CancelledError):
         try:
             partial = load_records_csv(results_csv_path) if results_csv_path.exists() else []
             new_count = mark_new_records(partial, prev_keys)
@@ -1206,7 +1260,7 @@ def quick_search():
     with RUN_LOCK:
         RUN.update({
             "state": "running",
-            "current": 0, "total": 0, "label": "",
+            "current": 0, "total": 1, "label": f"{forename} {surname}".strip(),
             "started": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "finished": None, "error": "",
             "new_count": 0, "record_count": 0,
