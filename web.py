@@ -89,6 +89,7 @@ RUN: dict = {
     "server_now": 0.0,
     "step": "",
     "person_name": "",    # first person being searched (shown in loading heading)
+    "cancel_requested": False,
 }
 RUN_LOCK = threading.Lock()
 
@@ -342,6 +343,12 @@ INDEX_HTML = """
   <div class="loader-pause" id="loader-pause">
     ⏳ Being polite — waiting <strong id="loader-pause-remain">0</strong>s
   </div>
+
+  <form id="cancel-form" style="margin-top:1.2rem">
+    <button type="button" id="cancel-btn"
+      style="background:none;border:1px solid var(--sepia);color:var(--sepia);padding:.4rem 1.1rem;border-radius:6px;cursor:pointer;font:inherit;font-size:.95rem"
+      onclick="cancelSearch()">✕ Stop searching</button>
+  </form>
 </div>
 
 <div class="state" id="status-panel" style="{{ 'display:none' if run.state == 'running' else '' }}">
@@ -458,6 +465,12 @@ function renderPause() {
   }
 }
 setInterval(renderPause, 100);
+
+async function cancelSearch() {
+  const btn = document.getElementById('cancel-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Stopping…'; }
+  await fetch('{{ url_for("cancel") }}', {method: 'POST'});
+}
 
 async function tick() {
   try {
@@ -580,8 +593,14 @@ tick();
 """
 
 
+class _CancelledError(Exception):
+    pass
+
+
 def _progress(current: int, total: int, label: str) -> None:
     with RUN_LOCK:
+        if RUN.get("cancel_requested"):
+            raise _CancelledError("Search cancelled by user")
         RUN["current"] = current
         RUN["total"] = total
         RUN["label"] = label
@@ -704,6 +723,11 @@ def _worker(opts: dict) -> None:
             RUN["record_count"] = len(records)
             RUN["new_count"] = new_count
             RUN["finished"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    except _CancelledError:
+        with RUN_LOCK:
+            RUN["state"] = "error"
+            RUN["error"] = "Search stopped."
+            RUN["finished"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     except Exception as exc:
         logging.getLogger("genealogy").exception("Web run failed: %s", exc)
         with RUN_LOCK:
@@ -767,6 +791,7 @@ def quick_search():
             "finished": None, "error": "",
             "new_count": 0, "record_count": 0,
             "person_name": f"{forename} {surname}".strip(),
+            "cancel_requested": False,
         })
 
     RUNTIME_FLAGS["soundex"] = False
@@ -801,6 +826,7 @@ def start():
             "finished": None, "error": "",
             "new_count": 0, "record_count": 0,
             "person_name": "",
+            "cancel_requested": False,
         })
 
     upload = request.files.get("csv")
@@ -847,6 +873,14 @@ def start():
 
     threading.Thread(target=_worker, args=(opts,), daemon=True).start()
     return redirect(url_for("index"))
+
+
+@app.route("/cancel", methods=["POST"])
+def cancel():
+    with RUN_LOCK:
+        if RUN["state"] == "running":
+            RUN["cancel_requested"] = True
+    return Response(status=204)
 
 
 @app.route("/reset", methods=["POST"])
