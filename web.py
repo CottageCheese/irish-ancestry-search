@@ -444,6 +444,30 @@ INDEX_HTML = """
   <form id="st-reset" method="post" action="{{ url_for('reset') }}" style="margin-top:1rem;display:{{ 'block' if run.state in ('done','error') else 'none' }}">
     <button type="submit" class="go">&#128269; Try another name</button>
   </form>
+
+  {% set known = people | selectattr('forename') | list %}
+  {% if known %}
+  <div id="st-people" style="margin-top:1rem;display:{{ 'block' if run.state in ('done','error') else 'none' }}">
+    <div style="font-weight:600;color:var(--moss-dark);margin-bottom:.4rem">&#128100; Or search again for&hellip;</div>
+    <div class="people-grid">
+      {% for p in known %}
+      <form method="post" action="{{ url_for('quick_search') }}" class="person-form" style="margin:0">
+        <input type="hidden" name="forename" value="{{ p.forename }}">
+        <input type="hidden" name="surname" value="{{ p.surname }}">
+        <input type="hidden" name="county" value="{{ p.county }}">
+        <input type="hidden" name="birth_year" value="{{ p.birth_year_approx }}">
+        <button type="submit" class="person-btn">
+          <span class="person-name">{{ p.forename }} {{ p.surname }}</span>
+          <span class="person-sub">
+            {%- if p.county %}{{ p.county }}{% endif %}
+            {%- if p.birth_year_approx %} &middot; b.&nbsp;~{{ p.birth_year_approx }}{% endif -%}
+          </span>
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <script>
@@ -627,17 +651,21 @@ async function tick() {
     updatePause(s);
     const doneBlock = document.getElementById('st-done');
     const resetBlock = document.getElementById('st-reset');
+    const peopleBlock = document.getElementById('st-people');
     if (s.state === 'done') {
       doneBlock.style.display = 'block';
       resetBlock.style.display = 'block';
+      if (peopleBlock) peopleBlock.style.display = 'block';
       document.getElementById('st-rc').textContent = s.record_count;
       document.getElementById('st-new').textContent = s.new_count;
     } else if (s.state === 'error') {
       doneBlock.style.display = 'none';
       resetBlock.style.display = 'block';
+      if (peopleBlock) peopleBlock.style.display = 'block';
     } else {
       doneBlock.style.display = 'none';
       resetBlock.style.display = 'none';
+      if (peopleBlock) peopleBlock.style.display = 'none';
     }
     if (s.state === 'running') setTimeout(tick, 2000);
   } catch (e) { setTimeout(tick, 3000); }
