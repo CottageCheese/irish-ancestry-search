@@ -110,25 +110,25 @@ INDEX_HTML = """
     max-width: 900px; margin: 0 auto; padding: 1rem;
     background: var(--cream); color: var(--ink); min-height: 100vh;
   }
-  h1 { font-size: 2.6rem; margin:.4rem 0 .2rem; color: var(--moss-dark); text-align:center; letter-spacing:.02em; }
-  .tagline { text-align:center; color: var(--sepia); font-style:italic; margin:0 0 1.2rem; font-size:1.1rem; }
+  h1 { font-size: 2.2rem; margin:.2rem 0 .1rem; color: var(--moss-dark); text-align:center; letter-spacing:.02em; }
+  .tagline { text-align:center; color: var(--sepia); font-style:italic; margin:0 0 .5rem; font-size:1.05rem; }
   .hero {
     background: #fffcf2; border: 2px solid var(--gold); border-radius: 12px;
-    padding: 1.4rem 1.6rem; margin: 1rem 0; box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    padding: 1rem 1.3rem; margin: .4rem 0; box-shadow: 0 4px 12px rgba(0,0,0,.08);
     position: relative;
   }
-  .hero h2 { margin-top:0; color: var(--moss-dark); font-size:1.5rem; }
-  label { display: block; margin:.9rem 0 .3rem; font-weight: 600; color: var(--moss-dark); }
+  .hero h2 { margin-top:0; margin-bottom:.25rem; color: var(--moss-dark); font-size:1.3rem; }
+  label { display: block; margin:.55rem 0 .2rem; font-weight: 600; color: var(--moss-dark); font-size:1rem; }
   input[type=text], input[type=number], select {
-    width: 100%; padding:.7rem; font: inherit; font-size: 1.05rem;
+    width: 100%; padding:.55rem .7rem; font: inherit; font-size: 1.05rem;
     border: 2px solid var(--cream-dark); border-radius: 6px; background:#fff;
   }
   input:focus, select:focus { outline: none; border-color: var(--moss); }
-  .two-col { display:grid; grid-template-columns: 1fr 1fr; gap:.8rem; }
+  .two-col { display:grid; grid-template-columns: 1fr 1fr; gap:.6rem; }
   @media (max-width:520px){ .two-col { grid-template-columns: 1fr; } }
   button.go {
-    display:block; width:100%; margin-top:1.2rem; padding:.9rem;
-    font: inherit; font-size:1.3rem; font-weight:700;
+    display:block; width:100%; margin-top:.8rem; padding:.7rem;
+    font: inherit; font-size:1.2rem; font-weight:700;
     background: var(--moss); color:#fff; border:0; border-radius:8px; cursor:pointer;
     box-shadow: 0 3px 0 var(--moss-dark); transition: transform .1s;
   }
@@ -143,9 +143,9 @@ INDEX_HTML = """
   a.btn { display: inline-block; margin:.4rem .3rem 0 0; padding:.5rem 1rem; background: var(--moss); color: white; text-decoration: none; border-radius: 6px; font-weight:600; }
   a.btn:hover { background: var(--moss-dark); }
   .family-link {
-    display:inline-block; padding:.75rem 1.8rem;
+    display:inline-block; padding:.5rem 1.3rem;
     background:#fffcf2; border:2px solid var(--gold);
-    border-radius:24px; font-size:1.15rem; font-weight:700;
+    border-radius:24px; font-size:1rem; font-weight:700;
     color:var(--moss-dark); text-decoration:none;
     transition:background .15s, border-color .15s, box-shadow .15s;
   }
@@ -195,6 +195,41 @@ INDEX_HTML = """
         <div class="hint">A guess is fine. We search 5 years either side.</div>
       </div>
     </div>
+
+    <div style="margin-top:.7rem;border-top:1px solid var(--cream-dark);padding-top:.6rem">
+      <div class="filter-row">
+        <span class="filter-lbl">Census</span>
+        <div class="btn-group">
+          <label class="tog-btn"><input type="checkbox" name="census_year" value="1901">1901</label>
+          <label class="tog-btn"><input type="checkbox" name="census_year" value="1911">1911</label>
+          <label class="tog-btn"><input type="checkbox" name="census_year" value="1926">1926</label>
+        </div>
+      </div>
+      <div class="filter-row" style="margin-top:.4rem">
+        <span class="filter-lbl">Records</span>
+        <div class="btn-group">
+          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-birth">Births</label>
+          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-marriage">Marriages</label>
+          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-death">Deaths</label>
+          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-baptism">Baptisms</label>
+          <label class="tog-btn"><input type="checkbox" name="ig_event" value="event-burial">Burials</label>
+          <label class="tog-btn"><input type="checkbox" name="ig_event" value="griffiths">Land records</label>
+        </div>
+      </div>
+    </div>
+    <style>
+      .filter-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+      .filter-lbl { font-size:.92rem; font-weight:700; color:var(--moss-dark); min-width:65px; flex-shrink:0; }
+      .btn-group { display:flex; gap:.35rem; flex-wrap:wrap; }
+      .tog-btn {
+        display:inline-block; cursor:pointer; padding:.32rem .8rem;
+        border-radius:20px; font-size:.92rem; border:2px solid var(--cream-dark);
+        background:#fff; color:var(--sepia); transition:all .12s; user-select:none;
+      }
+      .tog-btn input { display:none; }
+      .tog-btn:has(input:checked) { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+      .tog-btn:hover { border-color:var(--gold); }
+    </style>
 
     <button type="submit" class="go" id="qs-btn">&#127808; Find them!</button>
     <div id="qs-spinner" style="display:none;margin-top:.8rem;text-align:center">
@@ -773,8 +808,23 @@ def quick_search():
 
     RUNTIME_FLAGS["soundex"] = False
     RUNTIME_FLAGS["collapse_weak"] = True
-    scrape_settings.CENSUS_YEAR_FILTER = ""
-    scrape_settings.IG_EVENT_FILTER = ()
+    census_years = set(request.form.getlist("census_year")) & {"1901", "1911", "1926"}
+    scrape_settings.CENSUS_YEAR_FILTER = census_years if census_years else ""
+    ig_events = set(request.form.getlist("ig_event"))
+    valid_ev = {"event-birth", "event-marriage", "event-death", "event-baptism", "event-burial"}
+    want_griffiths = "griffiths" in ig_events
+    want_ig = ig_events & valid_ev
+    skip_sites = ""
+    if want_griffiths and not want_ig:
+        scrape_settings.IG_EVENT_FILTER = ()
+        skip_sites = "nai_census,irishgenealogy_civil"
+    elif want_ig and not want_griffiths:
+        scrape_settings.IG_EVENT_FILTER = tuple(want_ig)
+        skip_sites = "griffiths"
+    elif want_ig and want_griffiths:
+        scrape_settings.IG_EVENT_FILTER = tuple(want_ig)
+    else:
+        scrape_settings.IG_EVENT_FILTER = ()
 
     opts = {
         "headless": True,
@@ -784,7 +834,7 @@ def quick_search():
         "surname_picks": [],
         "forename_picks": [],
         "only": f"{forename} {surname}",
-        "skip": "",
+        "skip": skip_sites,
     }
     threading.Thread(target=_worker, args=(opts,), daemon=True).start()
     return redirect(url_for("index"))

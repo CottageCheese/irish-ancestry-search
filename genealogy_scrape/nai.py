@@ -194,8 +194,12 @@ def search_nai_census(page: Page, person: Person, logger: logging.Logger,
                       state: dict, cache: SearchCache, use_nicknames: bool) -> list[Record]:
     """NAI census (1901, 1911, 1926). SPA that reads URL-fragment params."""
     records: list[Record] = []
-    year_filter = (settings.CENSUS_YEAR_FILTER or "").strip()
-    years = [year_filter] if year_filter in CENSUS_YEARS else CENSUS_YEARS
+    yf = settings.CENSUS_YEAR_FILTER
+    if isinstance(yf, set):
+        years = [y for y in CENSUS_YEARS if y in yf] or CENSUS_YEARS
+    else:
+        year_filter = (yf or "").strip()
+        years = [year_filter] if year_filter in CENSUS_YEARS else CENSUS_YEARS
     for surname in person.all_surnames():
         for forename in person.all_forenames(use_nicknames):
             for year in years:

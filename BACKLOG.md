@@ -23,10 +23,18 @@ Working list. Tick when done. Add free-form.
 - [ ] "Export my family tree" button — build a GEDCOM from confirmed records across all ancestors with inferred relationships.
 - [ ] Import GEDCOM to seed `ancestors.csv`.
 
-### Ideas — kid mode follow-ups
-- [ ] Loading screen while scrape runs — bigger than current status page, kid-paced (animation + "we're asking the old books about X" messages).
 
 ## Done
+
+### Navigation & home page (Nov 2026)
+- [x] `/ancestors` page: card grid with avatar initials, pastel colours, confirmed/found badges, sorted by confirmed count.
+- [x] `/person/<slug>` page: per-person records grouped by confidence tier, back nav to `/ancestors`.
+- [x] Home: family pill link above form, visible without scrolling. SVG scene moved to `/ancestors` banner.
+- [x] `/ancestors` page: landscape SVG banner, confirmed-card gold glow, summary bar (N confirmed · N found · N unsearched).
+- [x] Remove × button on ancestor cards to delete mistyped entries from `ancestors.csv`.
+- [x] Animated loader (sheep bounce + rotating messages) always shown when run is in progress; cancel button.
+- [x] Census year + record type filter buttons on home form; multi-select checkboxes (none = search all).
+- [x] `CENSUS_YEAR_FILTER` updated to support a set of years; NAI scraper reads set or string.
 
 ### Household grouping (Nov 2026)
 - [x] `fetch_nai_household` loads NAI detail page, extracts co-residents via `parse_nai_household` (pure fn, surname-first column order, subject excluded, deduped).
