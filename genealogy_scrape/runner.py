@@ -132,6 +132,8 @@ def run_search(playwright: Playwright, people: list[Person], headless: bool,
                 progress(idx - 1, total, f"{person.label()} ({person.county})")
             logger.info("====== Searching for: %s (%s) ======", person.label(), person.county)
             for site_key, fn in SEARCH_FUNCTIONS:
+                if progress:
+                    progress(idx - 1, total, f"{person.label()} ({person.county})")
                 if site_key in skip_sites:
                     logger.info("[%s] skipped by --skip flag", site_key)
                     continue

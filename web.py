@@ -92,6 +92,7 @@ RUN: dict = {
     "step": "",
     "person_name": "",    # first person being searched (shown in loading heading)
     "cancel_requested": False,
+    "stopped": False,
 }
 RUN_LOCK = threading.Lock()
 
@@ -565,6 +566,8 @@ INDEX_HTML = """
     <pre id="st-log" style="background:#111;color:#bbb;padding:.8rem;border-radius:4px;max-height:420px;overflow:auto;font-size:1rem;line-height:1.35;margin:.4rem 0 0;white-space:normal;word-break:break-word">Waiting to start…</pre>
   </details>
 
+  <div id="st-stopped" style="display:{{ 'block' if run.stopped else 'none' }};margin-top:.5rem;padding:.4rem .7rem;background:#fff6d8;border-left:3px solid #e0a800;border-radius:4px;font-size:.9rem">&#9208; Search stopped early &mdash; showing results found so far.</div>
+
   <div id="st-done" style="display:{{ 'block' if run.state == 'done' else 'none' }}">
     <div><strong><span id="st-rc">{{ run.record_count }}</span></strong> unique record(s).
          <span id="st-new">{{ run.new_count }}</span> new since previous run.</div>
@@ -765,17 +768,21 @@ async function tick() {
     updatePause(s);
     const doneBlock = document.getElementById('st-done');
     const resetBlock = document.getElementById('st-reset');
+    const stoppedNote = document.getElementById('st-stopped');
     if (s.state === 'done') {
       doneBlock.style.display = 'block';
       resetBlock.style.display = 'block';
       document.getElementById('st-rc').textContent = s.record_count;
       document.getElementById('st-new').textContent = s.new_count;
+      if (stoppedNote) stoppedNote.style.display = s.stopped ? 'block' : 'none';
     } else if (s.state === 'error') {
       doneBlock.style.display = 'none';
       resetBlock.style.display = 'block';
+      if (stoppedNote) stoppedNote.style.display = 'none';
     } else {
       doneBlock.style.display = 'none';
       resetBlock.style.display = 'none';
+      if (stoppedNote) stoppedNote.style.display = 'none';
     }
     if (s.state === 'running') setTimeout(tick, 2000);
   } catch (e) { setTimeout(tick, 3000); }
@@ -917,10 +924,26 @@ def _worker(opts: dict) -> None:
             RUN["new_count"] = new_count
             RUN["finished"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     except _CancelledError:
-        with RUN_LOCK:
-            RUN["state"] = "error"
-            RUN["error"] = "Search stopped."
-            RUN["finished"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            partial = load_records_csv(results_csv_path) if results_csv_path.exists() else []
+            new_count = mark_new_records(partial, prev_keys)
+            with CONFIRMS_LOCK:
+                confs = load_confirmations(CONFIRMS_FILE)
+            apply_confirmations(partial, confs)
+            write_json(partial, HERE / RESULTS_JSON)
+            write_summary(partial, people, HERE / RESULTS_SUMMARY, new_count, cache.hits, cache.misses)
+            cache.save()
+            with RUN_LOCK:
+                RUN["state"] = "done"
+                RUN["stopped"] = True
+                RUN["record_count"] = len(partial)
+                RUN["new_count"] = new_count
+                RUN["finished"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            with RUN_LOCK:
+                RUN["state"] = "error"
+                RUN["error"] = "Search stopped."
+                RUN["finished"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     except Exception as exc:
         logging.getLogger("genealogy").exception("Web run failed: %s", exc)
         with RUN_LOCK:
@@ -994,6 +1017,7 @@ def quick_search():
             "new_count": 0, "record_count": 0,
             "person_name": f"{forename} {surname}".strip(),
             "cancel_requested": False,
+            "stopped": False,
         })
 
     RUNTIME_FLAGS["soundex"] = False
@@ -1046,6 +1070,7 @@ def start():
             "new_count": 0, "record_count": 0,
             "person_name": "",
             "cancel_requested": False,
+            "stopped": False,
         })
 
     upload = request.files.get("csv")
