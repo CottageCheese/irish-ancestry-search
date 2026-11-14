@@ -51,6 +51,27 @@ TIER_BLURB: dict[str, str] = {
 TIER_ORDER = ["Likely", "Possible", "Weak", "Manual"]
 
 
+BREAKDOWN_LABELS: dict[str, str] = {
+    "base": "Starting point",
+    "forename": "Forename matches",
+    "surname_primary": "Surname matches",
+    "surname_soundex": "Surname sounds like",
+    "surname_variant": "Surname variant matches",
+    "county": "County matches",
+    "townland": "Townland matches",
+    "townland_variant": "Townland variant matches",
+    "townland_soundex": "Townland sounds like",
+    "year_window": "Year in expected window",
+    "sparse": "Sparse row (no place or year)",
+    "kin": "Family name in record",
+    "feedback": "Feedback from confirmed records",
+}
+
+
+def _breakdown_label(key: str) -> str:
+    return BREAKDOWN_LABELS.get(key, key.replace("_", " ").capitalize())
+
+
 _BASE_CSS = (
     "body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;"
     "max-width:1000px;margin:1.5em auto;padding:0 1em;color:#222;background:#fafaf7}"
@@ -122,6 +143,15 @@ _BASE_CSS = (
     "ul.toc a{font-weight:600;font-size:1.05em}"
     "a{color:#0b5fa4;text-decoration:none}a:hover{text-decoration:underline}"
     ".variant{font-size:.8em;color:#666;font-style:italic;margin-top:.15em}"
+    ".rec-why{margin:.3em 0}"
+    ".rec-why summary{font-size:.85em;color:#555;cursor:pointer;display:inline-block;"
+    "padding:2px 8px;border-radius:12px;background:#eef;list-style:none}"
+    ".rec-why summary::-webkit-details-marker{display:none}"
+    ".rec-why summary:hover{background:#dde}"
+    ".rec-why ul.why-list{margin:.4em 0 .2em;padding-left:1.1em;font-size:.88em;color:#444}"
+    ".rec-why li{margin:.1em 0}"
+    ".rec-why .why-pos{color:#2a7d2a;font-weight:600}"
+    ".rec-why .why-neg{color:#b43232;font-weight:600}"
 )
 
 _DARK_CSS = (
@@ -142,6 +172,11 @@ _DARK_CSS = (
     "body.dark button.dark-toggle{background:#333;color:#eee;border-color:#666}"
     "body.dark ul.toc li{background:#242424}"
     "body.dark details summary,body.dark .empty{color:#aaa}"
+    "body.dark .rec-why summary{background:#2a2a3a;color:#ccd}"
+    "body.dark .rec-why summary:hover{background:#3a3a4a}"
+    "body.dark .rec-why ul.why-list{color:#bbb}"
+    "body.dark .rec-why .why-pos{color:#8fd48f}"
+    "body.dark .rec-why .why-neg{color:#e78a8a}"
     "body.dark a{color:#6bb6ff}"
     ".rec-card.confirmed{background:#d7efd0!important}"
     ".rec-card.rejected{opacity:.35}"
@@ -405,6 +440,30 @@ def _hero_sentence(name: str, tiers: dict[str, int], total: int) -> str:
     return " ".join(bits)
 
 
+def _render_why(r: Record) -> str:
+    """Expandable chip listing each score component and its signed delta.
+    Empty when the record has no breakdown (manual rows, legacy cached data)."""
+    bd = r.score_breakdown or {}
+    if not bd:
+        return ""
+    items: list[str] = []
+    for key, delta in bd.items():
+        if delta == 0:
+            continue
+        cls = "why-pos" if delta > 0 else "why-neg"
+        sign = f"+{delta}" if delta > 0 else str(delta)
+        label = _esc(_breakdown_label(key))
+        items.append(f"<li>{label} <span class='{cls}'>{sign}</span></li>")
+    if not items:
+        return ""
+    return (
+        "<details class='rec-why'>"
+        f"<summary title='Which signals added up to the score'>🧮 Why this score? ({r.score})</summary>"
+        f"<ul class='why-list'>{''.join(items)}</ul>"
+        "</details>"
+    )
+
+
 def _render_card(r: Record) -> str:
     tier = confidence_tier(r.score)
     icon = _record_icon(r.record_type)
@@ -458,6 +517,7 @@ def _render_card(r: Record) -> str:
         f"</div>"
         f"<p class='rec-sentence'>{_narrate(r)}</p>"
         f"<div class='rec-meta'>{''.join(chips)}</div>"
+        f"{_render_why(r)}"
         f"{thumb}"
         f"{other}"
         f"{notes_html}"

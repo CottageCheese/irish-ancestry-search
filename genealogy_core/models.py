@@ -68,6 +68,7 @@ class Record:
     user_notes: str = ""
     status: str = ""  # "" | "confirmed" | "rejected" — set by user via web UI
     name_used: str = ""  # forename+surname variant actually queried (may differ from person's primary)
+    score_breakdown: dict[str, int] = field(default_factory=dict)
 
 
 def confidence_tier(score: int) -> str:

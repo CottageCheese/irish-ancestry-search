@@ -283,9 +283,11 @@ def write_csv(records: list[Record], path: Path) -> None:
                 "tier",
                 "kin_hits",
                 "is_new",
+                "score_breakdown",
             ]
         )
         for r in records:
+            bd_json = json.dumps(r.score_breakdown, ensure_ascii=False) if r.score_breakdown else ""
             writer.writerow(
                 [
                     r.person_searched,
@@ -300,6 +302,7 @@ def write_csv(records: list[Record], path: Path) -> None:
                     confidence_tier(r.score),
                     r.kin_hits,
                     "yes" if r.is_new else "",
+                    bd_json,
                 ]
             )
 

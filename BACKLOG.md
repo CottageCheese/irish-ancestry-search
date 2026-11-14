@@ -4,10 +4,11 @@ Working list. Tick when done. Add free-form.
 
 ## Open
 
+### Next up (2026-11-14)
+1. **Household grouping** — scraper coverage, ~3 hrs, strong data win on confirmed census hits.
+
 ### Ideas — scoring / matching
 - [ ] ~~Feedback bonus tuning~~ — deferred. Revisit only if a real run shows confirmed records ranking poorly.
-- [ ] "Why this score?" expandable chip on each card — list which bits matched (surname / soundex / year / county / kin). Needs `score_record` to return a breakdown, not just an int.
-- [ ] Age-field parser for census rows: convert "26" (age in 1901) → implied birth year ~1875, feed into year-window check.
 
 ### Ideas — scraper coverage
 - [ ] New site: RootsIreland parish records (paid, but searches are free).
@@ -29,6 +30,14 @@ Working list. Tick when done. Add free-form.
 - [ ] Loading screen while scrape runs — bigger than current status page, kid-paced (animation + "we're asking the old books about X" messages).
 
 ## Done
+
+### Census age parser (Nov 2026)
+- [x] `_parse_age` + `_census_year` helpers in `scoring.py`; for Census rows compute implied birth year = `census_year - age`, match against `person.year_window()` with ±2y tolerance → `census_age: 3` bonus. Skips `year_window` path when census-age hits. 6 new tests.
+
+### Score transparency (Nov 2026)
+- [x] `score_record` returns `(total, breakdown)`; `Record.score_breakdown` dict field; `annotate_records` merges kin+feedback into same dict.
+- [x] "Why this score?" expandable chip on each card showing signed delta per component with human labels.
+- [x] CSV column `score_breakdown` (JSON blob); `load_records_csv` parses it back.
 
 ### Dedupe follow-up (Nov 2026)
 - [x] Semantic dedupe second pass in `runner.dedupe_records`: collapse by `(person, site, record_type, name_found, place, age_or_year)`, keep highest-scoring row. Fixes 91-copy IG birth bloat.

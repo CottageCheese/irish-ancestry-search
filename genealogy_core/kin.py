@@ -44,12 +44,16 @@ def annotate_records(person: Person, records: list[Record],
     bonus and their reason is appended to kin_hits.
     """
     for r in records:
-        r.score = score_record(person, r)
+        total, breakdown = score_record(person, r)
+        r.score = total
+        r.score_breakdown = dict(breakdown)
         kin = kin_cross_check(person, r)
         if kin:
             r.kin_hits = kin
             r.score += 5
+            r.score_breakdown["kin"] = 5
         bonus, reason = score_hint_bonus(r, hints)
         if bonus:
             r.score += bonus
+            r.score_breakdown["feedback"] = bonus
             r.kin_hits = f"{r.kin_hits}; feedback:{reason}".lstrip("; ") if r.kin_hits else f"feedback:{reason}"

@@ -5,6 +5,7 @@ tokens become hints for *future* runs of the same person. The next run
 rewards records that share those signals.
 """
 import csv
+import json
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -38,6 +39,15 @@ def load_records_csv(path: Path) -> list[Record]:
                         kw["score"] = 0
                 if "is_new" in kw:
                     kw["is_new"] = str(kw["is_new"]).lower() in ("1", "true", "yes")
+                if "score_breakdown" in kw:
+                    raw = kw["score_breakdown"]
+                    if isinstance(raw, str) and raw.strip():
+                        try:
+                            kw["score_breakdown"] = json.loads(raw)
+                        except Exception:
+                            kw["score_breakdown"] = {}
+                    elif not isinstance(raw, dict):
+                        kw["score_breakdown"] = {}
                 out.append(Record(**kw))
     except Exception:
         return []
