@@ -31,21 +31,41 @@ SEARCH_FUNCTIONS: list[tuple[str, SearchFn]] = [
 
 
 def dedupe_records(records: list[Record]) -> list[Record]:
-    """Drop duplicate hits. Same ancestor often arrives under multiple
-    surname spellings or nickname variants. Key on (person, site,
-    record_id) when a record_id parses out of the link, else fall back
-    to (link, name).
+    """Drop duplicate hits. Two passes:
+
+    1. Exact: (person, site, record_id) when record_id parses, else
+       (person, site, link, name) — catches same URL arriving under
+       multiple surname/nickname variants.
+    2. Semantic: (person, site, record_type, name_found, place,
+       age_or_year) — collapses near-identical IG rows that each have
+       distinct record_ids but describe the same event (e.g. 91 copies
+       of a single birth index entry). Keeps highest-scoring instance.
     """
-    seen: set[tuple] = set()
-    out: list[Record] = []
+    seen_exact: set[tuple] = set()
+    first_pass: list[Record] = []
     for r in records:
         m = RECORD_ID_RE.search(r.link or "")
         key = (r.person_searched, r.site, m.group(1) if m else (r.link, r.name_found))
-        if key in seen:
+        if key in seen_exact:
             continue
-        seen.add(key)
-        out.append(r)
-    return out
+        seen_exact.add(key)
+        first_pass.append(r)
+
+    best: dict[tuple, int] = {}  # semantic key -> index in first_pass
+    for i, r in enumerate(first_pass):
+        skey = (
+            r.person_searched,
+            r.site,
+            r.record_type,
+            (r.name_found or "").strip().lower(),
+            (r.place or "").strip().lower(),
+            (r.age_or_year or "").strip().lower(),
+        )
+        prev = best.get(skey)
+        if prev is None or first_pass[prev].score < r.score:
+            best[skey] = i
+    keep = set(best.values())
+    return [r for i, r in enumerate(first_pass) if i in keep]
 
 
 def _dump_debug_html(page: Page, site_key: str, person: Person,

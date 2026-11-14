@@ -25,7 +25,22 @@ Working list. Tick when done. Add free-form.
 - [ ] "Export my family tree" button — build a GEDCOM from confirmed records across all ancestors with inferred relationships.
 - [ ] Import GEDCOM to seed `ancestors.csv`.
 
+### Ideas — kid mode follow-ups
+- [ ] Nicknames default-on for kid mode: Michael → Mick/Mike automatic without opening variant panel.
+- [ ] Loading screen while scrape runs — bigger than current status page, kid-paced (animation + "we're asking the old books about X" messages).
+- [ ] "Try another name" button on done page that scrolls back to form, not full reset.
+- [ ] Spinner or sheep animation on submit so kid sees something happen immediately.
+
 ## Done
+
+### Dedupe follow-up (Nov 2026)
+- [x] Semantic dedupe second pass in `runner.dedupe_records`: collapse by `(person, site, record_type, name_found, place, age_or_year)`, keep highest-scoring row. Fixes 91-copy IG birth bloat.
+
+### Kid-mode landing (Nov 2026)
+- [x] Replace idle branch of `/` with themed hero form (forename/surname/county/birth_year only).
+- [x] `/quick-search` POST: dedupe append to `ancestors.csv` on (forename+surname), auto-start worker scoped via `only=`.
+- [x] Irish palette + Palatino serif + inline SVG scene (hills, cottage, sheep, sun) — no external image licences.
+- [x] End-to-end tested: Michael Murphy, Cork, 1870 → 176 records (84 Likely / 91 Possible).
 
 ### Kid-friendly UI rework
 - [x] Phase 1 — Scrub live log of technical terms (JS phrase dictionary in `web.py`).
