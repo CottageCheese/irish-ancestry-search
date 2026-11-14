@@ -1404,6 +1404,41 @@ TIER_COLOR = {
     "Weak": "#9a6f6f", "Manual": "#555",
 }
 
+# Approximate county centroids (lat, lon). All 32 counties of Ireland.
+COUNTY_COORDS = {
+    "antrim": (54.90, -6.30), "armagh": (54.35, -6.45),
+    "carlow": (52.70, -6.80), "cavan": (54.00, -7.30),
+    "clare": (52.90, -9.00), "cork": (51.95, -8.50),
+    "derry": (54.90, -7.00), "londonderry": (54.90, -7.00),
+    "donegal": (54.90, -8.00), "down": (54.33, -5.90),
+    "dublin": (53.35, -6.25), "fermanagh": (54.35, -7.60),
+    "galway": (53.30, -9.00), "kerry": (52.10, -9.60),
+    "kildare": (53.20, -6.80), "kilkenny": (52.60, -7.25),
+    "laois": (52.90, -7.35), "leitrim": (54.10, -8.00),
+    "limerick": (52.50, -8.60), "longford": (53.70, -7.80),
+    "louth": (53.95, -6.50), "mayo": (54.00, -9.40),
+    "meath": (53.60, -6.65), "monaghan": (54.25, -6.95),
+    "offaly": (53.20, -7.50), "roscommon": (53.70, -8.30),
+    "sligo": (54.15, -8.60), "tipperary": (52.60, -8.00),
+    "tyrone": (54.60, -7.30), "waterford": (52.20, -7.60),
+    "westmeath": (53.50, -7.50), "wexford": (52.50, -6.55),
+    "wicklow": (52.95, -6.30),
+}
+
+# Simplified Ireland coastline as (lon, lat) points, roughly clockwise from Malin Head.
+IRELAND_OUTLINE = [
+    (-7.40, 55.38), (-6.95, 55.18), (-6.03, 55.21), (-5.65, 55.00),
+    (-5.85, 54.65), (-5.49, 54.43), (-5.86, 54.21), (-6.00, 54.05),
+    (-6.25, 54.08), (-6.07, 53.75), (-6.03, 53.33), (-6.03, 52.99),
+    (-6.11, 52.72), (-6.38, 52.18), (-6.95, 52.14), (-7.56, 52.11),
+    (-8.14, 51.84), (-8.56, 51.60), (-9.47, 51.44), (-9.95, 51.47),
+    (-10.37, 51.99), (-10.16, 52.26), (-9.73, 52.62), (-9.93, 52.95),
+    (-9.47, 53.15), (-9.90, 53.42), (-10.18, 53.62), (-9.83, 53.92),
+    (-10.08, 54.28), (-9.06, 54.28), (-8.70, 54.49), (-8.70, 54.71),
+    (-8.37, 55.17), (-7.95, 55.21), (-7.40, 55.38),
+]
+
+
 AVATAR_PALETTES = [
     ("#c8e6c9", "#1b5e20"),
     ("#bbdefb", "#0d47a1"),
@@ -1716,6 +1751,139 @@ PERSON_HTML = """
   }
   .search-btn:hover { background:var(--moss-dark); }
   .summary { color:var(--sepia); font-style:italic; margin:.2rem 0 1rem; }
+  .fun-fact {
+    background:linear-gradient(135deg,#fff6d8 0%,#ffe7a8 100%);
+    border:2px dashed var(--gold); border-radius:12px;
+    padding:.8rem 1rem; margin:0 0 1rem; font-size:1.02rem;
+    display:flex; align-items:center; gap:.7rem;
+  }
+  .fun-fact .ff-icon { font-size:2rem; line-height:1; }
+  .fun-fact .ff-text { flex:1; }
+  .fun-fact .ff-text strong { color:var(--moss-dark); }
+  .badges {
+    display:flex; flex-wrap:wrap; gap:.5rem; margin:.2rem 0 1rem;
+  }
+  .badge {
+    background:#fff; border:2px solid var(--cream-dark); border-radius:20px;
+    padding:.35rem .8rem; font-size:.95rem; font-weight:600;
+    display:inline-flex; align-items:center; gap:.4rem; color:var(--ink);
+  }
+  .badge.zero { opacity:.35; }
+  .badge .b-ico { font-size:1.1rem; }
+  .badge .b-num { background:var(--moss); color:#fff; border-radius:12px;
+    padding:0 .55rem; font-size:.85rem; min-width:1.5rem; text-align:center; }
+  .badge.zero .b-num { background:#bbb; }
+  .timeline-wrap {
+    background:#fffcf2; border:2px solid var(--cream-dark); border-radius:12px;
+    padding:1rem 1.2rem .8rem; margin:0 0 1.2rem;
+  }
+  .timeline-title {
+    font-weight:700; color:var(--moss-dark); margin-bottom:.6rem; font-size:1rem;
+  }
+  .timeline-title .tl-hint { font-weight:400; color:var(--sepia); font-size:.85rem; margin-left:.4rem; }
+  .timeline {
+    position:relative; height:70px; margin:0 .5rem;
+  }
+  .tl-track {
+    position:absolute; left:0; right:0; top:34px; height:4px;
+    background:linear-gradient(90deg,var(--sepia),var(--gold),var(--moss));
+    border-radius:2px;
+  }
+  .tl-dot {
+    position:absolute; top:22px; transform:translateX(-50%);
+    width:28px; height:28px; border-radius:50%; background:#fff;
+    border:3px solid var(--moss); cursor:pointer; text-decoration:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; transition:transform .15s, box-shadow .15s;
+    box-shadow:0 2px 4px rgba(0,0,0,.15);
+  }
+  .tl-dot:hover { transform:translateX(-50%) scale(1.25); box-shadow:0 3px 8px rgba(0,0,0,.25); z-index:2; }
+  .tl-dot .tl-year {
+    position:absolute; bottom:-22px; left:50%; transform:translateX(-50%);
+    font-size:.78rem; color:var(--sepia); white-space:nowrap; font-weight:600;
+  }
+  .tl-ends { display:flex; justify-content:space-between; font-size:.82rem; color:var(--sepia); margin-top:.3rem; }
+  .map-wrap {
+    background:#eaf3ea; border:2px solid var(--moss); border-radius:12px;
+    padding:1rem; margin:0 0 1.2rem; display:flex; gap:1rem; align-items:center; flex-wrap:wrap;
+  }
+  .map-svg { flex:0 0 auto; }
+  .map-svg svg { display:block; max-width:180px; height:auto; }
+  .map-coast { fill:#c8e0c3; stroke:var(--moss-dark); stroke-width:1.5; stroke-linejoin:round; }
+  .map-dot { fill:#7ea974; opacity:.55; }
+  .map-dot-target {
+    fill:#d9472a; stroke:#fff; stroke-width:2;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
+    animation:pulseMap 1.8s ease-in-out infinite;
+    transform-origin:center;
+            transform-box:fill-box;
+  }
+  @keyframes pulseMap {
+    0%,100% { transform:scale(1); }
+    50%     { transform:scale(1.4); }
+  }
+  .map-label {
+    font-family:"Palatino Linotype",Georgia,serif;
+    font-weight:700; font-size:11px; fill:#d9472a;
+    paint-order:stroke; stroke:#fff; stroke-width:3;
+  }
+  .map-text { flex:1; min-width:180px; }
+  .map-text h3 { margin:0 0 .4rem; color:var(--moss-dark); font-size:1.1rem; }
+  .map-text p { margin:.2rem 0; font-size:.95rem; color:var(--ink); }
+  .map-text .map-pin { font-size:2.2rem; line-height:1; display:inline-block; vertical-align:middle; }
+  .trophy-wrap {
+    background:linear-gradient(135deg,#fff4cc 0%,#ffe08a 55%,#ffd04a 100%);
+    border:3px solid var(--gold); border-radius:14px;
+    padding:1rem 1.2rem 1.1rem; margin:0 0 1.3rem;
+    box-shadow:0 4px 14px rgba(201,160,74,.35);
+    position:relative; overflow:hidden;
+  }
+  .trophy-wrap::before {
+    content:""; position:absolute; top:-30px; right:-30px;
+    width:120px; height:120px; background:radial-gradient(circle,#fff6d8,transparent 70%);
+    pointer-events:none;
+  }
+  .trophy-title {
+    font-size:1.3rem; font-weight:700; color:var(--moss-dark);
+    display:flex; align-items:center; gap:.5rem; margin-bottom:.2rem;
+  }
+  .trophy-title .t-ico { font-size:1.7rem; animation:bounce 1.6s ease-in-out infinite; display:inline-block; }
+  @keyframes bounce {
+    0%,100% { transform:translateY(0); }
+    50%     { transform:translateY(-5px); }
+  }
+  .trophy-sub { color:#6b5a1f; font-size:.92rem; margin-bottom:.7rem; font-style:italic; }
+  .trophy-card {
+    background:#fffef7; border:2px solid var(--gold); border-radius:10px;
+    padding:.8rem 1rem; margin:.5rem 0; font-size:1rem; line-height:1.5;
+    position:relative; padding-left:3rem;
+  }
+  .trophy-card::before {
+    content:"⭐"; position:absolute; left:.8rem; top:.7rem; font-size:1.5rem;
+  }
+  .trophy-card a.src { color:var(--moss-dark); font-weight:600; }
+  .trophy-card .ribbon {
+    display:inline-block; background:var(--moss); color:#fff;
+    font-size:.72rem; font-weight:700; padding:.15rem .5rem; border-radius:10px;
+    margin-left:.4rem; vertical-align:middle; letter-spacing:.3px;
+  }
+  .rec-card.confirmed-card {
+    background:#fffef7; border:2px solid var(--gold); border-left-width:6px;
+    box-shadow:0 2px 6px rgba(201,160,74,.25);
+  }
+  .rec-card.confirmed-card::after {
+    content:"⭐ confirmed"; float:right; background:var(--gold); color:#fff;
+    font-size:.75rem; font-weight:700; padding:.15rem .55rem; border-radius:10px;
+    margin-left:.5rem;
+  }
+  .rec-card:target {
+    background:#fff6d8; border-left-width:6px;
+    animation:flash 1.2s ease-out;
+  }
+  @keyframes flash {
+    0% { background:#ffe7a8; }
+    100% { background:#fff6d8; }
+  }
 </style>
 
 <div class="nav">
@@ -1735,12 +1903,80 @@ PERSON_HTML = """
   </div>
 </div>
 
+{% if map_data and map_data.target %}
+<div class="map-wrap">
+  <div class="map-svg">
+    <svg width="180" height="240" viewBox="0 0 {{ map_data.w }} {{ map_data.h }}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Map of Ireland showing {{ map_data.county_label }}">
+      <polygon class="map-coast" points="{{ map_data.outline }}"/>
+      {% for d in map_data.dots %}
+        {% if not d.target %}<circle class="map-dot" cx="{{ d.x }}" cy="{{ d.y }}" r="2.5"/>{% endif %}
+      {% endfor %}
+      <circle class="map-dot-target" cx="{{ map_data.target.x }}" cy="{{ map_data.target.y }}" r="6"/>
+      <text class="map-label" x="{{ map_data.target.x + 9 }}" y="{{ map_data.target.y + 4 }}">{{ map_data.target.name }}</text>
+    </svg>
+  </div>
+  <div class="map-text">
+    <h3><span class="map-pin">📍</span> From {{ map_data.county_label }}</h3>
+    <p>{{ person.forename }}'s family came from <strong>County {{ map_data.county_label }}</strong> in Ireland.</p>
+    <p style="color:var(--sepia);font-size:.88rem">The red dot shows where on the island. Those green dots are all the other counties.</p>
+  </div>
+</div>
+{% endif %}
+
+{% if fun_fact %}
+<div class="fun-fact">
+  <div class="ff-icon">🕰️</div>
+  <div class="ff-text"><strong>Did you know?</strong> {{ fun_fact }}</div>
+</div>
+{% endif %}
+
 {% if total == 0 %}
 <div class="empty">
   <p>We have not searched for {{ person.forename }} yet.</p>
   <a href="{{ url_for('index') }}" class="search-btn">&#128269; Search for {{ person.forename }}</a>
 </div>
 {% else %}
+{% if confirmed_cards %}
+<div class="trophy-wrap">
+  <div class="trophy-title"><span class="t-ico">🏆</span> {{ confirmed_cards|length }} confirmed match{{ 'es' if confirmed_cards|length != 1 else '' }}!</div>
+  <div class="trophy-sub">You already said these are definitely {{ person.forename }}. Nice work!</div>
+  {% for r in confirmed_cards %}
+  <div class="trophy-card">
+    <a href="#{{ r.anchor }}" style="color:inherit;text-decoration:none">{{ r.sentence|safe }}</a>
+    <span class="ribbon">{{ tier_stars[r.tier] }} {{ r.tier }}</span>
+    {% if r.link %}<a class="src" href="{{ r.link }}" target="_blank">open source &#8599;</a>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+<div class="badges">
+  {% for key, icon, label in bucket_meta %}
+    {% set n = type_counts.get(key, 0) %}
+    <span class="badge {% if n == 0 %}zero{% endif %}" title="{{ n }} {{ label }}">
+      <span class="b-ico">{{ icon }}</span>
+      <span>{{ label }}</span>
+      <span class="b-num">{{ n }}</span>
+    </span>
+  {% endfor %}
+</div>
+
+{% if timeline %}
+<div class="timeline-wrap">
+  <div class="timeline-title">📅 Life timeline <span class="tl-hint">tap a dot to jump to that record</span></div>
+  <div class="timeline">
+    <div class="tl-track"></div>
+    {% for d in timeline %}
+      {% set emoji = {'census':'🏘️','birth':'🎂','marriage':'💍','death':'⚰️','land':'🗺️','other':'📜'}[d.bucket] %}
+      <a class="tl-dot" href="#{{ d.anchor }}" style="left:{{ d.pct }}%;border-color:{{ tier_color[d.tier] }}" title="{{ d.year }} — {{ d.bucket }}">
+        <span>{{ emoji }}</span>
+        <span class="tl-year">{{ d.year }}</span>
+      </a>
+    {% endfor %}
+  </div>
+  <div class="tl-ends"><span>{{ tl_min }}</span><span>{{ tl_max }}</span></div>
+</div>
+{% endif %}
+
 <p class="summary">Found {{ total }} record(s) in the old books.</p>
 {% for tier in tier_order %}
   {% set recs = tiers.get(tier, []) %}
@@ -1751,10 +1987,9 @@ PERSON_HTML = """
     </div>
     <p class="tier-blurb">{{ tier_blurb[tier] }}</p>
     {% for r in recs %}
-    <div class="rec-card" style="border-left-color:{{ tier_color[tier] }}">
+    <div class="rec-card {% if r.status == 'confirmed' %}confirmed-card{% endif %}" id="{{ r.anchor }}" style="border-left-color:{{ tier_color[tier] }}">
       {{ r.sentence|safe }}
       {% if r.link %}<a class="src" href="{{ r.link }}" target="_blank">open source &#8599;</a>{% endif %}
-      {% if r.status == 'confirmed' %}<span class="badge-confirmed">&#10003; confirmed</span>{% endif %}
     </div>
     {% endfor %}
   </div>
@@ -2239,7 +2474,11 @@ def person_page(slug: str):
     if target is None:
         abort(404)
 
+    import re as _re
     tiers: dict[str, list[dict]] = {t: [] for t in TIER_ORDER}
+    years: list[int] = []
+    type_counts = {"census": 0, "birth": 0, "marriage": 0, "death": 0, "land": 0, "other": 0}
+    rec_id = 0
     p = HERE / RESULTS_JSON
     if p.exists():
         try:
@@ -2252,15 +2491,123 @@ def person_page(slug: str):
                         tier = rec.get("tier") or "Manual"
                         if tier not in tiers:
                             tiers[tier] = []
-                        tiers[tier].append({
+                        rec_id += 1
+                        anchor = f"r{rec_id}"
+                        rtype_raw = (rec.get("record_type") or "").lower()
+                        site_raw = (rec.get("site") or "").lower()
+                        if "census" in rtype_raw or "census" in site_raw:
+                            bucket = "census"
+                        elif "birth" in rtype_raw or "baptism" in rtype_raw:
+                            bucket = "birth"
+                        elif "marriage" in rtype_raw or "wedding" in rtype_raw:
+                            bucket = "marriage"
+                        elif "death" in rtype_raw or "burial" in rtype_raw:
+                            bucket = "death"
+                        elif "griff" in site_raw or "valuation" in rtype_raw or "land" in rtype_raw:
+                            bucket = "land"
+                        else:
+                            bucket = "other"
+                        type_counts[bucket] += 1
+                        ym = _re.search(r"\b(1[6-9]\d\d|20\d\d)\b", (rec.get("age_or_year") or ""))
+                        year_int = int(ym.group(1)) if ym else None
+                        if year_int:
+                            years.append(year_int)
+                        card = {
                             "sentence": _narrate(rec),
                             "link": rec.get("link", ""),
                             "status": rec.get("status", ""),
-                        })
+                            "anchor": anchor,
+                            "year": year_int,
+                            "bucket": bucket,
+                            "tier": tier,
+                        }
+                        tiers[tier].append(card)
         except Exception:
             pass
 
     total = sum(len(v) for v in tiers.values())
+    confirmed_cards = [c for tier in TIER_ORDER for c in tiers.get(tier, []) if c.get("status") == "confirmed"]
+
+    timeline = []
+    if years:
+        y_min, y_max = min(years), max(years)
+        span = max(1, y_max - y_min)
+        for tier in TIER_ORDER:
+            for r in tiers.get(tier, []):
+                if r["year"] is None:
+                    continue
+                timeline.append({
+                    "year": r["year"],
+                    "pct": round((r["year"] - y_min) / span * 100, 2),
+                    "anchor": r["anchor"],
+                    "bucket": r["bucket"],
+                    "tier": tier,
+                })
+        timeline.sort(key=lambda x: x["year"])
+    tl_min = min(years) if years else None
+    tl_max = max(years) if years else None
+
+    fun_fact = ""
+    try:
+        by = int((target.get("year") or "").strip()[:4])
+    except (ValueError, TypeError):
+        by = None
+    if by:
+        age = 2026 - by
+        if by < 1800:
+            era = "before the steam train came to Ireland"
+        elif by < 1845:
+            era = "before the Great Famine of 1845"
+        elif by < 1900:
+            era = "when Ireland had no cars, no planes, and no TV"
+        elif by < 1922:
+            era = "before Ireland became an independent country"
+        else:
+            era = "in modern times"
+        fun_fact = f"Born around {by} — that was {age} years ago, {era}."
+
+    bucket_meta = [
+        ("census", "🏘️", "census"),
+        ("birth", "🎂", "births"),
+        ("marriage", "💍", "marriages"),
+        ("death", "⚰️", "deaths"),
+        ("land", "🗺️", "land records"),
+        ("other", "📜", "other"),
+    ]
+
+    map_data = None
+    county_key = (target.get("county") or "").strip().lower()
+    county_key = county_key.replace("county ", "").replace("co ", "").replace(".", "").strip()
+    county_key = county_key.split()[0] if county_key else ""
+    MAP_W, MAP_H = 240, 320
+    LON_MIN, LON_MAX = -10.6, -5.3
+    LAT_MIN, LAT_MAX = 51.35, 55.55
+
+    def _project(lon: float, lat: float) -> tuple[float, float]:
+        x = (lon - LON_MIN) / (LON_MAX - LON_MIN) * MAP_W
+        y = (LAT_MAX - lat) / (LAT_MAX - LAT_MIN) * MAP_H
+        return (round(x, 1), round(y, 1))
+
+    outline_pts = " ".join(f"{x},{y}" for x, y in (_project(lon, lat) for lon, lat in IRELAND_OUTLINE))
+    dots = []
+    target_dot = None
+    for name, (lat, lon) in COUNTY_COORDS.items():
+        if name == "londonderry":
+            continue
+        x, y = _project(lon, lat)
+        is_target = (name == county_key) or (county_key == "londonderry" and name == "derry")
+        dots.append({"name": name.capitalize(), "x": x, "y": y, "target": is_target})
+        if is_target:
+            target_dot = {"name": name.capitalize(), "x": x, "y": y}
+    if dots:
+        map_data = {
+            "w": MAP_W, "h": MAP_H,
+            "outline": outline_pts,
+            "dots": dots,
+            "target": target_dot,
+            "county_label": (target.get("county") or "").strip(),
+        }
+
     return render_template_string(
         PERSON_HTML,
         person=target,
@@ -2270,6 +2617,14 @@ def person_page(slug: str):
         tier_stars=TIER_STARS,
         tier_blurb=TIER_BLURB,
         tier_color=TIER_COLOR,
+        timeline=timeline,
+        tl_min=tl_min,
+        tl_max=tl_max,
+        fun_fact=fun_fact,
+        type_counts=type_counts,
+        bucket_meta=bucket_meta,
+        map_data=map_data,
+        confirmed_cards=confirmed_cards,
     )
 
 
