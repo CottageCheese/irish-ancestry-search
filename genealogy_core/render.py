@@ -4,10 +4,12 @@ Card-based kid-friendly layout: per-record cards grouped by confidence tier,
 emoji icons per record type, big confirm/reject buttons, learning tooltips.
 """
 import html
+import json
 import re
 
 from .confirmations import record_key
 from .models import Record, confidence_tier
+from .nicknames import NICKNAMES
 
 
 RECORD_ICONS: dict[str, str] = {
@@ -157,6 +159,25 @@ _BASE_CSS = (
     ".rec-why .why-neg{color:#b43232;font-weight:600}"
     ".rec-household{font-size:.85em;color:#444;margin:.3em 0;padding:.3em .6em;"
     "background:#f5f0e8;border-radius:6px;border-left:3px solid #c7a46b}"
+    ".name-search{background:linear-gradient(135deg,#f0f7ff,#e8f4e8);border-radius:12px;"
+    "padding:1em 1.2em;margin:1em 0;border:2px solid #8b6f47}"
+    ".name-search-title{font-size:1.1em;font-weight:700;margin-bottom:.7em;color:#4a3520}"
+    ".name-search-row{display:flex;gap:.8em;align-items:flex-end;flex-wrap:wrap}"
+    ".name-input-wrap{display:flex;flex-direction:column;gap:.3em}"
+    ".name-label{font-size:.9em;font-weight:600;color:#555}"
+    ".name-input{padding:.5em .8em;font-size:1.1em;width:160px;border:2px solid #8b6f47;"
+    "border-radius:8px;outline:none;background:#fff}"
+    ".name-input:focus{border-color:#0b5fa4;box-shadow:0 0 0 3px rgba(11,95,164,.15)}"
+    ".btn-ns-clear{padding:.45em .9em;cursor:pointer;border:1px solid #888;background:#fff;"
+    "border-radius:6px;font-size:.9em;align-self:flex-end}"
+    ".btn-ns-clear:hover{background:#f4f4f4}"
+    ".ns-variants{align-items:center;gap:.5em;flex-wrap:wrap;margin-top:.6em;"
+    "padding:.5em .8em;background:rgba(255,255,255,.7);border-radius:8px}"
+    ".ns-variants-label{font-size:.9em;color:#555;font-weight:600;white-space:nowrap}"
+    ".ns-chip{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.85em;"
+    "background:#e0eeff;color:#0b5fa4;border:1px solid #b0d0ff;margin:1px}"
+    ".ns-toggle-label{font-size:.9em;cursor:pointer;margin-left:.3em;user-select:none}"
+    ".ns-toggle-label input{cursor:pointer;margin-right:.3em}"
 )
 
 _DARK_CSS = (
@@ -184,6 +205,16 @@ _DARK_CSS = (
     "body.dark .rec-why .why-neg{color:#e78a8a}"
     "body.dark .rec-household{background:#2a2416;color:#c8b98a;border-left-color:#8b6f47}"
     "body.dark a{color:#6bb6ff}"
+    "body.dark .name-search{background:linear-gradient(135deg,#1a2030,#1a2a1a);border-color:#8b6f47}"
+    "body.dark .name-search-title{color:#d4b896}"
+    "body.dark .name-label{color:#aaa}"
+    "body.dark .name-input{background:#222;color:#eee;border-color:#666}"
+    "body.dark .name-input:focus{border-color:#6bb6ff}"
+    "body.dark .btn-ns-clear{background:#333;color:#eee;border-color:#555}"
+    "body.dark .ns-variants{background:rgba(255,255,255,.05)}"
+    "body.dark .ns-variants-label{color:#aaa}"
+    "body.dark .ns-chip{background:#1a2a3a;color:#6bb6ff;border-color:#2a4a6a}"
+    "body.dark .ns-toggle-label{color:#ccc}"
     ".rec-card.confirmed{background:#d7efd0!important}"
     ".rec-card.rejected{opacity:.35}"
     "body.dark .rec-card.confirmed{background:#1e4a24!important}"
@@ -300,6 +331,61 @@ _HTML_SCRIPT = (
 )
 
 
+def _name_search_script() -> str:
+    nk_json = json.dumps(NICKNAMES)
+    return (
+        "<script>(function(){var NK=" + nk_json + ";"
+        "function expandFore(name){"
+        "var key=name.toLowerCase().trim();"
+        "if(!key)return[];"
+        "var out=[name],seen={};"
+        "seen[key]=1;"
+        "(NK[key]||[]).forEach(function(v){if(!seen[v]){out.push(v);seen[v]=1;}});"
+        "Object.keys(NK).forEach(function(canon){"
+        "if(NK[canon].indexOf(key)>=0&&!seen[canon]){"
+        "out.push(canon);seen[canon]=1;"
+        "NK[canon].forEach(function(v){if(!seen[v]){out.push(v);seen[v]=1;}});"
+        "}});"
+        "return out;}"
+        "function filterBlocks(){"
+        "var fore=(document.getElementById('ns-fore').value||'').trim();"
+        "var sur=(document.getElementById('ns-sur').value||'').trim().toLowerCase();"
+        "var useVar=document.getElementById('ns-use-variants').checked;"
+        "var foreTerms=fore?(useVar?expandFore(fore):[fore]).map(function(t){return t.toLowerCase();}):null;"
+        "document.querySelectorAll('.person-block').forEach(function(b){"
+        "if(!fore&&!sur){b.style.display='';return;}"
+        "var pn=(b.dataset.person||'').toLowerCase();"
+        "var sp=pn.indexOf(' ');"
+        "var pf=sp>=0?pn.slice(0,sp):pn;"
+        "var ps=sp>=0?pn.slice(sp+1):'';"
+        "var fm=!foreTerms||foreTerms.indexOf(pf)>=0;"
+        "var sm=!sur||ps.indexOf(sur)>=0;"
+        "b.style.display=(fm&&sm)?'':'none';});}"
+        "function updateChips(){"
+        "var fore=(document.getElementById('ns-fore').value||'').trim();"
+        "var vd=document.getElementById('ns-variants');"
+        "var ce=document.getElementById('ns-chips');"
+        "if(!fore){vd.style.display='none';return;}"
+        "var variants=expandFore(fore).slice(1);"
+        "if(!variants.length){vd.style.display='none';return;}"
+        "ce.innerHTML=variants.map(function(v){"
+        "return '<span class=\"ns-chip\">'+v+'</span>';}).join('');"
+        "vd.style.display='flex';}"
+        "var nf=document.getElementById('ns-fore');"
+        "var ns2=document.getElementById('ns-sur');"
+        "var nc=document.getElementById('ns-clear');"
+        "var nu=document.getElementById('ns-use-variants');"
+        "if(nf)nf.oninput=function(){updateChips();filterBlocks();};"
+        "if(ns2)ns2.oninput=function(){filterBlocks();};"
+        "if(nc)nc.onclick=function(){"
+        "nf.value='';ns2.value='';"
+        "document.getElementById('ns-variants').style.display='none';"
+        "document.querySelectorAll('.person-block').forEach(function(b){b.style.display='';});};"
+        "if(nu)nu.onchange=function(){filterBlocks();};"
+        "})();</script>"
+    )
+
+
 _TOUR_HTML = (
     "<div id='tour' class='tour-overlay' style='display:none'>"
     "<div class='tour-box'>"
@@ -390,12 +476,36 @@ def _html_head(title: str) -> list[str]:
 
 
 def _html_controls() -> str:
-    return ("<div class='controls'>"
-            "<input class='filter' id='filter' placeholder='Find a name, place or year...' type='search'>"
-            "<button class='dark-toggle' id='dm' type='button'>🌙 Toggle dark mode</button>"
-            "<label style='margin-left:.4em'>"
-            "<input type='checkbox' id='hr'> Hide rejected</label>"
-            "</div>")
+    return (
+        "<div class='name-search'>"
+        "<div class='name-search-title'>🔍 Who do you want to find?</div>"
+        "<div class='name-search-row'>"
+        "<div class='name-input-wrap'>"
+        "<label class='name-label' for='ns-fore'>👤 First name</label>"
+        "<input class='name-input' id='ns-fore' type='text' placeholder='e.g. William' autocomplete='off'>"
+        "</div>"
+        "<div class='name-input-wrap'>"
+        "<label class='name-label' for='ns-sur'>👪 Last name</label>"
+        "<input class='name-input' id='ns-sur' type='text' placeholder='e.g. Furey' autocomplete='off'>"
+        "</div>"
+        "<button class='btn-ns-clear' id='ns-clear' type='button'>✖ Show everyone</button>"
+        "</div>"
+        "<div class='ns-variants' id='ns-variants' style='display:none'>"
+        "<span class='ns-variants-label'>Also known as:</span>"
+        "<span id='ns-chips'></span>"
+        "<label class='ns-toggle-label'>"
+        "<input type='checkbox' id='ns-use-variants'>"
+        " Look for all these names too \u2728"
+        "</label>"
+        "</div>"
+        "</div>"
+        "<div class='controls'>"
+        "<input class='filter' id='filter' placeholder='Find a name, place or year...' type='search'>"
+        "<button class='dark-toggle' id='dm' type='button'>\U0001f319 Toggle dark mode</button>"
+        "<label style='margin-left:.4em'>"
+        "<input type='checkbox' id='hr'> Hide rejected</label>"
+        "</div>"
+    )
 
 
 def slugify(name: str) -> str:
@@ -652,13 +762,14 @@ def render_results_html(records: list[Record], stamp: str,
         parts.append("<p class='empty'>No records found.</p>")
 
     for person, recs in grouped.items():
-        parts.append(f"<div class='person-block'>")
+        parts.append(f"<div class='person-block' data-person='{_esc(person)}'>")
         parts.append(_person_hero(person, recs))
         parts.append(render_person_table(recs, collapse_weak=collapse_weak))
         parts.append("</div>")
 
     parts.append(_TOUR_HTML)
     parts.append(_HTML_SCRIPT)
+    parts.append(_name_search_script())
     parts.append("</body></html>")
     return "\n".join(parts)
 
@@ -670,12 +781,13 @@ def render_person_page(name: str, recs: list[Record], stamp: str,
     parts.append(f"<p><a href='{_esc(back_href)}'>&larr; back to index</a></p>")
     parts.append(f"<p>Generated {_esc(stamp)}.</p>")
     parts.append(_html_controls())
-    parts.append("<div class='person-block'>")
+    parts.append(f"<div class='person-block' data-person='{_esc(name)}'>")
     parts.append(_person_hero(name, recs))
     parts.append(render_person_table(recs, collapse_weak=collapse_weak))
     parts.append("</div>")
     parts.append(_TOUR_HTML)
     parts.append(_HTML_SCRIPT)
+    parts.append(_name_search_script())
     parts.append("</body></html>")
     return "\n".join(parts)
 

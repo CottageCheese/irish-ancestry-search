@@ -24,7 +24,8 @@ import csv
 from flask import Flask, Response, abort, jsonify, redirect, render_template_string, request, send_file, url_for
 from playwright.sync_api import sync_playwright
 
-from genealogy_core.nicknames import expand_forename
+import json
+from genealogy_core.nicknames import expand_forename, NICKNAMES
 from genealogy_core.render import slugify
 from genealogy_core.soundex import soundex
 from genealogy_core import (
@@ -174,6 +175,16 @@ INDEX_HTML = """
       <div>
         <label for="forename">First name</label>
         <input type="text" id="forename" name="forename" required placeholder="e.g. Mary" autofocus>
+        <div id="fore-variants" style="display:none;margin-top:.45rem">
+          <div style="font-size:.85rem;color:var(--sepia);margin-bottom:.3rem">
+            &#128260; This name is also known as: <span id="fore-chips"></span>
+          </div>
+          <label style="font-size:.88rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem">
+            <input type="checkbox" name="use_nicks" value="1" id="use-nicks-cb" checked>
+            Search all these names too &#10024;
+          </label>
+          <div class="hint">Leave this ticked to find records where a nickname was used.</div>
+        </div>
       </div>
       <div>
         <label for="surname">Last name</label>
@@ -299,6 +310,40 @@ INDEX_HTML = """
         });
         syncAll(g);
       });
+
+      var NK = {{ nicknames_json | safe }};
+      function expandFore(name) {
+        var key = name.toLowerCase().trim();
+        if (!key) return [];
+        var out = [name], seen = {}; seen[key] = 1;
+        (NK[key] || []).forEach(function(v){ if (!seen[v]){ out.push(v); seen[v]=1; } });
+        Object.keys(NK).forEach(function(canon){
+          if (NK[canon].indexOf(key) >= 0 && !seen[canon]){
+            out.push(canon); seen[canon] = 1;
+            NK[canon].forEach(function(v){ if (!seen[v]){ out.push(v); seen[v]=1; } });
+          }
+        });
+        return out;
+      }
+      var foreInput = document.getElementById('forename');
+      var foreVarDiv = document.getElementById('fore-variants');
+      var foreChips = document.getElementById('fore-chips');
+      if (foreInput && foreVarDiv && foreChips) {
+        foreInput.addEventListener('input', function(){
+          var val = this.value.trim();
+          var variants = val ? expandFore(val).slice(1) : [];
+          if (variants.length) {
+            foreChips.innerHTML = variants.map(function(v){
+              return '<span style="display:inline-block;padding:2px 9px;border-radius:12px;'
+                   + 'background:#e8f4e8;color:var(--moss-dark);border:1px solid var(--moss);'
+                   + 'margin:1px;font-size:.88rem">' + v + '</span>';
+            }).join('');
+            foreVarDiv.style.display = 'block';
+          } else {
+            foreVarDiv.style.display = 'none';
+          }
+        });
+      }
     })();
   </script>
 
@@ -807,7 +852,8 @@ def index():
         people_rows = []
     sites = [{"key": k, "name": v.get("name", k)} for k, v in SITES.items()]
     return render_template_string(INDEX_HTML, run=RUN, people=people_rows,
-                                  sites=sites, counties=IRISH_COUNTIES)
+                                  sites=sites, counties=IRISH_COUNTIES,
+                                  nicknames_json=json.dumps(NICKNAMES))
 
 
 IRISH_COUNTIES = [
@@ -890,7 +936,7 @@ def quick_search():
         "headless": True,
         "no_cache": False,
         "use_surnames": False,
-        "use_nicks": True,
+        "use_nicks": bool(request.form.get("use_nicks")),
         "surname_picks": [],
         "forename_picks": [],
         "only": f"{forename} {surname}",
