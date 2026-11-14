@@ -977,12 +977,22 @@ ANCESTORS_HTML = """
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:1rem; }
   .card {
     background:#fffcf2; border:2px solid var(--cream-dark); border-radius:12px;
-    padding:1.2rem 1rem 1rem; text-align:center; cursor:pointer;
-    text-decoration:none; color:var(--ink);
+    padding:0; text-align:center; position:relative;
     transition:border-color .15s, box-shadow .15s, transform .12s;
     display:block;
   }
   .card:hover { border-color:var(--gold); box-shadow:0 5px 18px rgba(0,0,0,.13); transform:translateY(-3px); }
+  .card-inner {
+    display:block; text-decoration:none; color:var(--ink);
+    padding:1.2rem 1rem 1rem;
+  }
+  .card-del {
+    position:absolute; top:.35rem; right:.4rem;
+    background:none; border:none; cursor:pointer;
+    font-size:1.1rem; color:#bbb; line-height:1; padding:.15rem .3rem;
+    border-radius:4px; transition:color .12s, background .12s;
+  }
+  .card-del:hover { color:#b00; background:#ffeaea; }
   .avatar {
     width:66px; height:66px; border-radius:50%; margin:0 auto .75rem;
     display:flex; align-items:center; justify-content:center;
@@ -1013,23 +1023,29 @@ ANCESTORS_HTML = """
 {% if people %}
 <div class="grid">
   {% for p in people %}
-  <a class="card" href="{{ url_for('person_page', slug=p.slug) }}">
-    <div class="avatar" style="background:{{ p.avatar_bg }};color:{{ p.avatar_fg }}">
-      {{ p.forename[0]|upper }}
-    </div>
-    <div class="card-name">{{ p.forename }} {{ p.surname }}</div>
-    <div class="card-sub">
-      {%- if p.county %}{{ p.county }}{% endif %}
-      {%- if p.year %} &middot; b.&nbsp;~{{ p.year }}{% endif -%}
-    </div>
-    {% if p.confirmed > 0 %}
-      <span class="badge badge-confirmed">&#11088; {{ p.confirmed }} confirmed</span>
-    {% elif p.found > 0 %}
-      <span class="badge badge-found">&#128270; {{ p.found }} found</span>
-    {% else %}
-      <span class="badge badge-none">Not searched yet</span>
-    {% endif %}
-  </a>
+  <div class="card">
+    <a class="card-inner" href="{{ url_for('person_page', slug=p.slug) }}">
+      <div class="avatar" style="background:{{ p.avatar_bg }};color:{{ p.avatar_fg }}">
+        {{ p.forename[0]|upper }}
+      </div>
+      <div class="card-name">{{ p.forename }} {{ p.surname }}</div>
+      <div class="card-sub">
+        {%- if p.county %}{{ p.county }}{% endif %}
+        {%- if p.year %} &middot; b.&nbsp;~{{ p.year }}{% endif -%}
+      </div>
+      {% if p.confirmed > 0 %}
+        <span class="badge badge-confirmed">&#11088; {{ p.confirmed }} confirmed</span>
+      {% elif p.found > 0 %}
+        <span class="badge badge-found">&#128270; {{ p.found }} found</span>
+      {% else %}
+        <span class="badge badge-none">Not searched yet</span>
+      {% endif %}
+    </a>
+    <form method="post" action="{{ url_for('ancestors_delete', slug=p.slug) }}" style="display:inline">
+      <button class="card-del" title="Remove {{ p.forename }} {{ p.surname }}"
+        onclick="return confirm('Remove {{ p.forename }} {{ p.surname }} from the list?')">&#10005;</button>
+    </form>
+  </div>
   {% endfor %}
 </div>
 {% else %}
@@ -1094,7 +1110,6 @@ PERSON_HTML = """
 
 <div class="nav">
   <a href="{{ url_for('ancestors_page') }}">&#8592; Our family</a>
-  {% if total > 0 %}<a href="{{ url_for('results_html') }}">Full results &#8599;</a>{% endif %}
 </div>
 
 <div class="hero-card">
@@ -1566,6 +1581,20 @@ def ancestors_page():
         })
     people_data.sort(key=lambda p: (-p["confirmed"], -p["found"], p["label"]))
     return render_template_string(ANCESTORS_HTML, people=people_data)
+
+
+@app.route("/ancestors/<slug>/delete", methods=["POST"])
+def ancestors_delete(slug: str):
+    with PEOPLE_LOCK:
+        rows = _read_rows()
+        kept = []
+        for row in rows:
+            forename = row.get("forename", "").strip()
+            surname = row.get("surname", "").strip()
+            if slugify(f"{forename} {surname}") != slug:
+                kept.append(row)
+        _write_rows(kept)
+    return redirect(url_for("ancestors_page"))
 
 
 @app.route("/person/<slug>")
