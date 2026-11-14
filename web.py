@@ -236,46 +236,46 @@ INDEX_HTML = """
     </div>
 
     <div style="margin-top:.7rem;border-top:1px solid var(--cream-dark);padding-top:.6rem">
+      <div style="margin-bottom:.5rem;font-size:.9rem;color:var(--sepia);font-weight:600">What should we search?</div>
       <div style="display:flex;gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap">
-        <button type="button" id="preset-census" onclick="applyPreset('census')"
-          style="padding:.3rem .9rem;border-radius:20px;border:2px solid var(--moss);background:var(--moss);color:#fff;cursor:pointer;font:inherit;font-size:.88rem;font-weight:600">
-          ⚡ Census only <span style="font-weight:400;opacity:.85">(3 searches)</span>
+        <button type="button" id="preset-census"
+          style="padding:.4rem 1rem;border-radius:20px;border:2px solid;cursor:pointer;font:inherit;font-size:.9rem;font-weight:600;background:#fff;border-color:var(--cream-dark);color:var(--sepia)">
+          📜 Just the census <span style="font-weight:400;opacity:.85">(fast)</span>
         </button>
-        <button type="button" id="preset-full" onclick="applyPreset('full')"
-          style="padding:.3rem .9rem;border-radius:20px;border:2px solid var(--cream-dark);background:#fff;color:var(--sepia);cursor:pointer;font:inherit;font-size:.88rem">
-          🔍 Full search <span style="opacity:.7">(9+ searches)</span>
+        <button type="button" id="preset-full"
+          style="padding:.4rem 1rem;border-radius:20px;border:2px solid;cursor:pointer;font:inherit;font-size:.9rem;font-weight:600;background:var(--moss);border-color:var(--moss);color:#fff">
+          🔍 Everything <span style="font-weight:400;opacity:.85">(takes longer)</span>
         </button>
       </div>
+      <div id="search-count" style="font-size:.85rem;color:var(--moss-dark);margin-bottom:.5rem;padding:.3rem .6rem;background:#f4fdf4;border-radius:6px;border-left:3px solid var(--moss)"></div>
       <div class="filter-row">
-        <span class="filter-lbl">Census</span>
+        <span class="filter-lbl">📜 Census</span>
         <div class="btn-group">
-          <button type="button" class="tog-btn all-btn" data-group="census_year">All</button>
-          <label class="tog-btn"><input type="checkbox" name="census_year" value="1901">1901</label>
-          <label class="tog-btn"><input type="checkbox" name="census_year" value="1911">1911</label>
-          <label class="tog-btn"><input type="checkbox" name="census_year" value="1926">1926</label>
+          <label class="tog-btn"><input type="checkbox" name="census_year" value="1901" checked>1901</label>
+          <label class="tog-btn"><input type="checkbox" name="census_year" value="1911" checked>1911</label>
+          <label class="tog-btn"><input type="checkbox" name="census_year" value="1926" checked>1926</label>
         </div>
       </div>
       <div class="filter-row" style="margin-top:.4rem">
-        <span class="filter-lbl">Records</span>
+        <span class="filter-lbl">🔍 Records</span>
         <div class="btn-group" id="rec-btn-group">
-          <button type="button" class="tog-btn all-btn" data-group="ig_event" data-tip="Search all types of record.">All</button>
-          <label class="tog-btn" data-tip="&#128220; Official birth records. Ireland started keeping these in 1864."><input type="checkbox" name="ig_event" value="event-birth">Births</label>
-          <label class="tog-btn" data-tip="&#9962; Church record of a baptism &mdash; often older than official records, going back centuries."><input type="checkbox" name="ig_event" value="event-baptism">Baptisms</label>
-          <label class="tog-btn" data-tip="&#128141; Official and church marriage records. Civil records from 1845."><input type="checkbox" name="ig_event" value="event-marriage">Marriages</label>
-          <label class="tog-btn" data-tip="&#128366; Official death records, kept from 1864."><input type="checkbox" name="ig_event" value="event-death">Deaths</label>
-          <label class="tog-btn" data-tip="&#9960; Church burial record &mdash; can be much older than official records."><input type="checkbox" name="ig_event" value="event-burial">Burials</label>
-          <label class="tog-btn" data-tip="&#127969; A list of who rented land in Ireland in the 1850s and 1860s. Great for finding whole families."><input type="checkbox" name="ig_event" value="griffiths">Land records</label>
+          <label class="tog-btn" data-tip="&#128220; Official birth records. Ireland started keeping these in 1864."><input type="checkbox" name="ig_event" value="event-birth" checked>Births</label>
+          <label class="tog-btn" data-tip="&#9962; Church record of a baptism &mdash; often older than official records, going back centuries."><input type="checkbox" name="ig_event" value="event-baptism" checked>Baptisms</label>
+          <label class="tog-btn" data-tip="&#128141; Official and church marriage records. Civil records from 1845."><input type="checkbox" name="ig_event" value="event-marriage" checked>Marriages</label>
+          <label class="tog-btn" data-tip="&#128366; Official death records, kept from 1864."><input type="checkbox" name="ig_event" value="event-death" checked>Deaths</label>
+          <label class="tog-btn" data-tip="&#9960; Church burial record &mdash; can be much older than official records."><input type="checkbox" name="ig_event" value="event-burial" checked>Burials</label>
+          <label class="tog-btn" data-tip="&#127969; A list of who rented land in Ireland in the 1850s and 1860s. Great for finding whole families."><input type="checkbox" name="ig_event" value="griffiths" checked>Land records</label>
         </div>
       </div>
-      <div id="rec-tip" style="visibility:hidden;margin-top:.4rem;margin-left:71px;padding:.4rem .7rem;background:#fffcf2;border-left:3px solid var(--gold);border-radius:0 6px 6px 0;font-size:.88rem;color:var(--ink)"></div>
-      <div class="filter-hint">Pick some to search faster, or leave on <em>All</em> for everything.</div>
+      <div id="rec-tip" style="visibility:hidden;margin-top:.4rem;margin-left:91px;padding:.4rem .7rem;background:#fffcf2;border-left:3px solid var(--gold);border-radius:0 6px 6px 0;font-size:.88rem;color:var(--ink)"></div>
+      <div class="filter-hint">Click any to untick and skip that search.</div>
     </div>
 
     <div id="search-quality" style="visibility:hidden;margin:.7rem 0 .2rem;padding:.55rem .8rem;border-radius:8px;background:#f4fdf4;border:1px solid #c0dfc0;font-size:.95rem"></div>
     <style>
       .filter-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
-      .filter-lbl { font-size:.92rem; font-weight:700; color:var(--moss-dark); min-width:65px; flex-shrink:0; }
-      .filter-hint { font-size:.82rem; color:var(--sepia); margin-top:.45rem; margin-left:71px; font-style:italic; }
+      .filter-lbl { font-size:.92rem; font-weight:700; color:var(--moss-dark); min-width:85px; flex-shrink:0; }
+      .filter-hint { font-size:.82rem; color:var(--sepia); margin-top:.45rem; margin-left:91px; font-style:italic; }
       .btn-group { display:flex; gap:.35rem; flex-wrap:wrap; }
       .tog-btn {
         display:inline-block; cursor:pointer; padding:.32rem .8rem;
@@ -284,8 +284,7 @@ INDEX_HTML = """
         font-family:inherit;
       }
       .tog-btn input { display:none; }
-      .tog-btn:has(input:checked),
-      .tog-btn.all-btn.active { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+      .tog-btn:has(input:checked) { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
       .tog-btn:hover { border-color:var(--gold); }
       .sex-btn {
         display:inline-block; cursor:pointer; padding:.38rem 1rem;
@@ -325,24 +324,6 @@ INDEX_HTML = """
         if (sp)  sp.style.display = 'block';
       });
 
-      function syncAll(group){
-        const any = form.querySelectorAll('input[name="'+group+'"]:checked').length > 0;
-        const btn = form.querySelector('.all-btn[data-group="'+group+'"]');
-        if (btn) btn.classList.toggle('active', !any);
-      }
-      form.querySelectorAll('.all-btn').forEach(function(btn){
-        btn.addEventListener('click', function(){
-          const g = btn.dataset.group;
-          form.querySelectorAll('input[name="'+g+'"]').forEach(function(cb){ cb.checked = false; });
-          syncAll(g);
-        });
-      });
-      ['census_year','ig_event'].forEach(function(g){
-        form.querySelectorAll('input[name="'+g+'"]').forEach(function(cb){
-          cb.addEventListener('change', function(){ syncAll(g); });
-        });
-        syncAll(g);
-      });
 
       var NK = {{ nicknames_json | safe }};
       function expandFore(name) {
@@ -425,31 +406,57 @@ INDEX_HTML = """
 
       // --- Search presets ---
       function applyPreset(mode) {
-        // census checkboxes
-        document.querySelectorAll('input[name="census_year"]').forEach(cb => { cb.checked = true; });
-        document.querySelectorAll('.tog-btn:has(input[name="census_year"])').forEach(el => el.classList.add('active'));
-        // ig_event checkboxes
-        var igCbs = document.querySelectorAll('input[name="ig_event"]');
-        igCbs.forEach(cb => { cb.checked = (mode === 'full'); });
-        document.querySelectorAll('.tog-btn:has(input[name="ig_event"])').forEach(el => {
-          el.classList.toggle('active', mode === 'full');
-        });
-        // All buttons
-        document.querySelectorAll('.all-btn[data-group="census_year"]').forEach(b => b.classList.add('active'));
-        var igAll = document.querySelector('.all-btn[data-group="ig_event"]');
-        if (igAll) igAll.classList.toggle('active', mode === 'full');
-        // preset button styles
+        form.querySelectorAll('input[name="census_year"]').forEach(function(cb){ cb.checked = true; });
+        form.querySelectorAll('input[name="ig_event"]').forEach(function(cb){ cb.checked = (mode === 'full'); });
         var pc = document.getElementById('preset-census');
         var pf = document.getElementById('preset-full');
-        if (mode === 'census') {
-          pc.style.background = 'var(--moss)'; pc.style.borderColor = 'var(--moss)'; pc.style.color = '#fff';
-          pf.style.background = '#fff'; pf.style.borderColor = 'var(--cream-dark)'; pf.style.color = 'var(--sepia)';
-        } else {
-          pf.style.background = 'var(--moss)'; pf.style.borderColor = 'var(--moss)'; pf.style.color = '#fff';
-          pc.style.background = '#fff'; pc.style.borderColor = 'var(--cream-dark)'; pc.style.color = 'var(--sepia)';
+        if (pc && pf) {
+          var on = 'background:var(--moss);border-color:var(--moss);color:#fff';
+          var off = 'background:#fff;border-color:var(--cream-dark);color:var(--sepia)';
+          var base = 'padding:.4rem 1rem;border-radius:20px;border:2px solid;cursor:pointer;font:inherit;font-size:.9rem;font-weight:600;';
+          pc.setAttribute('style', base + (mode === 'census' ? on : off));
+          pf.setAttribute('style', base + (mode === 'full' ? on : off));
         }
-        updateQuality();
+        updateSearchCount();
+        if (typeof updateQuality === 'function') updateQuality();
       }
+      var pcBtn = document.getElementById('preset-census');
+      var pfBtn = document.getElementById('preset-full');
+      if (pcBtn) pcBtn.addEventListener('click', function(){ applyPreset('census'); });
+      if (pfBtn) pfBtn.addEventListener('click', function(){ applyPreset('full'); });
+
+      // --- Live search count ---
+      function updateSearchCount() {
+        var cEl = document.getElementById('search-count');
+        if (!cEl) return;
+        var censusN = form.querySelectorAll('input[name="census_year"]:checked').length;
+        var igChecked = Array.from(form.querySelectorAll('input[name="ig_event"]:checked'))
+          .map(function(cb){ return cb.value; });
+        var igN = igChecked.filter(function(v){ return v !== 'griffiths'; }).length;
+        var griff = igChecked.indexOf('griffiths') >= 0 ? 1 : 0;
+        var total = censusN + igN + griff;
+        if (total === 0) {
+          cEl.innerHTML = '<strong style="color:#b00">Nothing ticked</strong> — pick at least one to search.';
+          return;
+        }
+        var parts = [];
+        if (censusN) parts.push(censusN + ' census');
+        if (igN) parts.push(igN + ' record type' + (igN === 1 ? '' : 's'));
+        if (griff) parts.push('land records');
+        cEl.innerHTML = '<strong>' + total + '</strong> search' + (total === 1 ? '' : 'es') + ' will run: ' + parts.join(' + ');
+      }
+      form.querySelectorAll('input[name="census_year"], input[name="ig_event"]').forEach(function(cb){
+        cb.addEventListener('change', function(){
+          // user manually toggled → both presets deselected
+          var pc = document.getElementById('preset-census');
+          var pf = document.getElementById('preset-full');
+          var base = 'padding:.4rem 1rem;border-radius:20px;border:2px solid;cursor:pointer;font:inherit;font-size:.9rem;font-weight:600;background:#fff;border-color:var(--cream-dark);color:var(--sepia)';
+          if (pc) pc.setAttribute('style', base);
+          if (pf) pf.setAttribute('style', base);
+          updateSearchCount();
+        });
+      });
+      updateSearchCount();
 
       // --- Birth year helper ---
       var yhBtn = document.getElementById('year-helper-btn');
