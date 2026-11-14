@@ -262,6 +262,54 @@ INDEX_HTML = """
     <div>&#127969; <strong>Griffiths Valuation</strong> &mdash; a list from the 1850s of who rented land.</div>
   </div>
 </div>
+
+{% set known = people | selectattr('forename') | list %}
+{% if known %}
+<style>
+  .people-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:.6rem; margin-top:.6rem; }
+  .person-btn {
+    width:100%; text-align:left; background:#fffcf2; border:2px solid var(--cream-dark);
+    border-radius:8px; padding:.65rem .8rem; cursor:pointer; font:inherit;
+    transition:border-color .15s, background .15s;
+  }
+  .person-btn:hover { border-color:var(--gold); background:#fff8e6; }
+  .person-btn:active { background:var(--cream-dark); }
+  .person-name { display:block; font-weight:700; color:var(--moss-dark); font-size:1.05rem; }
+  .person-sub { display:block; font-size:.85rem; color:var(--sepia); margin-top:.15rem; }
+</style>
+<div class="hero" style="margin-top:.6rem">
+  <h2 style="margin:0 0 .2rem;font-size:1.2rem">&#128100; Search again for&hellip;</h2>
+  <p style="margin:.1rem 0 .6rem;font-size:.9rem;color:#666">People already in your list &mdash; tap one to search.</p>
+  <div class="people-grid" id="people-grid">
+    {% for p in known %}
+    <form method="post" action="{{ url_for('quick_search') }}" class="person-form" style="margin:0">
+      <input type="hidden" name="forename" value="{{ p.forename }}">
+      <input type="hidden" name="surname" value="{{ p.surname }}">
+      <input type="hidden" name="county" value="{{ p.county }}">
+      <input type="hidden" name="birth_year" value="{{ p.birth_year_approx }}">
+      <button type="submit" class="person-btn">
+        <span class="person-name">{{ p.forename }} {{ p.surname }}</span>
+        <span class="person-sub">
+          {%- if p.county %}{{ p.county }}{% endif %}
+          {%- if p.birth_year_approx %} &middot; b.&nbsp;~{{ p.birth_year_approx }}{% endif -%}
+        </span>
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
+<script>
+(function(){
+  document.querySelectorAll('.person-form').forEach(function(form){
+    form.addEventListener('submit', function(){
+      const btn = form.querySelector('.person-btn');
+      if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
+    });
+  });
+})();
+</script>
+{% endif %}
+
 {% else %}
 
 <style>
