@@ -155,6 +155,15 @@ INDEX_HTML = """
 <h1>&#9752; Family Finder &#9752;</h1>
 <p class="tagline">Find your Irish ancestors in old books and papers</p>
 
+{% set known = people | selectattr('forename') | list %}
+{% if known %}
+<div style="text-align:center;margin:.4rem 0 .8rem">
+  <a href="{{ url_for('ancestors_page') }}" class="family-link">
+    &#128106; Our family so far ({{ known|length }}) &#8594;
+  </a>
+</div>
+{% endif %}
+
 {% if run.state == 'idle' %}
 <div class="hero">
   <h2>&#128269; Who do you want to find?</h2>
@@ -210,60 +219,9 @@ INDEX_HTML = """
     })();
   </script>
 
-  <div class="scene" aria-hidden="true">
-    <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#cfe6f2"/>
-          <stop offset="100%" stop-color="#f4ecd8"/>
-        </linearGradient>
-        <linearGradient id="hill1" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#6ca84a"/>
-          <stop offset="100%" stop-color="#4a7c3a"/>
-        </linearGradient>
-        <linearGradient id="hill2" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#8bbd5d"/>
-          <stop offset="100%" stop-color="#5d8f3d"/>
-        </linearGradient>
-      </defs>
-      <rect width="800" height="200" fill="url(#sky)"/>
-      <path d="M0 150 Q200 80 400 130 T800 110 L800 200 L0 200 Z" fill="url(#hill1)"/>
-      <path d="M0 170 Q150 130 350 160 T800 150 L800 200 L0 200 Z" fill="url(#hill2)"/>
-      <g transform="translate(540,120)">
-        <rect x="0" y="20" width="70" height="45" fill="#d9c9a0" stroke="#8b6f47" stroke-width="2"/>
-        <polygon points="-5,20 35,-5 75,20" fill="#6b4a2a" stroke="#4a3220" stroke-width="2"/>
-        <rect x="26" y="40" width="14" height="25" fill="#4a3220"/>
-        <rect x="8" y="28" width="12" height="12" fill="#f4ecd8" stroke="#8b6f47"/>
-        <rect x="50" y="28" width="12" height="12" fill="#f4ecd8" stroke="#8b6f47"/>
-        <rect x="46" y="-5" width="8" height="18" fill="#8b6f47"/>
-        <path d="M46 -3 Q48 -8 50 -5" fill="none" stroke="#999" stroke-width="2"/>
-      </g>
-      <g transform="translate(120,130)">
-        <ellipse cx="0" cy="30" rx="30" ry="18" fill="#2f5a22"/>
-        <ellipse cx="-15" cy="22" rx="20" ry="18" fill="#3a6b2a"/>
-        <ellipse cx="15" cy="22" rx="20" ry="18" fill="#3a6b2a"/>
-        <rect x="-4" y="30" width="8" height="18" fill="#5a3a20"/>
-      </g>
-      <g transform="translate(220,160)">
-        <ellipse cx="0" cy="0" rx="14" ry="9" fill="#f5f0e4"/>
-        <circle cx="-12" cy="-2" r="6" fill="#4a3a28"/>
-        <circle cx="-14" cy="-4" r="1.5" fill="#000"/>
-        <rect x="-6" y="7" width="3" height="5" fill="#4a3a28"/>
-        <rect x="4" y="7" width="3" height="5" fill="#4a3a28"/>
-      </g>
-      <g transform="translate(300,170)">
-        <ellipse cx="0" cy="0" rx="14" ry="9" fill="#f5f0e4"/>
-        <circle cx="-12" cy="-2" r="6" fill="#4a3a28"/>
-        <circle cx="-14" cy="-4" r="1.5" fill="#000"/>
-        <rect x="-6" y="7" width="3" height="5" fill="#4a3a28"/>
-        <rect x="4" y="7" width="3" height="5" fill="#4a3a28"/>
-      </g>
-      <circle cx="680" cy="40" r="22" fill="#f6d35e" opacity=".85"/>
-    </svg>
-  </div>
 </div>
 
-<div class="hero" style="background:#fff7e0">
+<div class="hero" style="background:#fff7e0;margin-top:.6rem">
   <h2 style="margin:0 0 .4rem;font-size:1.15rem">&#128214; What we search</h2>
   <div style="font-size:.95rem;line-height:1.5">
     <div>&#128203; <strong>The old census</strong> &mdash; who lived in which house in 1901, 1911 and 1926.</div>
@@ -271,15 +229,6 @@ INDEX_HTML = """
     <div>&#127969; <strong>Griffiths Valuation</strong> &mdash; a list from the 1850s of who rented land.</div>
   </div>
 </div>
-
-{% set known = people | selectattr('forename') | list %}
-{% if known %}
-<div style="text-align:center;margin-top:1.1rem">
-  <a href="{{ url_for('ancestors_page') }}" class="family-link">
-    &#128106; Our family so far ({{ known|length }}) &#8594;
-  </a>
-</div>
-{% endif %}
 
 {% else %}
 
@@ -966,14 +915,22 @@ ANCESTORS_HTML = """
   * { box-sizing:border-box; }
   body {
     font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    max-width:960px; margin:0 auto; padding:1rem;
+    max-width:960px; margin:0 auto; padding:0;
     background:var(--cream); color:var(--ink); min-height:100vh;
   }
-  .nav { margin-bottom:1.2rem; }
+  .scene { display:block; width:100%; height:auto; border-radius:0; margin-bottom:0; }
+  .page-body { padding:1rem; }
+  .nav { margin-bottom:.8rem; }
   .nav a { color:var(--moss); text-decoration:none; font-size:1rem; font-weight:600; }
   .nav a:hover { color:var(--moss-dark); text-decoration:underline; }
-  h1 { font-size:2.2rem; color:var(--moss-dark); margin:.2rem 0 .2rem; text-align:center; letter-spacing:.02em; }
-  .subtitle { text-align:center; color:var(--sepia); font-style:italic; margin:0 0 1.5rem; font-size:1.05rem; }
+  h1 { font-size:2.2rem; color:var(--moss-dark); margin:.2rem 0 .1rem; text-align:center; letter-spacing:.02em; }
+  .subtitle { text-align:center; color:var(--sepia); font-style:italic; margin:0 0 .6rem; font-size:1.05rem; }
+  .summary-bar {
+    text-align:center; margin:0 0 1.3rem;
+    font-size:.95rem; color:var(--sepia);
+    display:flex; justify-content:center; gap:1.2rem; flex-wrap:wrap;
+  }
+  .summary-bar span { display:inline-flex; align-items:center; gap:.3rem; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:1rem; }
   .card {
     background:#fffcf2; border:2px solid var(--cream-dark); border-radius:12px;
@@ -982,6 +939,10 @@ ANCESTORS_HTML = """
     display:block;
   }
   .card:hover { border-color:var(--gold); box-shadow:0 5px 18px rgba(0,0,0,.13); transform:translateY(-3px); }
+  .card-confirmed {
+    border-color:var(--gold);
+    box-shadow:0 2px 10px rgba(201,160,74,.25);
+  }
   .card-inner {
     display:block; text-decoration:none; color:var(--ink);
     padding:1.2rem 1rem 1rem;
@@ -1013,6 +974,53 @@ ANCESTORS_HTML = """
   .empty a:hover { text-decoration:underline; }
 </style>
 
+<svg class="scene" viewBox="0 0 800 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="asky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#cfe6f2"/><stop offset="100%" stop-color="#f4ecd8"/>
+    </linearGradient>
+    <linearGradient id="ah1" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#6ca84a"/><stop offset="100%" stop-color="#4a7c3a"/>
+    </linearGradient>
+    <linearGradient id="ah2" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#8bbd5d"/><stop offset="100%" stop-color="#5d8f3d"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="130" fill="url(#asky)"/>
+  <path d="M0 95 Q200 50 400 80 T800 70 L800 130 L0 130 Z" fill="url(#ah1)"/>
+  <path d="M0 110 Q150 85 350 105 T800 98 L800 130 L0 130 Z" fill="url(#ah2)"/>
+  <g transform="translate(560,78)">
+    <rect x="0" y="14" width="52" height="34" fill="#d9c9a0" stroke="#8b6f47" stroke-width="1.5"/>
+    <polygon points="-4,14 26,-4 56,14" fill="#6b4a2a" stroke="#4a3220" stroke-width="1.5"/>
+    <rect x="20" y="28" width="10" height="20" fill="#4a3220"/>
+    <rect x="6" y="20" width="9" height="9" fill="#f4ecd8" stroke="#8b6f47"/>
+    <rect x="38" y="20" width="9" height="9" fill="#f4ecd8" stroke="#8b6f47"/>
+  </g>
+  <g transform="translate(80,88)">
+    <ellipse cx="0" cy="20" rx="22" ry="14" fill="#2f5a22"/>
+    <ellipse cx="-10" cy="14" rx="15" ry="13" fill="#3a6b2a"/>
+    <ellipse cx="10" cy="14" rx="15" ry="13" fill="#3a6b2a"/>
+    <rect x="-3" y="20" width="6" height="12" fill="#5a3a20"/>
+  </g>
+  <g transform="translate(185,108)">
+    <ellipse cx="0" cy="0" rx="12" ry="7" fill="#f5f0e4"/>
+    <circle cx="-10" cy="-2" r="5" fill="#4a3a28"/>
+    <circle cx="-11" cy="-3" r="1.3" fill="#000"/>
+    <rect x="-5" y="6" width="3" height="4" fill="#4a3a28"/>
+    <rect x="3" y="6" width="3" height="4" fill="#4a3a28"/>
+  </g>
+  <g transform="translate(255,114)">
+    <ellipse cx="0" cy="0" rx="11" ry="7" fill="#f5f0e4"/>
+    <circle cx="-9" cy="-2" r="5" fill="#4a3a28"/>
+    <circle cx="-10" cy="-3" r="1.2" fill="#000"/>
+    <rect x="-4" y="6" width="3" height="4" fill="#4a3a28"/>
+    <rect x="3" y="6" width="3" height="4" fill="#4a3a28"/>
+  </g>
+  <circle cx="700" cy="28" r="18" fill="#f6d35e" opacity=".85"/>
+  <text x="400" y="55" text-anchor="middle" font-size="28" opacity=".55">&#128214;</text>
+</svg>
+
+<div class="page-body">
 <div class="nav">
   <a href="{{ url_for('index') }}">&#8592; Find someone</a>
 </div>
@@ -1021,9 +1029,17 @@ ANCESTORS_HTML = """
 <p class="subtitle">Everyone we have been searching for</p>
 
 {% if people %}
+{% set n_confirmed = people | selectattr('confirmed', 'gt', 0) | list | length %}
+{% set n_found = people | selectattr('found', 'gt', 0) | selectattr('confirmed', 'eq', 0) | list | length %}
+{% set n_none = people | selectattr('found', 'eq', 0) | list | length %}
+<div class="summary-bar">
+  {% if n_confirmed %}<span>&#11088; {{ n_confirmed }} confirmed</span>{% endif %}
+  {% if n_found %}<span>&#128270; {{ n_found }} with records</span>{% endif %}
+  {% if n_none %}<span>&#8203;&#128100; {{ n_none }} not yet searched</span>{% endif %}
+</div>
 <div class="grid">
   {% for p in people %}
-  <div class="card">
+  <div class="card{% if p.confirmed > 0 %} card-confirmed{% endif %}">
     <a class="card-inner" href="{{ url_for('person_page', slug=p.slug) }}">
       <div class="avatar" style="background:{{ p.avatar_bg }};color:{{ p.avatar_fg }}">
         {{ p.forename[0]|upper }}
@@ -1054,6 +1070,7 @@ ANCESTORS_HTML = """
   <a href="{{ url_for('index') }}">Go find someone &#8594;</a>
 </div>
 {% endif %}
+</div>
 """
 
 
