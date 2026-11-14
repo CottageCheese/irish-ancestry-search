@@ -149,7 +149,7 @@ def read_people(path: Path, logger: logging.Logger | None = None) -> list[Person
       - blank surname AND forename  -> row skipped
       - birth_year_approx that isn't a 4-digit year
       - county that doesn't look like any of Ireland's 32
-      - year_range that isn't a positive integer
+      - year_range that isn't a non-negative integer (0 = exact year)
     """
     def warn(msg: str) -> None:
         if logger:
@@ -183,9 +183,9 @@ def read_people(path: Path, logger: logging.Logger | None = None) -> list[Person
                 birth_year = int(year_raw) if year_raw.isdigit() else None
 
             range_raw = (row.get("year_range") or "").strip()
-            if range_raw and not (range_raw.isdigit() and 0 < int(range_raw) <= 50):
+            if range_raw and not (range_raw.isdigit() and 0 <= int(range_raw) <= 50):
                 warn(f"row {i} ({surname},{forename}): year_range={range_raw!r} "
-                     "is not a positive integer <= 50; using default 5")
+                     "is not an integer 0-50; using default 5")
                 year_range = 5
             else:
                 year_range = int(range_raw) if range_raw.isdigit() else 5
