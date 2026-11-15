@@ -1,28 +1,73 @@
-# Irish Genealogy Search
+# Irish Ancestry Search
 
-A small Python script that opens a web browser and searches three **free** Irish
-family-history sites for the ancestors you list in a spreadsheet. It saves
-everything it finds to a CSV file and a tidy HTML summary you can open in any
-browser.
+A friendly desktop app that hunts for your Irish ancestors across three
+**free** Irish family-history websites at once. Type a name, pick a county,
+and watch it search census records, civil registration, church records, and
+Griffith's Valuation — then tap through the matches it finds, keep the ones
+that are yours, and build up a little family book over time.
 
-The sites it searches:
+Designed for newcomers to family history: no genealogy jargon, plain-English
+explanations on every record, star ratings on how good each match looks, and
+a gentle visual interface anyone in the family can use.
 
-1. **National Archives of Ireland census**
-   <https://nationalarchives.ie/collections/search-the-census/>
-   * 1901 and 1911: fully automated.
-   * 1926: separate search tool - the results include a direct search link
-     you click in your browser.
-2. **IrishGenealogy.ie** - civil records *and* church records (both types,
-   six event categories: Birth, Marriage, Death, Baptism, Marriage, Burial)
-   <https://www.irishgenealogy.ie>
-3. **Griffith's Valuation** on Ask About Ireland
-   <https://www.askaboutireland.ie/griffith-valuation/> - output is a direct
-   search link you click in your own browser (the site sits behind a
-   Cloudflare challenge that blocks automated access).
+## What it does
 
-> This is a **personal research tool**. It pauses 5-10 seconds between every
-> search and will stop and ask you to solve any CAPTCHA by hand. Please respect
-> each site's terms of use and don't run it in a tight loop.
+**Search**
+
+- Hunts three free Irish sites in one go:
+  - **National Archives census** — 1901, 1911, and 1926 (fully automated)
+  - **IrishGenealogy.ie** — civil *and* church records across six event
+    types (Birth / Marriage / Death / Baptism / Marriage / Burial)
+  - **Griffith's Valuation** — generates a one-click search link (the site
+    sits behind Cloudflare, so automation isn't allowed)
+- **Smart name matching** — handles spelling variants automatically.
+  William also searches Bill, Will, Liam, Billy. Furey also catches Fury
+  and Fewery. Soundex catches wonky spellings the registrar invented on
+  the day.
+- **Townland matching** — exact, variant, *and* soundex, so the parish
+  priest's creative spelling doesn't lose you a match.
+- **Household grouping** — when a census match is found, it also fetches
+  the other people living at the same address, so Patrick appearing in
+  the same household as John strengthens John's match.
+
+**Score & explain**
+
+- Every match gets a star rating and a confidence tier (Likely / Possible
+  / Weak). Click **"Why this score?"** on any card to see every bonus and
+  penalty broken down in plain English.
+- Known-wrong-sex records auto-reject (a male ancestor search won't keep
+  Bridgets).
+- Records outside the plausible year window auto-reject.
+- The feedback loop learns: when you confirm a record, future searches
+  rank similar records higher automatically.
+
+**Curate**
+
+- Three buttons on every record: **👍 That's them** (adds to your family),
+  **🔖 Keep** (interesting but not yours — goes to Bookmarks), **👎 Not
+  them**.
+- **Our Family** page shows every confirmed ancestor as a card, grouped by
+  Irish historical era (Famine years, Land War, Independence, etc.).
+- **Per-person pages** with a map of where they lived, a life timeline,
+  and record-type badges.
+- **Bookmarks** page for interesting records that aren't your line.
+
+**Export & share**
+
+- Results written to CSV (spreadsheet), HTML (pretty web page), JSON (for
+  developers), and GEDCOM (import into Ancestry, MyHeritage, FamilySearch,
+  etc.).
+- Confirmed-only GEDCOM so you only export the family you've verified.
+
+**Easy on the sites**
+
+- 5–10 second random pause between every search.
+- Stops and asks you to solve any CAPTCHA by hand — no bypass attempts.
+- Caches every search so re-runs don't hammer the same pages.
+- Automatically skips any site that fails to load twice in a row.
+
+> This is a **personal research tool**. Please respect each site's terms of
+> use, keep the delays, and don't run it in a tight loop.
 
 ---
 
