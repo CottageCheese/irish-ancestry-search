@@ -45,6 +45,11 @@ flowchart TD
 `genealogy_core` has no browser or I/O. `genealogy_scrape` owns everything
 browser-ish. `genealogy_search.py` and `web.py` are thin orchestrators.
 
+**`web.py`** is the browser-based interface. It runs a small Flask server at
+`http://127.0.0.1:8000`. From there you can type a name, choose filters, and
+watch a live loading screen while the search runs — no terminal needed. Results
+appear as cards you can confirm, reject, and export.
+
 ---
 
 ## What you need
@@ -86,28 +91,27 @@ You don't need to know any programming.
 **Windows (PowerShell)**
 
 ```powershell
-cd "C:\Projects\daf-search-free-Irish genealogy websites"
+cd irish-ancestry-search
 ```
 
 **Mac (Terminal)**
 
 ```bash
-cd ~/Downloads/daf-search-free-Irish-genealogy-websites
+cd irish-ancestry-search
 ```
 
-(Adjust the path to wherever you saved these files.)
+(Adjust the path to wherever you cloned or saved the folder.)
 
-### 3. Install Playwright
+### 3. Install dependencies
 
-Copy these two lines into your terminal, one at a time, and press Enter after
-each:
+Copy these lines into your terminal, one at a time, and press Enter after each:
 
 ```bash
-python -m pip install playwright
+python -m pip install playwright flask
 python -m playwright install chromium
 ```
 
-The first line installs the Python package. The second downloads a copy of the
+The first line installs the Python packages. The second downloads a copy of the
 Chromium browser (about 150 MB) that the script will drive.
 
 > **Why `python -m` ?** It runs the tool through Python itself, so it works even
@@ -129,9 +133,9 @@ Open `ancestors.csv` in Excel, Numbers, or any text editor. You will see a
 header row and example rows:
 
 ```csv
-surname,forename,surname_variants,birth_year_approx,year_range,county,notes
-Furey,John,Fury;Furey;Fewery,1875,5,Galway,Possibly born near Ballinasloe
-Kelly,Mary,Kelley;O'Kelly,1880,7,Mayo,Married in Castlebar area
+surname,forename,surname_variants,birth_year_approx,year_range,county,townland,townland_variants,father,mother,spouse,notes,sex
+Furey,John,Fury;Fewery,1875,5,Galway,Ballinasloe,,Patrick,Mary,,Possibly born near Ballinasloe,M
+Kelly,Mary,Kelley;O'Kelly,1880,7,Mayo,,,,,,Married in Castlebar area,F
 ```
 
 Columns:
@@ -146,12 +150,28 @@ Columns:
 | `county` | Irish county | `Galway` |
 | `townland` | Townland / parish (optional) | `Ballinasloe` |
 | `townland_variants` | Other spellings of townland, separated by `;` | `Ballybeg;Ballybeag` |
+| `father` | Father's first name (optional, helps kin matching) | `Patrick` |
+| `mother` | Mother's first name (optional) | `Mary` |
+| `spouse` | Spouse's first name (optional) | `Anne` |
+| `sex` | `M`, `F`, or leave blank | `M` |
 | `notes` | Anything for your own reference | `Born near Ballinasloe` |
 
 Replace the two example rows with your own ancestors. Save the file as **CSV
 (Comma delimited)** - *not* `.xlsx`.
 
 ### 5. Run it
+
+**Option A — web interface (recommended)**
+
+```bash
+python web.py
+```
+
+Then open **http://127.0.0.1:8000** in your browser. Type a name, choose
+filters, and click **Search**. A live loading screen shows each step as it
+runs. Results appear as cards you can confirm, reject, and download.
+
+**Option B — command line**
 
 ```bash
 python genealogy_search.py
@@ -165,7 +185,7 @@ can watch it work. When it finishes:
   person, with clickable links to each record.
 * **`run.log`** - a diary of every search and any errors.
 
-### Useful options
+### Useful command-line options
 
 ```bash
 python genealogy_search.py --headless                    # no visible browser
@@ -218,16 +238,16 @@ for *that site* and keeps going with the other two. Check `run.log` for details.
 
 To fix a broken site yourself:
 
-1. Open `genealogy_search.py` in any text editor.
-2. Near the top is a block labelled **CONFIG**. Find the entry in `SITES` for
-   the broken site.
+1. Open `genealogy_scrape/sites.py` in any text editor.
+2. Find the entry in `SITES` for the broken site (`nai_census`,
+   `irishgenealogy_civil`, or `griffiths`).
 3. Visit the site manually, do a search, and look at the URL in your browser's
    address bar. Update the `search_url` template so its `{placeholders}` match
    the real parameters.
 4. If needed, update the `results_table` and `results_row` CSS selectors by
    right-clicking a result in your browser and choosing **Inspect**.
 
-You never have to touch the search logic further down the file.
+You never have to touch the search logic in other files.
 
 ### Python says "command not found"
 

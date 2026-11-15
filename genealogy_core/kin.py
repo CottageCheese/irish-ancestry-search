@@ -4,7 +4,7 @@ import re
 from .feedback import score_hint_bonus
 from .models import Person, Record
 from .nicknames import MALE_NAMES, FEMALE_NAMES
-from .scoring import score_record
+from .scoring import score_record, _extract_year, _expected_event_window
 
 KIN_SPLIT = re.compile(r"[,\s;]+")
 
@@ -60,11 +60,40 @@ def annotate_records(person: Person, records: list[Record],
             r.score_breakdown["feedback"] = bonus
             r.kin_hits = f"{r.kin_hits}; feedback:{reason}".lstrip("; ") if r.kin_hits else f"feedback:{reason}"
 
-    if person.sex in ("M", "F"):
-        opp = FEMALE_NAMES if person.sex == "M" else MALE_NAMES
+    sex = person.sex
+    if sex not in ("M", "F"):
+        pf = (person.forename or "").split()[0].lower()
+        if pf in MALE_NAMES:
+            sex = "M"
+        elif pf in FEMALE_NAMES:
+            sex = "F"
+    if sex in ("M", "F"):
+        opp = FEMALE_NAMES if sex == "M" else MALE_NAMES
         for r in records:
-            if r.status:  # already user-set, don't override
+            if r.status:
                 continue
             first = (r.name_found or "").split()[0].lower() if r.name_found else ""
             if first and first in opp:
                 r.status = "rejected"
+
+    bw = person.year_window()
+    for r in records:
+        if r.status:
+            continue
+        if "manual" in (r.record_type or "").lower():
+            continue
+        bd = r.score_breakdown or {}
+        if bd.get("forename_mismatch", 0) < 0:
+            rescued = bool(r.kin_hits) or "townland" in bd or "townland_variant" in bd \
+                      or "townland_soundex" in bd or "census_age" in bd
+            if not rescued:
+                r.status = "rejected"
+                continue
+        if bw and "census_age" not in bd and "year_window" not in bd:
+            yr = _extract_year(r.age_or_year, r.name_found, r.record_type)
+            if yr is not None:
+                expected = _expected_event_window(r.record_type, bw)
+                if expected:
+                    lo, hi = expected
+                    if yr < lo - 5 or yr > hi + 5:
+                        r.status = "rejected"

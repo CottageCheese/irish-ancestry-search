@@ -108,18 +108,42 @@ INDEX_HTML = """
     --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
   }
   * { box-sizing: border-box; }
+  html {
+    background:
+      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
+                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
+                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
+                              transparent 18px),
+      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
+      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
+      var(--cream);
+    background-attachment: fixed;
+  }
   body {
     font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-    max-width: 900px; margin: 0 auto; padding: 1rem;
-    background: var(--cream); color: var(--ink); min-height: 100vh;
+    max-width: 900px; margin: 0 auto; padding: 1.4rem 1rem 1rem;
+    color: var(--ink); min-height: 100vh;
+    background: transparent;
   }
+  .site-foot {
+    text-align:center; margin: 1.6rem 0 .3rem; color: var(--sepia);
+    font-style: italic; font-size:.95rem; letter-spacing:.02em;
+  }
+  .site-foot .glyph { color: var(--moss-dark); font-style: normal; margin: 0 .35rem; }
   h1 { font-size: 2.2rem; margin:.2rem 0 .1rem; color: var(--moss-dark); text-align:center; letter-spacing:.02em; }
   .tagline { text-align:center; color: var(--sepia); font-style:italic; margin:0 0 .5rem; font-size:1.05rem; }
   .hero {
     background: #fffcf2; border: 2px solid var(--gold); border-radius: 12px;
-    padding: 1rem 1.3rem; margin: .4rem 0; box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    padding: 1rem 1.3rem; margin: .4rem 0;
+    box-shadow: 0 0 0 4px #fffcf2, 0 0 0 5px var(--sepia), 0 6px 14px rgba(0,0,0,.1);
     position: relative;
   }
+  .hero::before, .hero::after {
+    content:"\2619"; position:absolute; color: var(--gold); font-size:1.2rem;
+    opacity:.75;
+  }
+  .hero::before { top:.3rem; left:.5rem; }
+  .hero::after  { top:.3rem; right:.5rem; }
   .hero h2 { margin-top:0; margin-bottom:.25rem; color: var(--moss-dark); font-size:1.3rem; }
   label { display: block; margin:.55rem 0 .2rem; font-weight: 600; color: var(--moss-dark); font-size:1rem; }
   input[type=text], input[type=number], select {
@@ -156,7 +180,7 @@ INDEX_HTML = """
 </style>
 
 <h1>&#9752; Family Finder &#9752;</h1>
-<p class="tagline">Find your Irish ancestors in old books and papers</p>
+<p class="tagline">&mdash; <em>Fáilte</em> &mdash; hunting your Irish ancestors in the old books and papers &mdash;</p>
 
 {% set known = people | selectattr('forename') | list %}
 {% if known %}
@@ -333,7 +357,7 @@ INDEX_HTML = """
       .decade-btn.selected { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
     </style>
 
-    <button type="submit" class="go" id="qs-btn">&#127808; Find them!</button>
+    <button type="submit" class="go" id="qs-btn">&#9752; Begin the hunt &#127808;</button>
     <div id="qs-spinner" style="display:none;margin-top:.8rem;text-align:center">
       <div class="sheep-spin" aria-hidden="true">&#128017;</div>
       <div style="color:var(--sepia);font-style:italic;margin-top:.3rem">Asking the old books…</div>
@@ -1075,6 +1099,7 @@ async function tick() {
 tick();
 </script>
 {% endif %}
+<p class="site-foot"><span class="glyph">&#9752;</span> Sláinte <span class="glyph">&#9752;</span> built with love for the diaspora <span class="glyph">&#9752;</span></p>
 """
 
 
@@ -1732,6 +1757,8 @@ ANCESTORS_HTML = """
 <div class="page-body">
 <div class="nav">
   <a href="{{ url_for('index') }}">&#8592; Find someone</a>
+  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
+  <a href="{{ url_for('bookmarks_page') }}">&#128278; Bookmarks</a>
 </div>
 
 <h1>&#128106; Our Family</h1>
@@ -1749,6 +1776,12 @@ ANCESTORS_HTML = """
 <div class="filter-tabs" id="filter-tabs">
   <button data-filter="all" class="active">All ({{ people|length }})</button>
   <button data-filter="found">&#128214; Found ({{ n_confirmed + n_found }})</button>
+  <form method="post" action="{{ url_for('ancestors_wipe') }}" style="display:inline;margin-left:auto">
+    <button type="submit" style="background:#c0392b;color:#fff;border:0;border-radius:8px;padding:.35rem .7rem;cursor:pointer;font-family:inherit"
+      onclick="return confirm('Wipe EVERYTHING? This deletes every person, every record, and every confirmation. Cannot be undone.')">
+      &#9888; Wipe all
+    </button>
+  </form>
 </div>
 <div class="grid" id="ancestor-grid">
   {% for p in people %}
@@ -2454,6 +2487,33 @@ document.getElementById('add').addEventListener('click', addRow);
 """
 
 
+_THEME_EXTRA = """<style>
+  html {
+    background:
+      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
+                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
+                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
+                              transparent 18px),
+      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
+      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
+      #f4ecd8;
+    background-attachment: fixed;
+  }
+  body { background: transparent !important; padding-top: 1.4rem !important; }
+  .site-foot {
+    text-align:center; margin: 1.6rem 0 .3rem; color:#8b6f47;
+    font-style: italic; font-size:.95rem; letter-spacing:.02em;
+  }
+  .site-foot .glyph { color:#1f4722; font-style:normal; margin: 0 .35rem; }
+</style>"""
+_THEME_FOOT = ('<p class="site-foot"><span class="glyph">&#9752;</span> '
+               'Sl&aacute;inte <span class="glyph">&#9752;</span> '
+               'built with love for the diaspora '
+               '<span class="glyph">&#9752;</span></p>')
+for _name in ("ANCESTORS_HTML", "PERSON_HTML", "NARRATIVE_HTML", "PEOPLE_HTML"):
+    globals()[_name] = _THEME_EXTRA + globals()[_name] + _THEME_FOOT
+
+
 @app.route("/people")
 def people_page():
     with PEOPLE_LOCK:
@@ -2488,9 +2548,42 @@ def people_delete(idx: int) -> Response:
         rows = _read_rows()
         if idx < 0 or idx >= len(rows):
             return Response("bad index", status=400)
-        rows.pop(idx)
+        gone = rows.pop(idx)
         _write_rows(rows)
+    label = f"{gone.get('forename','').strip()} {gone.get('surname','').strip()}".strip()
+    if label:
+        _purge_person_trail(label)
     return Response(status=204)
+
+
+def _purge_person_trail(label: str) -> None:
+    """Strip rows from results.csv and entries from confirmations.json that
+    belong to a deleted person. Keeps 'Our Family' counts honest."""
+    results_csv_path = HERE / RESULTS_CSV
+    kept_records = []
+    dropped_keys: set[str] = set()
+    if results_csv_path.exists():
+        try:
+            records = load_records_csv(results_csv_path)
+            for r in records:
+                if r.person_searched == label:
+                    dropped_keys.add(record_key(r))
+                else:
+                    kept_records.append(r)
+            write_csv(kept_records, results_csv_path)
+            write_html(kept_records, HERE / RESULTS_HTML)
+        except Exception:
+            logging.getLogger("genealogy").exception("Purge results.csv failed")
+    with CONFIRMS_LOCK:
+        confs = load_confirmations(CONFIRMS_FILE)
+        changed = False
+        for k in list(confs.keys()):
+            entry = confs.get(k) or {}
+            if k in dropped_keys or entry.get("person") == label:
+                confs.pop(k, None)
+                changed = True
+        if changed:
+            save_confirmations(CONFIRMS_FILE, confs)
 
 
 @app.route("/ancestors")
@@ -2574,17 +2667,148 @@ def _silhouette(sex: str) -> str:
     return "\U0001F464"  # bust silhouette
 
 
+BOOKMARKS_HTML = """
+<!doctype html>
+<meta charset="utf-8">
+<title>Bookmarks &mdash; Family Finder</title>
+<style>
+  :root { --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
+          --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416; }
+  body { font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+         max-width:960px; margin:0 auto; padding:1rem; background:var(--cream); color:var(--ink); }
+  .nav a { color:var(--moss); text-decoration:none; font-weight:600; }
+  .nav a:hover { text-decoration:underline; }
+  h1 { color:var(--moss-dark); margin:.4rem 0 .2rem; }
+  .subtitle { color:var(--sepia); font-style:italic; margin:0 0 1rem; }
+  .group { background:#fff; border:1px solid var(--cream-dark); border-radius:10px;
+           padding:.8rem 1rem; margin:.8rem 0; }
+  .group h2 { margin:.1rem 0 .5rem; color:var(--moss-dark); font-size:1.2rem; }
+  .rec { border-left:4px solid var(--gold); padding:.4rem .7rem; margin:.4rem 0;
+         background:#fff8e8; border-radius:4px; }
+  .rec a.src { color:var(--moss); font-size:.85rem; margin-left:.4rem; }
+  .meta { color:var(--sepia); font-size:.85rem; }
+  .empty { color:var(--sepia); font-style:italic; text-align:center; padding:2rem; }
+  button.unkeep { background:#fff; border:1px solid #bbb; border-radius:6px;
+                  padding:.15rem .5rem; font-size:.8rem; cursor:pointer; margin-left:.5rem; }
+  button.unkeep:hover { background:#f4f4f4; }
+</style>
+<div class="nav">
+  <a href="{{ url_for('index') }}">&#8592; Find someone</a>
+  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
+  <a href="{{ url_for('ancestors_page') }}">&#128106; Our Family</a>
+</div>
+<h1>&#128278; Bookmarks</h1>
+<p class="subtitle">Records you kept &mdash; interesting, but not confirmed family.</p>
+
+{% if not groups %}
+  <div class="empty">
+    No bookmarks yet. In the results, tap <strong>&#128278; Keep</strong> on any
+    record that is worth remembering but isn't your ancestor.
+  </div>
+{% endif %}
+
+{% for surname, items in groups %}
+<div class="group">
+  <h2>{{ surname }} <span class="meta">({{ items|length }})</span></h2>
+  {% for r in items %}
+  <div class="rec" data-key="{{ r.key }}">
+    <strong>{{ r.name_found or 'Unknown' }}</strong>
+    {% if r.record_type %} &middot; {{ r.record_type }}{% endif %}
+    {% if r.age_or_year %} &middot; {{ r.age_or_year }}{% endif %}
+    {% if r.place %} &middot; {{ r.place }}{% endif %}
+    {% if r.link %}<a class="src" href="{{ r.link }}" target="_blank">open &#8599;</a>{% endif %}
+    <button class="unkeep" data-key="{{ r.key }}" data-person="{{ r.person_searched }}">remove</button>
+    <div class="meta">searched as {{ r.person_searched }} &middot; {{ r.site }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+
+<script>
+document.querySelectorAll('button.unkeep').forEach(function(b){
+  b.addEventListener('click',function(){
+    if(!confirm('Remove this bookmark?'))return;
+    fetch('/confirm',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({key:b.dataset.key,status:'',person:b.dataset.person})})
+    .then(function(r){if(r.ok){b.closest('.rec').remove();}
+      else r.text().then(function(t){alert('Failed: '+t);});});
+  });
+});
+</script>
+"""
+
+
+@app.route("/bookmarks")
+def bookmarks_page():
+    with CONFIRMS_LOCK:
+        confs = load_confirmations(CONFIRMS_FILE)
+    saved_keys = {k for k, v in confs.items() if v.get("status") == "saved"}
+    groups: dict[str, list[dict]] = {}
+    results_csv_path = HERE / RESULTS_CSV
+    if saved_keys and results_csv_path.exists():
+        try:
+            recs = load_records_csv(results_csv_path)
+            for r in recs:
+                k = record_key(r)
+                if k not in saved_keys:
+                    continue
+                surname = (r.person_searched.split()[-1]
+                           if r.person_searched else "Other")
+                groups.setdefault(surname, []).append({
+                    "key": k,
+                    "name_found": r.name_found,
+                    "record_type": r.record_type,
+                    "age_or_year": r.age_or_year,
+                    "place": r.place,
+                    "link": r.link,
+                    "site": r.site,
+                    "person_searched": r.person_searched,
+                })
+        except Exception:
+            logging.getLogger("genealogy").exception("bookmarks load failed")
+    ordered = sorted(groups.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    return render_template_string(BOOKMARKS_HTML, groups=ordered)
+
+
 @app.route("/ancestors/<slug>/delete", methods=["POST"])
 def ancestors_delete(slug: str):
+    purged: list[str] = []
     with PEOPLE_LOCK:
         rows = _read_rows()
         kept = []
         for row in rows:
             forename = row.get("forename", "").strip()
             surname = row.get("surname", "").strip()
-            if slugify(f"{forename} {surname}") != slug:
+            label = f"{forename} {surname}".strip()
+            if slugify(label) != slug:
                 kept.append(row)
+            else:
+                purged.append(label)
         _write_rows(kept)
+    for lbl in purged:
+        if lbl:
+            _purge_person_trail(lbl)
+    return redirect(url_for("ancestors_page"))
+
+
+@app.route("/ancestors/wipe", methods=["POST"])
+def ancestors_wipe():
+    """Nuke everything: ancestors.csv, results.csv/html/json, confirmations.json."""
+    with PEOPLE_LOCK:
+        _write_rows([])
+    for name in (RESULTS_CSV, RESULTS_HTML, RESULTS_JSON, RESULTS_SUMMARY):
+        p = HERE / name
+        try:
+            if p.exists():
+                p.unlink()
+        except Exception:
+            logging.getLogger("genealogy").exception("wipe: could not remove %s", name)
+    with CONFIRMS_LOCK:
+        try:
+            if CONFIRMS_FILE.exists():
+                CONFIRMS_FILE.unlink()
+        except Exception:
+            logging.getLogger("genealogy").exception("wipe: could not remove confirmations.json")
     return redirect(url_for("ancestors_page"))
 
 

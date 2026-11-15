@@ -67,7 +67,7 @@ class Record:
     is_new: bool = False
     thumbnail: str = ""
     user_notes: str = ""
-    status: str = ""  # "" | "confirmed" | "rejected" — set by user via web UI
+    status: str = ""  # "" | "confirmed" | "saved" | "rejected" — set by user via web UI
     name_used: str = ""  # forename+surname variant actually queried (may differ from person's primary)
     score_breakdown: dict[str, int] = field(default_factory=dict)
     household: list[str] = field(default_factory=list)  # co-resident names on census detail page

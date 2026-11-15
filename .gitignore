@@ -18,6 +18,7 @@ ancestors.csv
 
 # Scraper runtime artifacts
 run.log
+web.out
 .search_cache.json
 .storage_state.json
 results.csv
@@ -29,6 +30,9 @@ run.summary.md
 results/
 notes.md
 confirmations.json
+
+# Dev-only screenshot / smoke scripts
+scripts/
 
 # OS
 .DS_Store

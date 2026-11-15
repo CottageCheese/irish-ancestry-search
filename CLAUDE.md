@@ -11,6 +11,9 @@ At session start, check `BACKLOG.md` for pending work and in-progress phases.
 python -m pip install playwright pytest
 python -m playwright install chromium
 
+# Web UI (Flask, http://127.0.0.1:8000)
+python web.py
+
 # Run full tool (headed browser, reads ancestors.csv, writes results.csv/html)
 python genealogy_search.py
 python genealogy_search.py --headless                # no visible browser
@@ -26,7 +29,7 @@ python -m pytest tests/ -k soundex                   # by keyword
 python -m pytest tests/test_scoring.py::test_townland_match_adds_four  # one test
 ```
 
-No build step. No linter configured.
+No build step. Pre-commit linter: ruff + black (`.pre-commit-config.yaml`).
 
 ## Architecture
 
@@ -34,6 +37,7 @@ Three layers with a one-way dependency chain:
 
 ```
 genealogy_search.py  (CLI, I/O orchestration, writes CSV/HTML/JSON/GEDCOM)
+web.py               (Flask web UI, background-thread runner, polling endpoints)
         │
         ├── genealogy_scrape/   (Playwright scrapers, browser helpers, cache, run loop)
         │           │
@@ -81,4 +85,4 @@ Script enforces 5-10s random delay per host (`polite_pause`). When adding a scra
 
 ## Files not tracked
 
-See `.gitignore`. Scraper outputs (`results.*`, `run.log`, `.search_cache.json`, `.storage_state.json`, `results/`, `notes.md`) are ignored. `ancestors.csv` is **ignored** too (may contain real family PII); keep your real data at that path locally. A sample `ancestors.sample.csv` can be committed for new users.
+See `.gitignore`. Scraper outputs (`results.*`, `run.log`, `web.out`, `.search_cache.json`, `.storage_state.json`, `results/`, `notes.md`) are ignored. `ancestors.csv` is **ignored** too (may contain real family PII); keep your real data at that path locally. A sample `ancestors.sample.csv` can be committed for new users. `scripts/` holds dev-only screenshot/smoke tools and is also gitignored.

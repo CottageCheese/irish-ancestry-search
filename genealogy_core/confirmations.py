@@ -13,7 +13,7 @@ from typing import Iterable
 from .diff import _record_diff_key
 from .models import Record
 
-VALID_STATUSES = {"confirmed", "rejected"}
+VALID_STATUSES = {"confirmed", "saved", "rejected"}
 
 
 def record_key(r: Record) -> str:
