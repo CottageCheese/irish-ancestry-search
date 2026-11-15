@@ -56,6 +56,8 @@ web.py               (Flask web UI, background-thread runner, polling endpoints)
 
 This callback injection is what keeps `genealogy_scrape` free of HTML/CSV rendering imports.
 
+`web.py` is a single-file Flask app embedding all its templates as `*_HTML` string constants (renders via `render_template_string`). It runs `run_search` on a background thread and exposes polling endpoints (`/status.json`, `/log.json`) so the browser can show live progress. Key routes: `/` (landing + quick-search form), `/quick-search` (POST → appends to `ancestors.csv` + kicks off worker), `/ancestors` (Our Family grid), `/person/<slug>` (per-person page), `/bookmarks` (saved records), `/confirm` (POST updates `confirmations.json`), `/ancestors/wipe` (nukes CSV + results + confirmations). Shares `RUNTIME_FLAGS` and `scrape_settings.set_max_results` with the CLI.
+
 ### Key extraction patterns to preserve
 
 - **Pure-function parsers**: `genealogy_scrape.nai.parse_nai_row(cells, href, fallback_url, person, year, site_label) -> Record` takes a list of cell strings (not a Playwright handle) so it's testable with fixture data. The scraper function extracts cells from the DOM then calls the pure parser. Apply the same shape to any new scraper.
@@ -63,15 +65,21 @@ This callback injection is what keeps `genealogy_scrape` free of HTML/CSV render
 - **CLI override for scraper settings**: `scrape_settings.set_max_results(n)` mutates `genealogy_scrape.settings.MAX_RESULTS_PER_SEARCH`. All scraper modules read `settings.MAX_RESULTS_PER_SEARCH` fresh each call so the override is visible everywhere. Do not shadow with local copies.
 - **Dead-site circuit breaker**: `run_search` tracks `site_state[key]["fails"]`. After `MAX_CONSECUTIVE_FAILURES` consecutive load failures, the site is marked dead for the rest of the run. Scrapers increment `state["fails"]` on `safe_goto` failure and reset to 0 on success.
 - **Cache keys**: `SearchCache.key(*parts)` lower-cases and pipe-joins. Reuse this — don't invent per-site key schemes.
+- **Record status tri-state**: `Record.status` is `""` | `"confirmed"` | `"saved"` | `"rejected"`. `confirmed` = family; `saved` = bookmarked (interesting but not family); `rejected` = not them. Stored in `confirmations.json` keyed by `record_key(r)`. `VALID_STATUSES` in `genealogy_core.confirmations` is the source of truth — update it if adding states.
+- **Feedback loop**: `genealogy_core.feedback._build_hints(confirmations, records)` extracts place/surname/year signals from confirmed records; `score_hint_bonus` in `annotate_records` boosts matching records on the next run. CLI and web both wire this.
+- **Auto-rejection** (in `kin.annotate_records`): forename-mismatch records auto-reject unless rescued by townland/kin/census-age bonus; records outside the person's event-year window by >5y auto-reject; wrong-sex records auto-reject (sex inferred from forename if `person.sex` is blank).
 
 ### Dataflow per run
 
 1. `read_people` → `list[Person]` from `ancestors.csv`.
-2. `run_search` loops people × sites. Each site function yields `list[Record]`.
-3. `annotate_records(person, found)` (in `genealogy_core.kin`) applies score, kin bonus, and confidence tier.
-4. After each person: dedupe → optional sort → incremental save callback.
-5. After run: `mark_new_records` tags unseen records (diff against snapshot of previous `results.csv`).
-6. `write_csv` / `write_html` / `write_json` / `write_gedcom` / `write_summary` emit final artifacts.
+2. Load `confirmations.json` → `_build_hints(confirms, prev_records)` → pass `feedback_hints` into `run_search`.
+3. `run_search` loops people × sites. Each site function yields `list[Record]`.
+4. `annotate_records(person, found, feedback_hints)` (in `genealogy_core.kin`) applies score, kin bonus, feedback bonus, auto-rejection rules, and confidence tier.
+5. After each person: dedupe (two-pass: exact-key, then semantic by `(person, site, type, name, place, age_or_year)`) → optional sort → incremental save callback.
+6. After run: `mark_new_records` tags unseen records (diff against snapshot of previous `results.csv`).
+7. `write_csv` / `write_html` / `write_json` / `write_gedcom` / `write_summary` emit final artifacts.
+
+Web dataflow differs at the edges: step 1 may be a single person appended via `/quick-search`; step 7 is incremental (every person write triggers re-render so the UI picks it up); `/confirm` POSTs mutate `confirmations.json` mid-session and re-render `results.html`.
 
 ### Site-specific notes
 
