@@ -18,6 +18,13 @@ Working list. Tick when done. Add free-form.
 - [ ] Mobile layout: cards stack better; conf-buttons full-width on <600px.
 - [ ] Read-aloud mode: speech-synthesis button on each card so a young user can hear the sentence.
 - [ ] Printable one-pager per ancestor: strip JS/filters, just confirmed records + sources.
+- [ ] Prize-chest reveal on done: animated unfurling-scroll button that scrolls to results.
+- [ ] Story card per person: auto-written sentence from confirmed records ("William was alive in 1901, 1911, 1926. He lived in Galway.").
+- [ ] Fun facts tied to timeline events: "William was 23 when the Titanic sank" — derive from record years + existing `TL_EVENTS`.
+- [ ] Progress stickers / badges: 🥇 First census found, 🏅 Three decades matched, 🎖️ Household unlocked.
+- [ ] "What next?" cards after done: "Want to find William's dad?" one-click add-ancestor shortcut.
+- [ ] Live-log re-skin: hide "(remembered from earlier)" tech detail; friendlier phrasing on in-progress steps.
+- [ ] Decade/exact toggle polish: persist last-used mode in `localStorage` so returning users skip re-choosing.
 
 ### Ideas — data
 - [ ] "Export my family tree" button — build a GEDCOM from confirmed records across all ancestors with inferred relationships.
