@@ -278,29 +278,97 @@ INDEX_HTML = """
           </button>
         </div>
 
-        <div id="tl-modal" style="display:none;position:fixed;inset:0;background:rgba(40,30,15,.75);z-index:1000;align-items:center;justify-content:center;padding:1.5rem">
-          <div style="background:#fffcf2;border:3px solid var(--gold);border-radius:14px;max-width:1200px;width:100%;max-height:92vh;overflow:auto;padding:1.2rem 1.4rem;box-shadow:0 10px 30px rgba(0,0,0,.4);position:relative">
-            <button type="button" id="tl-close-btn" style="position:absolute;top:.6rem;right:.8rem;font-size:1.1rem;cursor:pointer;border:1px solid var(--gold);background:#fff;color:var(--sepia);border-radius:50%;width:2rem;height:2rem;font-family:inherit;font-weight:700">&times;</button>
-            <h2 style="margin:.1rem 0 .3rem;color:var(--moss-dark);font-size:1.4rem">&#128197; What else was happening in Ireland?</h2>
-            <div id="tl-modal-gen" style="font-size:1rem;color:var(--sepia);margin-bottom:.4rem"></div>
-            <svg id="tl-modal-svg" viewBox="0 0 1200 420" style="width:100%;height:auto;font-family:inherit" aria-hidden="true">
-              <line x1="40" y1="340" x2="1160" y2="340" stroke="#c9b37a" stroke-width="3"/>
-              <g font-size="18" fill="#8a7a4a" text-anchor="middle">
-                <g><line x1="40" y1="335" x2="40" y2="345" stroke="#c9b37a"/><text x="40" y="372">1800</text></g>
-                <g><line x1="280" y1="335" x2="280" y2="345" stroke="#c9b37a"/><text x="280" y="372">1830</text></g>
-                <g><line x1="520" y1="335" x2="520" y2="345" stroke="#c9b37a"/><text x="520" y="372">1860</text></g>
-                <g><line x1="760" y1="335" x2="760" y2="345" stroke="#c9b37a"/><text x="760" y="372">1890</text></g>
-                <g><line x1="1000" y1="335" x2="1000" y2="345" stroke="#c9b37a"/><text x="1000" y="372">1920</text></g>
-                <g><line x1="1160" y1="335" x2="1160" y2="345" stroke="#c9b37a"/><text x="1160" y="372">1950</text></g>
+        <style>
+          #tl-modal { display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center; padding:1.5rem;
+            background: radial-gradient(ellipse at center, rgba(40,25,5,.78) 0%, rgba(20,12,0,.92) 100%); }
+          #tl-modal-panel {
+            position:relative; max-width:1200px; width:100%; max-height:92vh; overflow:auto;
+            padding:1.6rem 2.2rem 1.4rem;
+            font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;
+            color:#3a2a10;
+            background:
+              radial-gradient(ellipse at 20% 10%, rgba(255,248,210,.9) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 90%, rgba(230,200,140,.6) 0%, transparent 55%),
+              repeating-linear-gradient(115deg, rgba(180,140,60,.045) 0 2px, transparent 2px 7px),
+              linear-gradient(180deg, #f8ecc8 0%, #ecd9a6 100%);
+            border-radius:6px;
+            box-shadow:
+              inset 0 0 0 2px #c9a24a,
+              inset 0 0 0 4px #fffcf2,
+              inset 0 0 0 5px #8b6d2e,
+              inset 0 0 40px rgba(160,110,30,.25),
+              0 18px 60px rgba(0,0,0,.6);
+          }
+          #tl-modal-panel::before, #tl-modal-panel::after {
+            content:"\2618"; position:absolute; font-size:1.5rem; color:#8b6d2e; opacity:.6;
+          }
+          #tl-modal-panel::before { top:.7rem; left:1rem; }
+          #tl-modal-panel::after { bottom:.7rem; right:1rem; }
+          .tl-corner { position:absolute; font-size:1.5rem; color:#8b6d2e; opacity:.6; }
+          .tl-corner.tr { top:.7rem; right:3rem; }
+          .tl-corner.bl { bottom:.7rem; left:1rem; }
+          .tl-title {
+            text-align:center; font-size:2rem; margin:0 0 .1rem;
+            color:#5a3f10; letter-spacing:.06em; font-variant:small-caps; font-weight:700;
+            text-shadow:0 1px 0 rgba(255,255,255,.4);
+          }
+          .tl-title .orn { color:#c9a24a; font-size:1.1rem; vertical-align:middle; margin:0 .4rem; }
+          .tl-subtitle {
+            text-align:center; font-style:italic; color:#7a5a2a; font-size:1.05rem; margin:0 0 .3rem;
+          }
+          .tl-divider {
+            text-align:center; color:#c9a24a; letter-spacing:.6em; margin:.1rem 0 .5rem; font-size:.9rem;
+          }
+          #tl-modal-caption {
+            margin-top:.7rem; padding:.7rem 1rem;
+            background:rgba(255,252,226,.55);
+            border-left:4px solid #c9a24a; border-right:4px solid #c9a24a;
+            border-radius:3px;
+            font-size:1.1rem; color:#5a3f10; line-height:1.5; font-style:italic;
+            text-align:center; min-height:1em;
+          }
+          #tl-close-btn {
+            position:absolute; top:.7rem; right:.9rem;
+            font-size:1.15rem; cursor:pointer;
+            border:1px solid #8b6d2e; background:#fffcf2; color:#5a3f10;
+            border-radius:50%; width:2.1rem; height:2.1rem;
+            font-family:inherit; font-weight:700;
+            box-shadow:inset 0 0 0 1px #c9a24a;
+          }
+          #tl-close-btn:hover { background:#f3e6c2; }
+          #tl-expand-btn {
+            font-family:"Palatino Linotype",Georgia,serif;
+            background:linear-gradient(180deg,#fffcf2,#f3e6c2);
+            border:1px solid #8b6d2e; color:#5a3f10;
+          }
+          #tl-expand-btn:hover { background:linear-gradient(180deg,#f8ecc8,#ecd9a6); }
+        </style>
+        <div id="tl-modal">
+          <div id="tl-modal-panel">
+            <span class="tl-corner tr">&#x2618;</span>
+            <span class="tl-corner bl">&#x2618;</span>
+            <button type="button" id="tl-close-btn">&times;</button>
+            <h2 class="tl-title"><span class="orn">&#x2766;</span>What Else Was Happening in &Eacute;ire<span class="orn">&#x2766;</span></h2>
+            <div class="tl-subtitle" id="tl-modal-gen"></div>
+            <div class="tl-divider">&#9753; &#8226; &#9753; &#8226; &#9753;</div>
+            <svg id="tl-modal-svg" viewBox="0 0 1200 420" style="width:100%;height:auto;font-family:'Palatino Linotype',Georgia,serif" aria-hidden="true">
+              <line x1="40" y1="340" x2="1160" y2="340" stroke="#8b6d2e" stroke-width="3"/>
+              <g font-size="18" fill="#5a3f10" font-weight="600" text-anchor="middle">
+                <g><line x1="40" y1="334" x2="40" y2="346" stroke="#8b6d2e" stroke-width="2"/><text x="40" y="372">1800</text></g>
+                <g><line x1="280" y1="334" x2="280" y2="346" stroke="#8b6d2e" stroke-width="2"/><text x="280" y="372">1830</text></g>
+                <g><line x1="520" y1="334" x2="520" y2="346" stroke="#8b6d2e" stroke-width="2"/><text x="520" y="372">1860</text></g>
+                <g><line x1="760" y1="334" x2="760" y2="346" stroke="#8b6d2e" stroke-width="2"/><text x="760" y="372">1890</text></g>
+                <g><line x1="1000" y1="334" x2="1000" y2="346" stroke="#8b6d2e" stroke-width="2"/><text x="1000" y="372">1920</text></g>
+                <g><line x1="1160" y1="334" x2="1160" y2="346" stroke="#8b6d2e" stroke-width="2"/><text x="1160" y="372">1950</text></g>
               </g>
-              <g id="tl-modal-events" font-size="17" fill="#5a4a2a" text-anchor="middle"></g>
+              <g id="tl-modal-events" font-size="18" fill="#3a2a10" text-anchor="middle"></g>
               <g id="tl-modal-pin" style="display:none">
-                <line id="tl-modal-pin-line" x1="0" y1="40" x2="0" y2="340" stroke="#c0392b" stroke-width="4"/>
-                <circle id="tl-modal-pin-dot" cx="0" cy="40" r="14" fill="#c0392b"/>
-                <text id="tl-modal-pin-label" x="0" y="26" font-size="24" fill="#c0392b" font-weight="700" text-anchor="middle"></text>
+                <line id="tl-modal-pin-line" x1="0" y1="40" x2="0" y2="340" stroke="#8a1c1c" stroke-width="4"/>
+                <circle id="tl-modal-pin-dot" cx="0" cy="40" r="14" fill="#8a1c1c" stroke="#fffcf2" stroke-width="2"/>
+                <text id="tl-modal-pin-label" x="0" y="26" font-size="24" fill="#8a1c1c" font-weight="700" text-anchor="middle"></text>
               </g>
             </svg>
-            <div id="tl-modal-caption" style="font-size:1.1rem;color:var(--sepia);margin-top:.5rem;line-height:1.4"></div>
+            <div id="tl-modal-caption"></div>
           </div>
         </div>
       </div>
@@ -665,8 +733,8 @@ INDEX_HTML = """
           var x = tlX(cfg, ev.year);
           var yLabel = cfg.rowTop + (total - 1 - i) * cfg.rowStep;
           var yTickTop = yLabel + 4;
-          g.innerHTML += '<line x1="'+x+'" y1="'+yTickTop+'" x2="'+x+'" y2="'+(cfg.lineY-2)+'" stroke="#d4c28a" stroke-width="1" stroke-dasharray="2,2"/>'
-            + '<text x="'+x+'" y="'+yLabel+'" font-weight="600">'+ev.year+' &#183; '+ev.emoji+' '+ev.label+'</text>';
+          g.innerHTML += '<line x1="'+x+'" y1="'+yTickTop+'" x2="'+x+'" y2="'+(cfg.lineY-2)+'" stroke="#a8884a" stroke-width="1" stroke-dasharray="3,3"/>'
+            + '<text x="'+x+'" y="'+yLabel+'" font-weight="700">'+ev.year+' &#183; '+ev.emoji+' '+ev.label+'</text>';
         });
       }
       renderEvents('tl-modal-events', TL_CFG.modal);
