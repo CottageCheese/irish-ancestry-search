@@ -217,6 +217,31 @@ INDEX_HTML = """
     0%,100% { box-shadow: 0 3px 0 #6b4a0e, 0 6px 14px rgba(0,0,0,.22), 0 0 0 0 rgba(201,160,74,.55); }
     50%     { box-shadow: 0 3px 0 #6b4a0e, 0 6px 14px rgba(0,0,0,.22), 0 0 0 12px rgba(201,160,74,0); }
   }
+  .next-cards {
+    margin: 1rem auto 0; max-width: 560px;
+    padding: .9rem 1rem; background: #fff7e6;
+    border: 1px dashed var(--gold); border-radius: 10px;
+  }
+  .next-title { font-weight: 700; color: var(--moss-dark); margin-bottom: .55rem; font-size: 1rem; }
+  .next-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: .5rem;
+  }
+  .next-card { margin: 0; display: flex; }
+  .next-btn {
+    width: 100%; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: .15rem;
+    padding: .6rem .5rem; background: #fffdf5;
+    border: 2px solid var(--moss); border-radius: 8px;
+    color: var(--ink); font-family: inherit;
+    transition: background .15s, transform .08s, border-color .15s;
+  }
+  .next-btn:hover { background: #f1e8c6; border-color: var(--moss-dark); }
+  .next-btn:active { transform: translateY(1px); }
+  a.next-btn { text-decoration: none; }
+  .next-emoji { font-size: 1.6rem; line-height: 1; }
+  .next-btn span:nth-child(2) { font-weight: 700; font-size: .95rem; }
+  .next-btn small { color: var(--sepia); font-size: .82rem; }
 </style>
 
 <h1>&#9752; Family Finder &#9752;</h1>
@@ -240,7 +265,7 @@ INDEX_HTML = """
     <div class="two-col">
       <div style="position:relative">
         <label for="forename">&#128100; First name</label>
-        <input type="text" id="forename" name="forename" required placeholder="e.g. Mary" autofocus>
+        <input type="text" id="forename" name="forename" required placeholder="e.g. Mary" autofocus value="{{ request.args.get('forename','') }}">
         <div id="fore-variants" style="display:none;position:absolute;top:calc(100% + 10px);left:0;right:0;z-index:20;background:#fff;border:2px solid var(--moss);border-radius:10px;padding:.6rem .8rem;box-shadow:0 4px 14px rgba(74,124,58,.18)">
           <div aria-hidden="true" style="position:absolute;top:-8px;left:24px;width:14px;height:14px;background:#fff;border-left:2px solid var(--moss);border-top:2px solid var(--moss);transform:rotate(45deg)"></div>
           <div style="font-size:.9rem;color:var(--moss-dark);margin-bottom:.35rem;font-weight:600">
@@ -255,16 +280,17 @@ INDEX_HTML = """
       </div>
       <div>
         <label for="surname">&#128106; Last name</label>
-        <input type="text" id="surname" name="surname" required placeholder="e.g. Kelly">
+        <input type="text" id="surname" name="surname" required placeholder="e.g. Kelly" value="{{ request.args.get('surname','') }}">
       </div>
     </div>
 
     <div style="margin-top:.55rem">
       <label style="display:block;margin-bottom:.3rem">Are they a&hellip;</label>
       <div style="display:flex;gap:.45rem;flex-wrap:wrap">
-        <label class="sex-btn"><input type="radio" name="sex" value="" checked> &#129335; Don&rsquo;t know</label>
-        <label class="sex-btn"><input type="radio" name="sex" value="M"> &#128102; Boy / Man</label>
-        <label class="sex-btn"><input type="radio" name="sex" value="F"> &#128103; Girl / Woman</label>
+        {% set psex = request.args.get('sex','') %}
+        <label class="sex-btn"><input type="radio" name="sex" value="" {% if psex not in ('M','F') %}checked{% endif %}> &#129335; Don&rsquo;t know</label>
+        <label class="sex-btn"><input type="radio" name="sex" value="M" {% if psex=='M' %}checked{% endif %}> &#128102; Boy / Man</label>
+        <label class="sex-btn"><input type="radio" name="sex" value="F" {% if psex=='F' %}checked{% endif %}> &#128103; Girl / Woman</label>
       </div>
       <div class="hint">Picking boy or girl helps skip records that are clearly the wrong person.</div>
     </div>
@@ -274,9 +300,9 @@ INDEX_HTML = """
         <label for="county">&#128506; Where in Ireland?</label>
         <select id="county" name="county">
           <option value="">(any county)</option>
-          {% for c in counties %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+          {% for c in counties %}<option value="{{ c }}" {% if request.args.get('county')==c %}selected{% endif %}>{{ c }}</option>{% endfor %}
         </select>
-        <input type="text" id="townland" name="townland" placeholder="Townland or village (optional) — e.g. Ballymore" autocomplete="off" style="margin-top:.4rem">
+        <input type="text" id="townland" name="townland" placeholder="Townland or village (optional) — e.g. Ballymore" autocomplete="off" style="margin-top:.4rem" value="{{ request.args.get('townland','') }}">
         <div class="hint">Know a townland or village? Shortest unique part works best. Leave blank if unsure.</div>
       </div>
       <div>
@@ -323,7 +349,7 @@ INDEX_HTML = """
         <div style="margin-top:.35rem;font-size:.82rem">
           <span id="census-age-readout" style="display:none;color:var(--moss-dark);font-weight:600"><span id="census-age-list"></span></span>
         </div>
-        <input type="hidden" id="birth_year" name="birth_year">
+        <input type="hidden" id="birth_year" name="birth_year" value="{{ request.args.get('birth_year','') }}">
         <input type="hidden" id="year_mode" name="year_mode" value="approx">
         <div id="timeline-wrap" style="display:none;margin-top:.45rem">
           <button type="button" id="tl-expand-btn" style="font-size:.88rem;cursor:pointer;border:1px solid var(--gold);background:#fffcf2;color:var(--sepia);border-radius:16px;padding:.35rem .9rem;font-family:inherit;font-weight:600">
@@ -492,7 +518,13 @@ INDEX_HTML = """
         font-family:inherit;
       }
       .tog-btn input { display:none; }
-      .tog-btn:has(input:checked) { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+      /* Both the modern :has() selector and the JS-synced .on class keep the
+         pill visibly selected. .on is the fallback for browsers without :has()
+         support — otherwise the preset button looks selected but the pills
+         look white, which is confusing on first page load. */
+      .tog-btn:has(input:checked), .tog-btn.on {
+        background:var(--moss); color:#fff; border-color:var(--moss-dark);
+      }
       .tog-btn:hover { border-color:var(--gold); }
       .sex-btn {
         display:inline-block; cursor:pointer; padding:.38rem 1rem;
@@ -641,6 +673,7 @@ INDEX_HTML = """
       function applyPreset(mode) {
         form.querySelectorAll('input[name="census_year"]').forEach(function(cb){ cb.checked = true; });
         form.querySelectorAll('input[name="ig_event"]').forEach(function(cb){ cb.checked = (mode === 'full'); });
+        if (typeof syncTogPills === 'function') syncTogPills();
         var pc = document.getElementById('preset-census');
         var pf = document.getElementById('preset-full');
         if (pc && pf) {
@@ -697,6 +730,12 @@ INDEX_HTML = """
         updateSearchCount();
         form.requestSubmit();
       });
+      function syncTogPills() {
+        form.querySelectorAll('.tog-btn').forEach(function(lbl){
+          var cb = lbl.querySelector('input[type="checkbox"]');
+          if (cb) lbl.classList.toggle('on', !!cb.checked);
+        });
+      }
       form.querySelectorAll('input[name="census_year"], input[name="ig_event"]').forEach(function(cb){
         cb.addEventListener('change', function(){
           // user manually toggled → both presets deselected
@@ -705,9 +744,11 @@ INDEX_HTML = """
           var base = 'padding:.4rem 1rem;border-radius:20px;border:2px solid;cursor:pointer;font:inherit;font-size:.9rem;font-weight:600;background:#fff;border-color:var(--cream-dark);color:var(--sepia)';
           if (pc) pc.setAttribute('style', base);
           if (pf) pf.setAttribute('style', base);
+          syncTogPills();
           updateSearchCount();
         });
       });
+      syncTogPills();
       var nicksCb = document.getElementById('use-nicks-cb');
       if (nicksCb) nicksCb.addEventListener('change', updateSearchCount);
       if (foreInput) foreInput.addEventListener('input', updateSearchCount);
@@ -1218,13 +1259,44 @@ INDEX_HTML = """
           <span id="st-new">{{ run.new_count }}</span> new since last time.
         </div>
         <a id="open-treasure" class="treasure-btn" href="{{ url_for('results_html') }}">
-          &#128273; Open your treasure
+          &#128273; See who we found
         </a>
         <div style="margin-top:1rem;display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">
           <a class="btn" href="{{ url_for('ancestors_page') }}">&#128106; Our family</a>
           <a class="btn" href="{{ url_for('download', name='results.csv') }}">&#128190; Save (CSV)</a>
           <a class="btn" href="{{ url_for('download', name='results.json') }}">&#128190; Save (JSON)</a>
         </div>
+        {% if next_suggestions %}
+        <div class="next-cards" id="st-next">
+          <div class="next-title">&#128269; Who next?</div>
+          <div class="next-grid">
+            {% for s in next_suggestions %}
+              {% if s.prefill_only %}
+              <a class="next-card next-btn" href="{{ url_for('prefill') }}?forename=&surname={{ s.surname|urlencode }}&birth_year={{ s.birth_year|urlencode }}&sex={{ s.sex|urlencode }}&county={{ s.county|urlencode }}">
+                <span class="next-emoji">{{ s.emoji }}</span>
+                <span>Add {{ s.label }}</span>
+                <small>type their name &rarr;</small>
+              </a>
+              {% else %}
+              <form method="post" action="{{ url_for('quick_search') }}" class="next-card">
+                <input type="hidden" name="forename" value="{{ s.forename }}">
+                <input type="hidden" name="surname" value="{{ s.surname }}">
+                <input type="hidden" name="county" value="{{ s.county }}">
+                <input type="hidden" name="birth_year" value="{{ s.birth_year }}">
+                <input type="hidden" name="year_mode" value="approx">
+                <input type="hidden" name="sex" value="{{ s.sex }}">
+                <input type="hidden" name="use_nicks" value="1">
+                <button type="submit" class="next-btn" title="Start a search for this ancestor">
+                  <span class="next-emoji">{{ s.emoji }}</span>
+                  <span>Find {{ s.label }}</span>
+                  <small>{{ s.forename }}{% if s.surname %} {{ s.surname }}{% endif %}</small>
+                </button>
+              </form>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
         <details style="margin-top:.8rem">
           <summary style="cursor:pointer;font-size:.85rem;color:var(--sepia);opacity:.75">Grown-up files</summary>
           <div style="margin-top:.4rem;display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">
@@ -1472,6 +1544,7 @@ async function tick() {
           doneBlock.classList.add('unfurled');
           setTimeout(() => doneBlock.scrollIntoView({behavior:'smooth', block:'center'}), 200);
         }));
+        renderNextSuggestions();
       }
     } else if (s.state === 'error') {
       doneBlock.style.display = 'none';
@@ -1489,6 +1562,54 @@ async function tick() {
     if (s.state === 'running') setTimeout(tick, 2000);
   } catch (e) { setTimeout(tick, 3000); }
 }
+
+async function renderNextSuggestions() {
+  if (document.getElementById('st-next')) return;  // already server-rendered
+  try {
+    const r = await fetch('{{ url_for("next_suggestions_json") }}');
+    if (!r.ok) return;
+    const data = await r.json();
+    const items = data.suggestions || [];
+    if (!items.length) return;
+    const host = document.querySelector('#st-done .scroll-content');
+    if (!host) return;
+    const action = {{ url_for('quick_search') | tojson }};
+    const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const qs = s => '?forename=&surname=' + encodeURIComponent(s.surname || '')
+      + '&birth_year=' + encodeURIComponent(s.birth_year || '')
+      + '&sex=' + encodeURIComponent(s.sex || '')
+      + '&county=' + encodeURIComponent(s.county || '');
+    const cards = items.map(s => s.prefill_only ? `
+      <a class="next-card next-btn" href="/prefill${qs(s)}">
+        <span class="next-emoji">${esc(s.emoji)}</span>
+        <span>Add ${esc(s.label)}</span>
+        <small>type their name &rarr;</small>
+      </a>` : `
+      <form method="post" action="${esc(action)}" class="next-card">
+        <input type="hidden" name="forename"    value="${esc(s.forename)}">
+        <input type="hidden" name="surname"     value="${esc(s.surname)}">
+        <input type="hidden" name="county"      value="${esc(s.county)}">
+        <input type="hidden" name="birth_year"  value="${esc(s.birth_year)}">
+        <input type="hidden" name="year_mode"   value="approx">
+        <input type="hidden" name="sex"         value="${esc(s.sex)}">
+        <input type="hidden" name="use_nicks"   value="1">
+        <button type="submit" class="next-btn">
+          <span class="next-emoji">${esc(s.emoji)}</span>
+          <span>Find ${esc(s.label)}</span>
+          <small>${esc(s.forename)}${s.surname ? ' ' + esc(s.surname) : ''}</small>
+        </button>
+      </form>`).join('');
+    const block = document.createElement('div');
+    block.className = 'next-cards';
+    block.id = 'st-next';
+    block.innerHTML = `<div class="next-title">&#128269; Who next?</div><div class="next-grid">${cards}</div>`;
+    const grownups = host.querySelector('details');
+    if (grownups) host.insertBefore(block, grownups);
+    else host.appendChild(block);
+  } catch (e) { /* ignore */ }
+}
+
 tick();
 </script>
 {% endif %}
@@ -1679,9 +1800,16 @@ def index():
     except Exception:
         people_rows = []
     sites = [{"key": k, "name": v.get("name", k)} for k, v in SITES.items()]
+    next_suggestions: list[dict] = []
+    if RUN.get("state") == "done" and not RUN.get("stopped"):
+        try:
+            next_suggestions = _next_suggestions(RUN.get("label") or "", people_rows)
+        except Exception:
+            next_suggestions = []
     return render_template_string(INDEX_HTML, run=RUN, people=people_rows,
                                   sites=sites, counties=IRISH_COUNTIES,
-                                  nicknames_json=json.dumps(NICKNAMES))
+                                  nicknames_json=json.dumps(NICKNAMES),
+                                  next_suggestions=next_suggestions)
 
 
 IRISH_COUNTIES = [
@@ -1858,11 +1986,12 @@ def cancel():
     return Response(status=204)
 
 
-@app.route("/reset", methods=["POST"])
-def reset():
+def _reset_run_state() -> bool:
+    """Flip RUN back to idle so the quick-search form renders. Returns False
+    if a run is currently in progress (nothing is reset)."""
     with RUN_LOCK:
         if RUN["state"] == "running":
-            return redirect(url_for("index"))
+            return False
         RUN.update({
             "state": "idle",
             "current": 0, "total": 0, "label": "",
@@ -1870,7 +1999,25 @@ def reset():
             "new_count": 0, "record_count": 0,
             "person_name": "",
         })
+    return True
+
+
+@app.route("/reset", methods=["POST"])
+def reset():
+    _reset_run_state()
     return redirect(url_for("index"))
+
+
+@app.route("/prefill")
+def prefill():
+    """Reset done-state so the quick-search form renders, then redirect to /
+    preserving the prefill query string. Used by the 'Add William's dad' cards
+    on the done screen — a bare link to /?surname=… would land on the done
+    panel since the form only renders in 'idle' state."""
+    _reset_run_state()
+    qs = request.query_string.decode("ascii", "ignore")
+    target = url_for("index") + (("?" + qs) if qs else "") + "#forename"
+    return redirect(target)
 
 
 TIER_ORDER = ["Likely", "Possible", "Weak", "Manual"]
@@ -2704,6 +2851,30 @@ def _rerender_results_html(confs: dict[str, dict]) -> None:
         logging.getLogger("genealogy").exception("Re-render after /confirm failed")
 
 
+@app.route("/next-suggestions.json")
+def next_suggestions_json() -> Response:
+    """Return {'suggestions': [...]} for the just-finished run. Used by the
+    done-panel JS to render 'Who next?' cards after a background poll detects
+    state=='done' (server-side render only fires on fresh page loads)."""
+    try:
+        with PEOPLE_LOCK:
+            rows = _read_rows()
+    except Exception:
+        rows = []
+    with RUN_LOCK:
+        label = RUN.get("label") or ""
+        stopped = bool(RUN.get("stopped"))
+        state = RUN.get("state")
+    suggestions: list[dict] = []
+    if state == "done" and not stopped:
+        try:
+            suggestions = _next_suggestions(label, rows)
+        except Exception:
+            suggestions = []
+    return Response(json.dumps({"suggestions": suggestions}),
+                    mimetype="application/json")
+
+
 @app.route("/status.json")
 def status_json() -> Response:
     with RUN_LOCK:
@@ -2758,6 +2929,85 @@ CSV_COLUMNS = [
     "father", "mother", "spouse", "notes", "sex",
 ]
 PEOPLE_LOCK = threading.Lock()
+
+
+def _next_suggestions(person_label: str, rows: list[dict]) -> list[dict]:
+    """Build 'Who next?' ancestor suggestions for the finished-run panel.
+
+    Looks up the just-searched person in ancestors.csv, reads their
+    father/mother/spouse fields, and returns one entry per named relative who
+    isn't already in the CSV. Birth year guessed as subject - 30 for parents.
+    Returns [] if the person isn't in the CSV or has no named relatives.
+    """
+    name = (person_label or "").split(" (")[0].strip()
+    if not name:
+        return []
+    parts = name.split(None, 1)
+    forename = parts[0] if parts else ""
+    surname = parts[1] if len(parts) > 1 else ""
+    row = next(
+        (r for r in rows
+         if (r.get("forename", "").strip().lower(),
+             r.get("surname", "").strip().lower()) == (forename.lower(), surname.lower())),
+        None,
+    )
+    if row is None:
+        return []
+
+    existing = {
+        (r.get("forename", "").strip().lower(), r.get("surname", "").strip().lower())
+        for r in rows
+    }
+    try:
+        birth = int(row.get("birth_year_approx") or 0) or None
+    except ValueError:
+        birth = None
+    parent_year = str(birth - 30) if birth else ""
+    county = row.get("county", "")
+
+    def _parse_relative(field: str, fallback_surname: str) -> tuple[str, str]:
+        raw = (row.get(field) or "").strip()
+        if not raw:
+            return "", ""
+        bits = raw.split(None, 1)
+        return bits[0], (bits[1] if len(bits) > 1 else fallback_surname)
+
+    out: list[dict] = []
+    # Father — defaults surname to subject's surname.
+    f_fore, f_surn = _parse_relative("father", surname)
+    f_have = bool(f_fore) and (f_fore.lower(), f_surn.lower()) not in existing
+    f_missing = not f_fore  # no father recorded at all → offer generic slot
+    if f_have or f_missing:
+        out.append({
+            "label": f"{forename}'s dad",
+            "emoji": "\U0001F468",
+            "forename": f_fore, "surname": f_surn or surname,
+            "birth_year": parent_year, "sex": "M", "county": county,
+            "prefill_only": not f_have,
+        })
+    # Mother — maiden name often unknown; blank fallback.
+    m_fore, m_surn = _parse_relative("mother", "")
+    m_have = bool(m_fore) and (m_fore.lower(), m_surn.lower()) not in existing
+    m_missing = not m_fore
+    if m_have or m_missing:
+        out.append({
+            "label": f"{forename}'s mum",
+            "emoji": "\U0001F469",
+            "forename": m_fore, "surname": m_surn,
+            "birth_year": parent_year, "sex": "F", "county": county,
+            "prefill_only": not m_have,
+        })
+    # Spouse — only suggest when explicitly recorded (speculative otherwise).
+    s_fore, s_surn = _parse_relative("spouse", "")
+    if s_fore and (s_fore.lower(), s_surn.lower()) not in existing:
+        out.append({
+            "label": f"{forename}'s partner",
+            "emoji": "\U0001F49E",
+            "forename": s_fore, "surname": s_surn,
+            "birth_year": str(birth) if birth else "", "sex": "", "county": county,
+            "prefill_only": False,
+        })
+    return out
 
 
 def _read_rows() -> list[dict]:

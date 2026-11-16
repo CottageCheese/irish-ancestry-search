@@ -318,10 +318,24 @@ def write_csv(records: list[Record], path: Path) -> None:
 # _summarise_person moved to genealogy_core.render.summarise_person.
 
 
+def _persons_map_from_ancestors(ancestors_path: Path) -> dict[str, Person]:
+    """Best-effort load of ancestors.csv into a name→Person map. Silent on errors
+    so HTML rendering never breaks because of a missing/malformed CSV."""
+    try:
+        if not ancestors_path.exists():
+            return {}
+        people = read_people(ancestors_path)
+        return {p.label(): p for p in people}
+    except Exception:
+        return {}
+
+
 def write_html(records: list[Record], path: Path) -> None:
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     collapse = RUNTIME_FLAGS.get("collapse_weak", True)
-    path.write_text(render_results_html(records, stamp, collapse_weak=collapse),
+    persons = _persons_map_from_ancestors(path.parent / "ancestors.csv")
+    path.write_text(render_results_html(records, stamp, collapse_weak=collapse,
+                                        persons=persons),
                     encoding="utf-8")
 
 
@@ -457,9 +471,12 @@ def filter_people(
 def write_person_html(name: str, recs: list[Record], path: Path) -> None:
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     collapse = RUNTIME_FLAGS.get("collapse_weak", True)
+    # per-person pages live in results/; ancestors.csv is one level up.
+    persons = _persons_map_from_ancestors(path.parent.parent / "ancestors.csv")
     html_str = render_person_page(name, recs, stamp,
                                   back_href=f"../{RESULTS_HTML}",
-                                  collapse_weak=collapse)
+                                  collapse_weak=collapse,
+                                  person=persons.get(name))
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(html_str, encoding="utf-8")
 

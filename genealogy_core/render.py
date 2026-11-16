@@ -8,8 +8,9 @@ import json
 import re
 
 from .confirmations import record_key
-from .models import Record, confidence_tier
+from .models import Person, Record, confidence_tier
 from .nicknames import NICKNAMES
+from .story import build_story
 
 
 RECORD_ICONS: dict[str, str] = {
@@ -91,6 +92,16 @@ _BASE_CSS = (
     ".progress-bar{height:8px;background:#eee;border-radius:4px;overflow:hidden}"
     ".progress-fill{height:100%;background:linear-gradient(90deg,#2a7d2a,#5cb85c);width:0%;transition:width .4s}"
     ".progress-text{font-size:.85em;color:#555;margin-top:.2em}"
+    ".story-box{margin-top:.8em;padding:.6em .9em;background:rgba(255,255,255,.55);"
+    "border:1px dashed #b48a1a;border-radius:8px}"
+    ".story-box summary{cursor:pointer;font-weight:600;color:#6b4a0e;list-style:none}"
+    ".story-box summary::-webkit-details-marker{display:none}"
+    ".story-box summary::before{content:'\\25B6';display:inline-block;margin-right:.4em;"
+    "transition:transform .2s;font-size:.8em}"
+    ".story-box[open] summary::before{transform:rotate(90deg)}"
+    ".story-list{margin:.5em 0 0;padding-left:1.2em;line-height:1.5;color:#333}"
+    ".story-list li{margin:.15em 0}"
+    ".story-fact{color:#8b6f47;font-style:italic}"
     ".tier-section{margin:1.2em 0}"
     ".tier-head{font-weight:700;font-size:1.05em;margin:0 0 .5em;display:flex;align-items:center;gap:.4em}"
     ".tier-head .stars{color:#f3a800;letter-spacing:2px}"
@@ -186,6 +197,10 @@ _DARK_CSS = (
     "body.dark h1{border-bottom-color:#c7a46b}"
     "body.dark .person-hero{background:linear-gradient(135deg,#2a241c,#3a2e20);border-left-color:#c7a46b}"
     "body.dark .hero-sub,body.dark .progress-text,body.dark .tier-blurb{color:#aaa}"
+    "body.dark .story-box{background:rgba(0,0,0,.25);border-color:#c7a46b}"
+    "body.dark .story-box summary{color:#e5c58a}"
+    "body.dark .story-list{color:#ddd}"
+    "body.dark .story-fact{color:#c7a46b}"
     "body.dark .rec-card{background:#242424}"
     "body.dark .chip{background:#333;color:#ccc}"
     "body.dark .chip-place{background:#1e3b1e;color:#9c9}"
@@ -712,13 +727,40 @@ def render_person_table(recs: list[Record], collapse_weak: bool = True) -> str:
     return "".join(parts)
 
 
-def _person_hero(name: str, recs: list[Record]) -> str:
+def _person_stub(name: str) -> Person:
+    """Build a bare Person from the display name — no birth year, so no fun facts."""
+    parts = name.strip().split(None, 1)
+    forename = parts[0] if parts else ""
+    surname = parts[1] if len(parts) > 1 else ""
+    return Person(surname=surname, forename=forename)
+
+
+def _story_block(person: Person, recs: list[Record]) -> str:
+    sentences = build_story(person, recs)
+    if not sentences:
+        return ""
+    name = (person.forename or "they").strip() or "they"
+    items = []
+    for s in sentences:
+        css = "story-fact" if s.startswith("\u2728") else ""
+        items.append(f"<li class='{css}'>{_esc(s)}</li>")
+    return (
+        "<details class='story-box' open>"
+        f"<summary>\U0001F4D6 {_esc(name.capitalize())}'s story</summary>"
+        f"<ul class='story-list'>{''.join(items)}</ul>"
+        "</details>"
+    )
+
+
+def _person_hero(name: str, recs: list[Record],
+                 person: Person | None = None) -> str:
     tiers = _tier_counts(recs)
     total = len(recs)
     confirmed = sum(1 for r in recs if r.status == "confirmed")
     pct = (100 * confirmed / total) if total else 0
     initials = _avatar_initials(name)
     sentence = _hero_sentence(name, tiers, total)
+    story_html = _story_block(person or _person_stub(name), recs)
     return (
         f"<div class='person-hero'>"
         f"<div class='avatar'>{_esc(initials)}</div>"
@@ -729,6 +771,7 @@ def _person_hero(name: str, recs: list[Record]) -> str:
         f"<div class='progress-bar'><div class='progress-fill' style='width:{pct:.0f}%'></div></div>"
         f"<div class='progress-text'>✓ {confirmed} of {total} confirmed</div>"
         f"</div>"
+        f"{story_html}"
         f"<div style='display:flex;justify-content:flex-end;margin-top:.5em'>"
         f"<button type='button' class='btn-reject-rest' data-person='{_esc(name)}'"
         f" title='Reject all non-Likely records that have not been confirmed'>👎 Reject rest</button>"
@@ -738,8 +781,13 @@ def _person_hero(name: str, recs: list[Record]) -> str:
 
 
 def render_results_html(records: list[Record], stamp: str,
-                        collapse_weak: bool = True) -> str:
-    """Render the single-page results view: all people inline."""
+                        collapse_weak: bool = True,
+                        persons: dict[str, Person] | None = None) -> str:
+    """Render the single-page results view: all people inline.
+
+    `persons` maps display-name → Person; passed through so life-story fun facts
+    can use the real birth-year. Optional — a stub Person is used otherwise.
+    """
     grouped: dict[str, list[Record]] = {}
     for r in records:
         grouped.setdefault(r.person_searched, []).append(r)
@@ -754,7 +802,8 @@ def render_results_html(records: list[Record], stamp: str,
 
     for person, recs in grouped.items():
         parts.append(f"<div class='person-block' data-person='{_esc(person)}'>")
-        parts.append(_person_hero(person, recs))
+        p_obj = (persons or {}).get(person)
+        parts.append(_person_hero(person, recs, person=p_obj))
         parts.append(render_person_table(recs, collapse_weak=collapse_weak))
         parts.append("</div>")
 
@@ -765,14 +814,15 @@ def render_results_html(records: list[Record], stamp: str,
 
 
 def render_person_page(name: str, recs: list[Record], stamp: str,
-                       back_href: str, collapse_weak: bool = True) -> str:
+                       back_href: str, collapse_weak: bool = True,
+                       person: Person | None = None) -> str:
     """Render one person's page for the per-person output layout."""
     parts = _html_head(f"{name} - genealogy results")
     parts.append(f"<p><a href='{_esc(back_href)}'>&larr; back to index</a></p>")
     parts.append(f"<p>Generated {_esc(stamp)}.</p>")
     parts.append(_html_controls())
     parts.append(f"<div class='person-block' data-person='{_esc(name)}'>")
-    parts.append(_person_hero(name, recs))
+    parts.append(_person_hero(name, recs, person=person))
     parts.append(render_person_table(recs, collapse_weak=collapse_weak))
     parts.append("</div>")
     parts.append(_TOUR_HTML)

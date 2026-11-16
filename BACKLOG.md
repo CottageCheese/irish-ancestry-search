@@ -18,10 +18,7 @@ Working list. Tick when done. Add free-form.
 - [ ] Mobile layout: cards stack better; conf-buttons full-width on <600px.
 - [ ] Read-aloud mode: speech-synthesis button on each card so a young user can hear the sentence.
 - [ ] Printable one-pager per ancestor: strip JS/filters, just confirmed records + sources.
-- [ ] Story card per person: auto-written sentence from confirmed records ("William was alive in 1901, 1911, 1926. He lived in Galway.").
-- [ ] Fun facts tied to timeline events: "William was 23 when the Titanic sank" — derive from record years + existing `TL_EVENTS`.
 - [ ] Progress stickers / badges: 🥇 First census found, 🏅 Three decades matched, 🎖️ Household unlocked.
-- [ ] "What next?" cards after done: "Want to find William's dad?" one-click add-ancestor shortcut.
 - [ ] Live-log re-skin: hide "(remembered from earlier)" tech detail; friendlier phrasing on in-progress steps.
 - [ ] Decade/exact toggle polish: persist last-used mode in `localStorage` so returning users skip re-choosing.
 
@@ -31,6 +28,27 @@ Working list. Tick when done. Add free-form.
 
 
 ## Done
+
+### "Who next?" cards on done screen (Nov 2026)
+- [x] `_next_suggestions(person_label, rows)` in `web.py`: reads subject's father/mother/spouse from ancestors.csv; when the relative is unrecorded, emits a `prefill_only` slot instead of nothing so there's always a next step. Spouse only shown when explicitly named (too speculative otherwise). Dad slot inherits subject's surname; mum surname stays blank (maiden name unknown); parent birth year defaults to subject − 30, spouse to subject's year.
+- [x] `/next-suggestions.json` endpoint returns suggestions for `RUN.label` when state=='done' and not stopped; served via `fetch` from the done-panel JS after the poll detects completion (server-render only fires on fresh page loads, so JS covers the mid-poll case).
+- [x] Done scroll renders a `.next-cards` block: named relatives → POST form auto-launching `/quick-search`; prefill slots → GET link to `/?forename=&surname=…` landing user on a prefilled form with cursor in the forename field.
+- [x] Quick-search form inputs honour `request.args` for forename/surname/county/townland/birth_year/sex so the prefill link round-trips cleanly.
+- [x] 12 tests in `tests/test_next_suggestions.py` covering missing subject, generic-slot fallback, surname inheritance, dedupe against existing CSV rows, bad birth year, "(saved)" label suffix.
+
+### `:has()` fallback for filter pills (Nov 2026)
+- [x] `.tog-btn` census/record pills gained a `.on` class synced by JS on load, change, and preset click. CSS selector widened to `.tog-btn:has(input:checked), .tog-btn.on` so browsers without `:has()` (older Firefox, pre-105 Chrome) still show pre-checked pills as moss-green instead of white-on-white, which made the preset button look selected while the pills looked unchecked.
+
+### Story card + fun facts per person (Nov 2026)
+- [x] New `genealogy_core/story.py` pure module: `build_story(person, records)` returns chronological kid-friendly sentences from confirmed records (falls back to Likely tier if nothing confirmed).
+- [x] Life events: birth/baptism, marriage, death/burial, census (year pulled from `record_type`), Griffith's. Deduped by (kind, year).
+- [x] `STORY_EVENTS` timeline (Famine, Titanic, Easter Rising, WWs, census years) → up to 2 "✨ William was 23 when the Titanic sank (1912)" facts; skipped when their year overlaps a story event.
+- [x] Rendered in `_person_hero` as collapsible `<details class='story-box' open>` with parchment styling + dark-mode support.
+- [x] `render_results_html` / `render_person_page` accept optional `persons` map; `write_html` / `write_person_html` auto-load `ancestors.csv` so birth year powers fun facts.
+- [x] 15 tests in `tests/test_story.py` covering empty, fallback, chronology, dedupe, fun-fact caps, rejected-exclusion.
+
+### "See who we found" button rename (Nov 2026)
+- [x] Done-screen CTA renamed from "Open your treasure" → "See who we found" — kid-friendly, honest about content (records list, not a map).
 
 ### Unfurling-scroll done screen (Nov 2026)
 - [x] Celebration banner rebuilt as parchment scroll between two wooden rods on `/` done panel; `.scroll-parchment` animates max-height 0 → 900px on `.unfurled` class (1.2s cubic-bezier).
