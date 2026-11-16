@@ -8,6 +8,7 @@ import logging
 
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 
+from genealogy_core.config import RUNTIME_FLAGS
 from genealogy_core.models import Person, Record
 
 from . import settings
@@ -170,7 +171,7 @@ def _search_nai_one(page: Page, person: Person, surname: str, forename: str,
 
     # Household grouping: fetch co-residents for the first HOUSEHOLD_FETCH_MAX
     # records that have a real detail URL (not just the search page URL).
-    budget = settings.HOUSEHOLD_FETCH_MAX
+    budget = settings.HOUSEHOLD_FETCH_MAX if RUNTIME_FLAGS.get("fetch_household", False) else 0
     if budget > 0:
         search_url_prefix = page.url.split("#")[0]
         fetched = 0

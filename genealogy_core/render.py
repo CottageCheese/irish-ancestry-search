@@ -148,6 +148,7 @@ _BASE_CSS = (
     "padding:.3em .8em;border-radius:6px;font-size:.85em;font-weight:600;margin-left:auto}"
     ".btn-reject-rest:hover{background:#b43232;color:#fff}"
     ".variant{font-size:.8em;color:#666;font-style:italic;margin-top:.15em}"
+    ".rec-other{color:#555;font-size:.9em;margin:.3em 0}"
     ".rec-why{margin:.3em 0}"
     ".rec-why summary{font-size:.85em;color:#555;cursor:pointer;display:inline-block;"
     "padding:2px 8px;border-radius:12px;background:#eef;list-style:none}"
@@ -204,6 +205,7 @@ _DARK_CSS = (
     "body.dark .rec-why .why-pos{color:#8fd48f}"
     "body.dark .rec-why .why-neg{color:#e78a8a}"
     "body.dark .rec-household{background:#2a2416;color:#c8b98a;border-left-color:#8b6f47}"
+    "body.dark .rec-other{color:#c8c8c8}"
     "body.dark a{color:#6bb6ff}"
     "body.dark .name-search{background:linear-gradient(135deg,#1a2030,#1a2a1a);border-color:#8b6f47}"
     "body.dark .name-search-title{color:#d4b896}"
@@ -567,7 +569,13 @@ def _render_household(r: Record) -> str:
     text = ", ".join(_esc(n) for n in shown)
     if extra > 0:
         text += f" <em>(+{extra} more)</em>"
-    return f"<div class='rec-household'>🏠 Lived with: {text}</div>"
+    hint = (
+        "<div style='font-size:.78em;opacity:.75;margin-top:.2em;font-style:italic'>"
+        "These names come from the same census household &mdash; this card matched "
+        "your search; the extra names are their family living under the same roof."
+        "</div>"
+    )
+    return f"<div class='rec-household'>🏠 Lived with: {text}{hint}</div>"
 
 
 def _render_why(r: Record) -> str:
@@ -637,7 +645,7 @@ def _render_card(r: Record) -> str:
 
     other = ""
     if r.other_details:
-        other = f"<div class='rec-other' style='color:#555;font-size:.9em;margin:.3em 0'>{_esc(r.other_details)}</div>"
+        other = f"<div class='rec-other'>{_esc(r.other_details)}</div>"
 
     return (
         f"<article class='rec-card tier-{tier}{status_cls}' data-key='{key}' data-person='{_esc(r.person_searched)}'>"

@@ -236,7 +236,7 @@ INDEX_HTML = """
           <option value="">(any county)</option>
           {% for c in counties %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
         </select>
-        <input type="text" id="townland" name="townland" placeholder="Townland or village (optional) — e.g. Pollsillagh" autocomplete="off" style="margin-top:.4rem">
+        <input type="text" id="townland" name="townland" placeholder="Townland or village (optional) — e.g. Ballymore" autocomplete="off" style="margin-top:.4rem">
         <div class="hint">Know a townland or village? Shortest unique part works best. Leave blank if unsure.</div>
       </div>
       <div>
@@ -250,8 +250,7 @@ INDEX_HTML = """
             <button type="button" class="gen-btn" data-year="1840" data-range="15">Further back (born ~1820&ndash;1860)</button>
           </div>
         </div>
-        <div style="font-size:.85rem;color:var(--sepia);margin-bottom:.3rem">Tap a decade:</div>
-        <div id="decade-row" class="btn-group" style="margin-bottom:.5rem">
+        <div id="decade-row" class="btn-group" style="margin-bottom:.35rem">
           <button type="button" class="decade-btn" data-year="1825">1820s</button>
           <button type="button" class="decade-btn" data-year="1835">1830s</button>
           <button type="button" class="decade-btn" data-year="1845">1840s</button>
@@ -266,22 +265,20 @@ INDEX_HTML = """
           <button type="button" class="decade-btn" data-year="1935">1930s</button>
           <button type="button" class="decade-btn" data-year="1945">1940s</button>
         </div>
-        <div style="display:flex;gap:.5rem;align-items:center;font-size:.85rem;flex-wrap:wrap">
-          <span style="color:var(--sepia)">&#128170; Know exact year?</span>
-          <input type="number" id="exact_year" min="1700" max="1950" placeholder="e.g. 1875" style="width:7rem">
+        <div style="display:flex;gap:.4rem;align-items:center;font-size:.82rem;flex-wrap:wrap;margin-bottom:.25rem">
+          <span style="color:var(--sepia)">or exact year:</span>
+          <input type="number" id="exact_year" min="1700" max="1950" placeholder="e.g. 1875" style="width:7.5rem">
+          <span id="census-age-readout" style="display:none;color:var(--moss-dark);font-weight:600"><span id="census-age-list"></span></span>
         </div>
         <input type="hidden" id="birth_year" name="birth_year">
         <input type="hidden" id="year_mode" name="year_mode" value="approx">
-        <div class="hint">A decade is plenty &mdash; we&rsquo;ll search a few years either side.</div>
-        <div id="census-age-readout" style="display:none;margin-top:.5rem;padding:.5rem .7rem;background:#f4fdf4;border-left:3px solid var(--moss);border-radius:6px;font-size:.88rem;line-height:1.55">
-          <div style="font-weight:600;color:var(--moss-dark);margin-bottom:.2rem">&#128200; How old at each census?</div>
-          <div id="census-age-list"></div>
-        </div>
       </div>
     </div>
 
-    <div style="margin-top:.7rem;border-top:1px solid var(--cream-dark);padding-top:.6rem">
-      <div style="margin-bottom:.5rem;font-size:.9rem;color:var(--sepia);font-weight:600">What should we search?</div>
+    <details style="margin-top:.7rem;border-top:1px solid var(--cream-dark);padding-top:.6rem">
+      <summary style="cursor:pointer;margin-bottom:.5rem;font-size:.9rem;color:var(--sepia);font-weight:600;list-style:none;user-select:none">
+        &#9881; What should we search? <span style="font-weight:400;opacity:.75">(click to customise &mdash; defaults search everything)</span>
+      </summary>
       <div style="display:flex;gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap">
         <button type="button" id="preset-census"
           style="padding:.4rem 1rem;border-radius:20px;border:2px solid;cursor:pointer;font:inherit;font-size:.9rem;font-weight:600;background:#fff;border-color:var(--cream-dark);color:var(--sepia)">
@@ -292,13 +289,6 @@ INDEX_HTML = """
           🔍 Everything <span style="font-weight:400;opacity:.85">(takes longer)</span>
         </button>
       </div>
-      <div id="search-count" style="font-size:.85rem;color:var(--moss-dark);margin-bottom:.5rem;padding:.3rem .6rem;background:#f4fdf4;border-radius:6px;border-left:3px solid var(--moss)"></div>
-      <div id="fast-offer" style="display:none;font-size:.88rem;margin-bottom:.5rem;padding:.5rem .7rem;background:#fff6d8;border-left:3px solid #e0a800;border-radius:6px">
-        ⚡ That is a lot of searches. Each one takes 5–10s pause.
-        <button type="button" id="fast-btn" style="margin-left:.5rem;padding:.3rem .7rem;border-radius:16px;border:2px solid var(--moss);background:#fff;color:var(--moss-dark);cursor:pointer;font:inherit;font-size:.85rem;font-weight:600">
-          Fast search — exact name only
-        </button>
-      </div>
       <div class="filter-row">
         <span class="filter-lbl">📜 Census</span>
         <div class="btn-group">
@@ -306,6 +296,13 @@ INDEX_HTML = """
           <label class="tog-btn"><input type="checkbox" name="census_year" value="1911" checked>1911</label>
           <label class="tog-btn"><input type="checkbox" name="census_year" value="1926" checked>1926</label>
         </div>
+      </div>
+      <div class="filter-row" style="margin-top:.4rem">
+        <span class="filter-lbl">&nbsp;</span>
+        <label style="font-size:.88rem;cursor:pointer;display:inline-flex;align-items:center;gap:.4rem;color:var(--ink)" data-tip="&#127969; Also fetch who else lived in each census household. Slower but great for learning about families.">
+          <input type="checkbox" name="fetch_household" value="1">
+          &#127969; Also show household members <span style="font-weight:400;opacity:.7">(learning extra &mdash; slower)</span>
+        </label>
       </div>
       <div class="filter-row" style="margin-top:.4rem">
         <span class="filter-lbl">🔍 Records</span>
@@ -320,6 +317,14 @@ INDEX_HTML = """
       </div>
       <div id="rec-tip" style="visibility:hidden;margin-top:.4rem;margin-left:91px;padding:.4rem .7rem;background:#fffcf2;border-left:3px solid var(--gold);border-radius:0 6px 6px 0;font-size:.88rem;color:var(--ink)"></div>
       <div class="filter-hint">Click any to untick and skip that search.</div>
+    </details>
+
+    <div id="search-count" style="margin-top:.5rem;font-size:.85rem;color:var(--moss-dark);padding:.3rem .6rem;background:#f4fdf4;border-radius:6px;border-left:3px solid var(--moss)"></div>
+    <div id="fast-offer" style="display:none;margin-top:.4rem;font-size:.88rem;padding:.5rem .7rem;background:#fff6d8;border-left:3px solid #e0a800;border-radius:6px">
+      ⚡ That is a lot of searches. Each one takes 5–10s pause.
+      <button type="button" id="fast-btn" style="margin-left:.5rem;padding:.3rem .7rem;border-radius:16px;border:2px solid var(--moss);background:#fff;color:var(--moss-dark);cursor:pointer;font:inherit;font-size:.85rem;font-weight:600">
+        Fast search — exact name only
+      </button>
     </div>
 
     <div id="search-quality" style="visibility:hidden;margin:.7rem 0 .2rem;padding:.55rem .8rem;border-radius:8px;background:#f4fdf4;border:1px solid #c0dfc0;font-size:.95rem"></div>
@@ -353,7 +358,7 @@ INDEX_HTML = """
       }
       .gen-btn:hover { background:var(--gold); color:#fff; }
       .decade-btn {
-        cursor:pointer; padding:.35rem .7rem; border-radius:16px; font-size:.9rem;
+        cursor:pointer; padding:.22rem .55rem; border-radius:14px; font-size:.82rem;
         border:2px solid var(--cream-dark); background:#fff; color:var(--sepia);
         font-family:inherit; font-weight:600; transition:all .12s;
       }
@@ -568,24 +573,24 @@ INDEX_HTML = """
           });
           return;
         }
-        var lines = [];
+        var parts = [];
         years.forEach(function(cy){
           var age = cy - yr;
           var cb = form.querySelector('input[name="census_year"][value="'+cy+'"]');
           var label = cb ? cb.parentElement : null;
-          var text, implausible = false, reason = '';
+          var chip, implausible = false, reason = '';
           if (age < 0) {
-            text = '<span style="color:#888">Not born yet in '+cy+' &mdash; too early.</span>';
+            chip = '<span style="color:#aaa;text-decoration:line-through">'+cy+'</span>';
             implausible = true; reason = 'Not born yet in ' + cy;
           } else if (age > 95) {
-            text = '<span style="color:#888">In '+cy+" they'd be <strong>"+age+'</strong> &mdash; unlikely still alive.</span>';
+            chip = '<span style="color:#aaa;text-decoration:line-through">'+cy+':'+age+'</span>';
             implausible = true; reason = 'Would be ' + age + ' in ' + cy + ' — unlikely alive';
           } else if (age === 0) {
-            text = 'In <strong>'+cy+'</strong>: a <strong>newborn baby</strong> &#128700;';
+            chip = cy+': &#128700;baby';
           } else {
-            text = 'In <strong>'+cy+'</strong>: aged <strong>'+age+'</strong>';
+            chip = cy+': '+age;
           }
-          lines.push('<div>'+text+'</div>');
+          parts.push(chip);
           if (cb) {
             if (implausible) {
               if (cb.checked) cb.checked = false;
@@ -597,8 +602,8 @@ INDEX_HTML = """
             }
           }
         });
-        list.innerHTML = lines.join('');
-        readout.style.display = 'block';
+        list.innerHTML = '&nbsp;&middot;&nbsp;Age: ' + parts.join(' &middot; ');
+        readout.style.display = 'inline';
         if (typeof updateSearchCount === 'function') updateSearchCount();
       }
 
@@ -1415,6 +1420,7 @@ def quick_search():
 
     RUNTIME_FLAGS["soundex"] = False
     RUNTIME_FLAGS["collapse_weak"] = True
+    RUNTIME_FLAGS["fetch_household"] = bool(request.form.get("fetch_household"))
     census_years = set(request.form.getlist("census_year")) & {"1901", "1911", "1926"}
     ig_events = set(request.form.getlist("ig_event"))
     valid_ev = {"event-birth", "event-marriage", "event-death", "event-baptism", "event-burial"}
