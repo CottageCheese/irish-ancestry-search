@@ -250,24 +250,37 @@ INDEX_HTML = """
             <button type="button" class="gen-btn" data-year="1840" data-range="15">Further back (born ~1820&ndash;1860)</button>
           </div>
         </div>
-        <div id="decade-row" class="btn-group" style="margin-bottom:.35rem">
-          <button type="button" class="decade-btn" data-year="1825">1820s</button>
-          <button type="button" class="decade-btn" data-year="1835">1830s</button>
-          <button type="button" class="decade-btn" data-year="1845">1840s</button>
-          <button type="button" class="decade-btn" data-year="1855">1850s</button>
-          <button type="button" class="decade-btn" data-year="1865">1860s</button>
-          <button type="button" class="decade-btn" data-year="1875">1870s</button>
-          <button type="button" class="decade-btn" data-year="1885">1880s</button>
-          <button type="button" class="decade-btn" data-year="1895">1890s</button>
-          <button type="button" class="decade-btn" data-year="1905">1900s</button>
-          <button type="button" class="decade-btn" data-year="1915">1910s</button>
-          <button type="button" class="decade-btn" data-year="1925">1920s</button>
-          <button type="button" class="decade-btn" data-year="1935">1930s</button>
-          <button type="button" class="decade-btn" data-year="1945">1940s</button>
+        <div id="year-mode-toggle" class="seg" role="tablist" style="margin-bottom:.45rem">
+          <button type="button" class="seg-btn selected" data-mode="decade" role="tab" aria-selected="true">Decade</button>
+          <button type="button" class="seg-btn" data-mode="exact" role="tab" aria-selected="false">Exact year</button>
+          <button type="button" class="seg-btn" data-mode="unknown" role="tab" aria-selected="false">Not sure</button>
         </div>
-        <div style="display:flex;gap:.4rem;align-items:center;font-size:.82rem;flex-wrap:wrap;margin-bottom:.25rem">
-          <span style="color:var(--sepia)">or exact year:</span>
-          <input type="number" id="exact_year" min="1700" max="1950" placeholder="e.g. 1875" style="width:7.5rem">
+        <div id="mode-decade" class="mode-panel">
+          <div id="decade-row" class="btn-group" style="margin-bottom:.25rem">
+            <button type="button" class="decade-btn" data-year="1825">1820s</button>
+            <button type="button" class="decade-btn" data-year="1835">1830s</button>
+            <button type="button" class="decade-btn" data-year="1845">1840s</button>
+            <button type="button" class="decade-btn" data-year="1855">1850s</button>
+            <button type="button" class="decade-btn" data-year="1865">1860s</button>
+            <button type="button" class="decade-btn" data-year="1875">1870s</button>
+            <button type="button" class="decade-btn" data-year="1885">1880s</button>
+            <button type="button" class="decade-btn" data-year="1895">1890s</button>
+            <button type="button" class="decade-btn" data-year="1905">1900s</button>
+            <button type="button" class="decade-btn" data-year="1915">1910s</button>
+            <button type="button" class="decade-btn" data-year="1925">1920s</button>
+            <button type="button" class="decade-btn" data-year="1935">1930s</button>
+            <button type="button" class="decade-btn" data-year="1945">1940s</button>
+          </div>
+        </div>
+        <div id="mode-exact" class="mode-panel" style="display:none">
+          <div style="display:flex;gap:.4rem;align-items:center;font-size:.9rem;flex-wrap:wrap">
+            <input type="number" id="exact_year" min="1700" max="1950" placeholder="e.g. 1875" style="width:8rem">
+          </div>
+        </div>
+        <div id="mode-unknown" class="mode-panel" style="display:none;font-size:.85rem;color:var(--sepia);font-style:italic">
+          No year &mdash; search will cast a wider net; results less precise.
+        </div>
+        <div style="margin-top:.35rem;font-size:.82rem">
           <span id="census-age-readout" style="display:none;color:var(--moss-dark);font-weight:600"><span id="census-age-list"></span></span>
         </div>
         <input type="hidden" id="birth_year" name="birth_year">
@@ -463,6 +476,15 @@ INDEX_HTML = """
       }
       .decade-btn:hover { border-color:var(--gold); }
       .decade-btn.selected { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+      .seg { display:inline-flex; border:1px solid var(--cream-dark); border-radius:16px; overflow:hidden; background:#fff; }
+      .seg-btn {
+        cursor:pointer; padding:.3rem .8rem; font-size:.85rem; font-family:inherit; font-weight:600;
+        border:0; background:transparent; color:var(--sepia); transition:all .12s;
+        border-right:1px solid var(--cream-dark);
+      }
+      .seg-btn:last-child { border-right:0; }
+      .seg-btn:hover { background:#fffcf2; }
+      .seg-btn.selected { background:var(--moss); color:#fff; }
     </style>
 
     <button type="submit" class="go" id="qs-btn">&#9752; Begin the hunt &#127808;</button>
@@ -824,6 +846,46 @@ INDEX_HTML = """
         });
       }
 
+      // --- Year mode segmented toggle ---
+      var segBtns = document.querySelectorAll('#year-mode-toggle .seg-btn');
+      var panels = {
+        decade:  document.getElementById('mode-decade'),
+        exact:   document.getElementById('mode-exact'),
+        unknown: document.getElementById('mode-unknown')
+      };
+      function setYearMode(mode){
+        segBtns.forEach(function(b){
+          var on = b.dataset.mode === mode;
+          b.classList.toggle('selected', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        Object.keys(panels).forEach(function(k){
+          if (panels[k]) panels[k].style.display = (k === mode) ? '' : 'none';
+        });
+        if (mode === 'decade') {
+          if (exactInput) exactInput.value = '';
+          hiddenMode.value = 'approx';
+          var sel = document.querySelector('.decade-btn.selected');
+          hiddenYear.value = sel ? sel.dataset.year : '';
+        } else if (mode === 'exact') {
+          decadeBtns.forEach(function(x){ x.classList.remove('selected'); });
+          var v = exactInput ? exactInput.value.trim() : '';
+          hiddenYear.value = v;
+          hiddenMode.value = v ? 'exact' : 'approx';
+        } else {
+          decadeBtns.forEach(function(x){ x.classList.remove('selected'); });
+          if (exactInput) exactInput.value = '';
+          hiddenYear.value = '';
+          hiddenMode.value = 'approx';
+        }
+        updateQuality();
+        updateCensusAges();
+        updateTimeline();
+      }
+      segBtns.forEach(function(b){
+        b.addEventListener('click', function(){ setYearMode(b.dataset.mode); });
+      });
+
       // --- "Help me guess" generation shortcut ---
       var yhBtn = document.getElementById('year-helper-btn');
       var yhDiv = document.getElementById('year-helper');
@@ -836,7 +898,7 @@ INDEX_HTML = """
             var yr = parseInt(b.dataset.year);
             var decade = Math.floor(yr / 10) * 10 + 5;
             var match = document.querySelector('.decade-btn[data-year="' + decade + '"]');
-            if (match) pickDecade(match);
+            if (match) { setYearMode('decade'); pickDecade(match); }
             yhDiv.style.display = 'none';
           });
         });
