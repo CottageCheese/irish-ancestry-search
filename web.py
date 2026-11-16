@@ -1133,18 +1133,19 @@ INDEX_HTML = """
 </div>
 
 <div class="state" id="status-panel" style="{{ 'display:none' if run.state == 'running' else '' }}">
-  <strong>State:</strong> <span id="st-state">{{ run.state }}</span><br>
-  <strong>Progress:</strong> <span id="st-current">{{ run.current }}</span> / <span id="st-total">{{ run.total }}</span>
-  &mdash; <span id="st-label">{{ run.label }}</span>
-  <div class="bar"><div id="st-bar" style="width: {{ (100 * run.current / run.total) if run.total else 0 }}%"></div></div>
-  <div style="margin-top:.4rem">
-    <strong>Now searching:</strong> <code id="st-step">{{ run.step or '—' }}</code>
+  <div id="st-progress-block" style="{{ 'display:none' if run.state == 'done' else '' }}">
+    <strong>State:</strong> <span id="st-state">{{ run.state }}</span><br>
+    <strong>Progress:</strong> <span id="st-current">{{ run.current }}</span> / <span id="st-total">{{ run.total }}</span>
+    &mdash; <span id="st-label">{{ run.label }}</span>
+    <div class="bar"><div id="st-bar" style="width: {{ (100 * run.current / run.total) if run.total else 0 }}%"></div></div>
+    <div style="margin-top:.4rem">
+      <strong>Now searching:</strong> <code id="st-step">{{ run.step or '—' }}</code>
+    </div>
+    <div style="margin-top:.4rem">
+      <strong>Records so far:</strong> <span id="st-live">{{ run.live_records }}</span>
+      &nbsp;|&nbsp; <strong>Last site:</strong> <span id="st-site">{{ run.last_site or '—' }}</span>
+    </div>
   </div>
-  <div style="margin-top:.4rem">
-    <strong>Records so far:</strong> <span id="st-live">{{ run.live_records }}</span>
-    &nbsp;|&nbsp; <strong>Last site:</strong> <span id="st-site">{{ run.last_site or '—' }}</span>
-  </div>
-  <div id="st-debug" style="margin-top:.4rem;font-size:.75rem;color:#888;font-family:monospace"></div>
   <div id="st-pause" style="display:none;margin-top:.6rem;padding:.5rem .7rem;background:#fff6d8;border-left:3px solid #e0a800;border-radius:4px">
     <span style="font-size:1.1rem">&#9203;</span>
     <strong>Being polite:</strong> waiting
@@ -1165,14 +1166,31 @@ INDEX_HTML = """
   <div id="st-stopped" style="display:{{ 'block' if run.stopped else 'none' }};margin-top:.5rem;padding:.4rem .7rem;background:#fff6d8;border-left:3px solid #e0a800;border-radius:4px;font-size:.9rem">&#9208; Search stopped early &mdash; showing results found so far.</div>
 
   <div id="st-done" style="display:{{ 'block' if run.state == 'done' else 'none' }}">
-    <div><strong><span id="st-rc">{{ run.record_count }}</span></strong> unique record(s).
-         <span id="st-new">{{ run.new_count }}</span> new since previous run.</div>
-    <a class="btn" href="{{ url_for('ancestors_page') }}">&#128106; Our family</a>
-    <a class="btn" href="{{ url_for('results_html') }}" target="_blank">What we found</a>
-    <a class="btn" href="{{ url_for('download', name='results.csv') }}">Download CSV</a>
-    <a class="btn" href="{{ url_for('download', name='results.json') }}">Download JSON</a>
-    <a class="btn" href="{{ url_for('download', name='run.log') }}">run.log</a>
-    <a class="btn" href="{{ url_for('download', name='confirmations.json') }}">confirmations.json</a>
+    <div id="st-celebrate" style="text-align:center;padding:1.2rem 1rem 1rem;margin:.2rem 0 1rem;
+         background:linear-gradient(180deg,#fff9df 0%,#f6e9b8 100%);
+         border:2px solid var(--gold);border-radius:12px;box-shadow:inset 0 0 0 2px #fffcf2">
+      <div style="font-size:2.4rem;line-height:1">&#127881;</div>
+      <div style="font-size:1.35rem;font-weight:700;color:var(--moss-dark);margin-top:.3rem">
+        You found <span id="st-rc">{{ run.record_count }}</span> clue<span id="st-rc-plural">{{ '' if run.record_count == 1 else 's' }}</span>
+        <span id="st-celebrate-who">{% if run.label %}about {{ run.label.split(' (')[0] }}!{% else %}!{% endif %}</span>
+      </div>
+      <div id="st-new-line" style="font-size:.95rem;color:var(--sepia);margin-top:.35rem;font-style:italic">
+        <span id="st-new">{{ run.new_count }}</span> new since last time.
+      </div>
+    </div>
+    <div style="text-align:center;display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
+      <a class="btn" href="{{ url_for('ancestors_page') }}">&#128106; Our family</a>
+      <a class="btn" href="{{ url_for('results_html') }}" target="_blank">&#128269; What we found</a>
+      <a class="btn" href="{{ url_for('download', name='results.csv') }}">&#128190; Save (CSV)</a>
+      <a class="btn" href="{{ url_for('download', name='results.json') }}">&#128190; Save (JSON)</a>
+    </div>
+    <details style="margin-top:.8rem">
+      <summary style="cursor:pointer;font-size:.85rem;color:var(--sepia);opacity:.75">Grown-up files</summary>
+      <div style="margin-top:.4rem;display:flex;gap:.4rem;flex-wrap:wrap">
+        <a class="btn" href="{{ url_for('download', name='run.log') }}">run.log</a>
+        <a class="btn" href="{{ url_for('download', name='confirmations.json') }}">confirmations.json</a>
+      </div>
+    </details>
   </div>
 
   <form id="st-reset" method="post" action="{{ url_for('reset') }}" style="margin-top:1rem;display:{{ 'block' if run.state in ('done','error') else 'none' }}">
@@ -1228,8 +1246,6 @@ function renderChecklist() {
 
 let PAUSE = null;
 function updatePause(s) {
-  const dbg = document.getElementById('st-debug');
-  if (dbg) dbg.textContent = `dbg: state=${s.state} host=${s.pause_host||'-'} secs=${s.pause_seconds||0} until=${s.pause_until||0} now=${s.server_now||0} remain=${((s.pause_until||0)-(s.server_now||0)).toFixed(2)}`;
   if (s.state === 'running' && s.pause_until && s.server_now && s.pause_until > s.server_now) {
     const remainServer = s.pause_until - s.server_now;
     PAUSE = {
@@ -1390,19 +1406,32 @@ async function tick() {
     const doneBlock = document.getElementById('st-done');
     const resetBlock = document.getElementById('st-reset');
     const stoppedNote = document.getElementById('st-stopped');
+    const progressBlock = document.getElementById('st-progress-block');
     if (s.state === 'done') {
       doneBlock.style.display = 'block';
       resetBlock.style.display = 'block';
+      if (progressBlock) progressBlock.style.display = 'none';
       document.getElementById('st-rc').textContent = s.record_count;
       document.getElementById('st-new').textContent = s.new_count;
+      const plural = document.getElementById('st-rc-plural');
+      if (plural) plural.textContent = (s.record_count === 1) ? '' : 's';
+      const who = document.getElementById('st-celebrate-who');
+      if (who) {
+        const name = (s.label || '').split(' (')[0].trim();
+        who.textContent = name ? ('about ' + name + '!') : '!';
+      }
+      const newLine = document.getElementById('st-new-line');
+      if (newLine) newLine.style.display = (s.new_count > 0) ? '' : 'none';
       if (stoppedNote) stoppedNote.style.display = s.stopped ? 'block' : 'none';
     } else if (s.state === 'error') {
       doneBlock.style.display = 'none';
       resetBlock.style.display = 'block';
+      if (progressBlock) progressBlock.style.display = '';
       if (stoppedNote) stoppedNote.style.display = 'none';
     } else {
       doneBlock.style.display = 'none';
       resetBlock.style.display = 'none';
+      if (progressBlock) progressBlock.style.display = '';
       if (stoppedNote) stoppedNote.style.display = 'none';
     }
     if (s.state === 'running') setTimeout(tick, 2000);
