@@ -177,6 +177,46 @@ INDEX_HTML = """
     transition:background .15s, border-color .15s, box-shadow .15s;
   }
   .family-link:hover { background:#fff3c0; border-color:var(--sepia); box-shadow:0 3px 10px rgba(0,0,0,.1); }
+
+  .scroll-reveal { max-width: 480px; margin: .2rem auto 1rem; }
+  .scroll-rod {
+    height: 20px; margin: 0 -10px;
+    background: linear-gradient(180deg, #c48c4a 0%, #8a5a26 45%, #5a3812 100%);
+    border-radius: 10px;
+    box-shadow: inset 0 2px 0 rgba(255,236,190,.55), inset 0 -3px 0 rgba(0,0,0,.25), 0 3px 6px rgba(0,0,0,.25);
+    position: relative; z-index: 2;
+  }
+  .scroll-rod::before, .scroll-rod::after {
+    content:''; position:absolute; top:-4px; bottom:-4px; width:18px;
+    background: radial-gradient(ellipse at 40% 40%, #e6b878 0%, #8a5a26 60%, #4a2f0f 100%);
+    border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,.3);
+  }
+  .scroll-rod::before { left:-10px; } .scroll-rod::after { right:-10px; }
+  .scroll-parchment {
+    background: linear-gradient(180deg,#fff9df 0%,#f6e9b8 100%);
+    border-left: 2px solid var(--gold); border-right: 2px solid var(--gold);
+    box-shadow: inset 0 10px 14px -8px rgba(90,56,18,.35), inset 0 -10px 14px -8px rgba(90,56,18,.35);
+    overflow: hidden;
+    max-height: 0; opacity: 0;
+    transition: max-height 1.2s cubic-bezier(.65,.05,.36,1), opacity .5s .4s ease-out;
+  }
+  .scroll-reveal.unfurled .scroll-parchment { max-height: 900px; opacity: 1; }
+  .scroll-content { padding: 1.3rem 1.2rem 1.1rem; text-align:center; }
+  .treasure-btn {
+    display:inline-block; margin-top:1rem; padding:.78rem 1.7rem;
+    background: linear-gradient(180deg, #e8c468 0%, var(--gold) 55%, #a87a2c 100%);
+    color:#fff; text-decoration:none; font-weight:700; font-size:1.15rem;
+    border-radius:10px; letter-spacing:.02em;
+    box-shadow: 0 3px 0 #6b4a0e, 0 6px 14px rgba(0,0,0,.22);
+    animation: treasure-pulse 1.8s ease-in-out infinite;
+    transition: transform .1s;
+  }
+  .treasure-btn:hover { background: linear-gradient(180deg, #f3d07a 0%, #d6ad55 55%, #b8862f 100%); }
+  .treasure-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #6b4a0e; }
+  @keyframes treasure-pulse {
+    0%,100% { box-shadow: 0 3px 0 #6b4a0e, 0 6px 14px rgba(0,0,0,.22), 0 0 0 0 rgba(201,160,74,.55); }
+    50%     { box-shadow: 0 3px 0 #6b4a0e, 0 6px 14px rgba(0,0,0,.22), 0 0 0 12px rgba(201,160,74,0); }
+  }
 </style>
 
 <h1>&#9752; Family Finder &#9752;</h1>
@@ -1165,32 +1205,36 @@ INDEX_HTML = """
 
   <div id="st-stopped" style="display:{{ 'block' if run.stopped else 'none' }};margin-top:.5rem;padding:.4rem .7rem;background:#fff6d8;border-left:3px solid #e0a800;border-radius:4px;font-size:.9rem">&#9208; Search stopped early &mdash; showing results found so far.</div>
 
-  <div id="st-done" style="display:{{ 'block' if run.state == 'done' else 'none' }}">
-    <div id="st-celebrate" style="text-align:center;padding:1.2rem 1rem 1rem;margin:.2rem 0 1rem;
-         background:linear-gradient(180deg,#fff9df 0%,#f6e9b8 100%);
-         border:2px solid var(--gold);border-radius:12px;box-shadow:inset 0 0 0 2px #fffcf2">
-      <div style="font-size:2.4rem;line-height:1">&#127881;</div>
-      <div style="font-size:1.35rem;font-weight:700;color:var(--moss-dark);margin-top:.3rem">
-        You found <span id="st-rc">{{ run.record_count }}</span> clue<span id="st-rc-plural">{{ '' if run.record_count == 1 else 's' }}</span>
-        <span id="st-celebrate-who">{% if run.label %}about {{ run.label.split(' (')[0] }}!{% else %}!{% endif %}</span>
-      </div>
-      <div id="st-new-line" style="font-size:.95rem;color:var(--sepia);margin-top:.35rem;font-style:italic">
-        <span id="st-new">{{ run.new_count }}</span> new since last time.
+  <div id="st-done" class="scroll-reveal" style="display:{{ 'block' if run.state == 'done' else 'none' }}">
+    <div class="scroll-rod" aria-hidden="true"></div>
+    <div class="scroll-parchment">
+      <div class="scroll-content">
+        <div style="font-size:2.4rem;line-height:1">&#127881;</div>
+        <div style="font-size:1.35rem;font-weight:700;color:var(--moss-dark);margin-top:.3rem">
+          You found <span id="st-rc">{{ run.record_count }}</span> clue<span id="st-rc-plural">{{ '' if run.record_count == 1 else 's' }}</span>
+          <span id="st-celebrate-who">{% if run.label %}about {{ run.label.split(' (')[0] }}!{% else %}!{% endif %}</span>
+        </div>
+        <div id="st-new-line" style="font-size:.95rem;color:var(--sepia);margin-top:.35rem;font-style:italic">
+          <span id="st-new">{{ run.new_count }}</span> new since last time.
+        </div>
+        <a id="open-treasure" class="treasure-btn" href="{{ url_for('results_html') }}">
+          &#128273; Open your treasure
+        </a>
+        <div style="margin-top:1rem;display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">
+          <a class="btn" href="{{ url_for('ancestors_page') }}">&#128106; Our family</a>
+          <a class="btn" href="{{ url_for('download', name='results.csv') }}">&#128190; Save (CSV)</a>
+          <a class="btn" href="{{ url_for('download', name='results.json') }}">&#128190; Save (JSON)</a>
+        </div>
+        <details style="margin-top:.8rem">
+          <summary style="cursor:pointer;font-size:.85rem;color:var(--sepia);opacity:.75">Grown-up files</summary>
+          <div style="margin-top:.4rem;display:flex;gap:.4rem;flex-wrap:wrap;justify-content:center">
+            <a class="btn" href="{{ url_for('download', name='run.log') }}">run.log</a>
+            <a class="btn" href="{{ url_for('download', name='confirmations.json') }}">confirmations.json</a>
+          </div>
+        </details>
       </div>
     </div>
-    <div style="text-align:center;display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">
-      <a class="btn" href="{{ url_for('ancestors_page') }}">&#128106; Our family</a>
-      <a class="btn" href="{{ url_for('results_html') }}" target="_blank">&#128269; What we found</a>
-      <a class="btn" href="{{ url_for('download', name='results.csv') }}">&#128190; Save (CSV)</a>
-      <a class="btn" href="{{ url_for('download', name='results.json') }}">&#128190; Save (JSON)</a>
-    </div>
-    <details style="margin-top:.8rem">
-      <summary style="cursor:pointer;font-size:.85rem;color:var(--sepia);opacity:.75">Grown-up files</summary>
-      <div style="margin-top:.4rem;display:flex;gap:.4rem;flex-wrap:wrap">
-        <a class="btn" href="{{ url_for('download', name='run.log') }}">run.log</a>
-        <a class="btn" href="{{ url_for('download', name='confirmations.json') }}">confirmations.json</a>
-      </div>
-    </details>
+    <div class="scroll-rod" aria-hidden="true"></div>
   </div>
 
   <form id="st-reset" method="post" action="{{ url_for('reset') }}" style="margin-top:1rem;display:{{ 'block' if run.state in ('done','error') else 'none' }}">
@@ -1423,13 +1467,21 @@ async function tick() {
       const newLine = document.getElementById('st-new-line');
       if (newLine) newLine.style.display = (s.new_count > 0) ? '' : 'none';
       if (stoppedNote) stoppedNote.style.display = s.stopped ? 'block' : 'none';
+      if (!doneBlock.classList.contains('unfurled')) {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          doneBlock.classList.add('unfurled');
+          setTimeout(() => doneBlock.scrollIntoView({behavior:'smooth', block:'center'}), 200);
+        }));
+      }
     } else if (s.state === 'error') {
       doneBlock.style.display = 'none';
+      doneBlock.classList.remove('unfurled');
       resetBlock.style.display = 'block';
       if (progressBlock) progressBlock.style.display = '';
       if (stoppedNote) stoppedNote.style.display = 'none';
     } else {
       doneBlock.style.display = 'none';
+      doneBlock.classList.remove('unfurled');
       resetBlock.style.display = 'none';
       if (progressBlock) progressBlock.style.display = '';
       if (stoppedNote) stoppedNote.style.display = 'none';

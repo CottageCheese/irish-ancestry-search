@@ -18,7 +18,6 @@ Working list. Tick when done. Add free-form.
 - [ ] Mobile layout: cards stack better; conf-buttons full-width on <600px.
 - [ ] Read-aloud mode: speech-synthesis button on each card so a young user can hear the sentence.
 - [ ] Printable one-pager per ancestor: strip JS/filters, just confirmed records + sources.
-- [ ] Prize-chest reveal on done: animated unfurling-scroll button that scrolls to results.
 - [ ] Story card per person: auto-written sentence from confirmed records ("William was alive in 1901, 1911, 1926. He lived in Galway.").
 - [ ] Fun facts tied to timeline events: "William was 23 when the Titanic sank" — derive from record years + existing `TL_EVENTS`.
 - [ ] Progress stickers / badges: 🥇 First census found, 🏅 Three decades matched, 🎖️ Household unlocked.
@@ -32,6 +31,11 @@ Working list. Tick when done. Add free-form.
 
 
 ## Done
+
+### Unfurling-scroll done screen (Nov 2026)
+- [x] Celebration banner rebuilt as parchment scroll between two wooden rods on `/` done panel; `.scroll-parchment` animates max-height 0 → 900px on `.unfurled` class (1.2s cubic-bezier).
+- [x] JS adds `.unfurled` once per `state === 'done'` transition via double-rAF, then smooth-scrolls `#st-done` into view after 200ms. Class cleared on error/running so next run replays.
+- [x] Big gold "🗝️ Open your treasure" CTA inside scroll → `results.html`; pulsing box-shadow keyframes. Replaces old "What we found" btn.
 
 ### Quick-search year mode + kid-friendly done screen (Nov 2026)
 - [x] Segmented `[Decade] [Exact year] [Not sure]` toggle on quick-search; swaps visible panel, hidden `birth_year`/`year_mode` contract unchanged.
