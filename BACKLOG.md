@@ -26,6 +26,12 @@ Working list. Tick when done. Add free-form.
 
 ## Done
 
+### Quick-search year mode + kid-friendly done screen (Nov 2026)
+- [x] Segmented `[Decade] [Exact year] [Not sure]` toggle on quick-search; swaps visible panel, hidden `birth_year`/`year_mode` contract unchanged.
+- [x] Dev telemetry line (`dbg: state=…`) removed from status panel.
+- [x] On done, hide "State / Progress / Now searching / Records so far" rows; show celebration banner "🎉 You found N clues about <Name>!" + "N new since last time."
+- [x] Download buttons renamed "💾 Save (CSV)/(JSON)"; `run.log` + `confirmations.json` tucked behind collapsible "Grown-up files" disclosure.
+
 ### Late-1800s Irish cottage scene (Nov 2026)
 - [x] Both SVG scenes (loader 800×200, ancestors banner 800×130) redrawn: whitewashed limewashed walls, thatched roof with fan-texture lines + ridge, stone chimney at gable with smoke curl, split half-door (dutch), four-pane deep-set windows, stone foundation base.
 - [x] Added drystone field wall (grey stones), turf/peat stack, haycock, hawthorn tree, brown hen with red comb, woollier sheep (wool-curl circles + face).
