@@ -272,6 +272,29 @@ INDEX_HTML = """
         </div>
         <input type="hidden" id="birth_year" name="birth_year">
         <input type="hidden" id="year_mode" name="year_mode" value="approx">
+        <div id="timeline-wrap" style="display:none;margin-top:.5rem;padding:.5rem .6rem .35rem;background:#fffcf2;border:1px solid var(--gold);border-radius:8px">
+          <div style="font-size:.82rem;color:var(--moss-dark);font-weight:600;margin-bottom:.15rem">
+            &#128197; What else was happening? <span id="tl-gen" style="font-weight:400;color:var(--sepia)"></span>
+          </div>
+          <svg id="timeline-svg" viewBox="0 0 600 130" style="width:100%;height:130px;font-family:inherit" aria-hidden="true">
+            <line x1="20" y1="100" x2="580" y2="100" stroke="#c9b37a" stroke-width="2"/>
+            <g id="tl-ticks" font-size="9" fill="#8a7a4a" text-anchor="middle">
+              <g><line x1="20" y1="97" x2="20" y2="103" stroke="#c9b37a"/><text x="20" y="116">1800</text></g>
+              <g><line x1="140" y1="97" x2="140" y2="103" stroke="#c9b37a"/><text x="140" y="116">1830</text></g>
+              <g><line x1="260" y1="97" x2="260" y2="103" stroke="#c9b37a"/><text x="260" y="116">1860</text></g>
+              <g><line x1="380" y1="97" x2="380" y2="103" stroke="#c9b37a"/><text x="380" y="116">1890</text></g>
+              <g><line x1="500" y1="97" x2="500" y2="103" stroke="#c9b37a"/><text x="500" y="116">1920</text></g>
+              <g><line x1="580" y1="97" x2="580" y2="103" stroke="#c9b37a"/><text x="580" y="116">1950</text></g>
+            </g>
+            <g id="tl-events" font-size="8.5" fill="#5a4a2a" text-anchor="middle"></g>
+            <g id="tl-pin" style="display:none">
+              <line id="tl-pin-line" x1="0" y1="20" x2="0" y2="100" stroke="#c0392b" stroke-width="2"/>
+              <circle id="tl-pin-dot" cx="0" cy="20" r="6" fill="#c0392b"/>
+              <text id="tl-pin-label" x="0" y="14" font-size="10" fill="#c0392b" font-weight="700" text-anchor="middle"></text>
+            </g>
+          </svg>
+          <div id="tl-caption" style="font-size:.8rem;color:var(--sepia);margin-top:.1rem;min-height:1em"></div>
+        </div>
       </div>
     </div>
 
@@ -607,6 +630,93 @@ INDEX_HTML = """
         if (typeof updateSearchCount === 'function') updateSearchCount();
       }
 
+      // --- Timeline of historical events ---
+      var TL_EVENTS = [
+        {year:1803, label:'Emmet Rising', emoji:'\u2694'},
+        {year:1829, label:'Catholic Emancipation', emoji:'\u26EA'},
+        {year:1845, label:'Great Famine begins', emoji:'\u2620'},
+        {year:1848, label:'Coffin ships to America', emoji:'\u2693'},
+        {year:1864, label:'Civil records start', emoji:'\u270D'},
+        {year:1879, label:'Land War', emoji:'\u2692'},
+        {year:1886, label:'Emigration peak (~80k/yr)', emoji:'\u2708'},
+        {year:1892, label:'Ellis Island opens', emoji:'\u2693'},
+        {year:1901, label:'1901 Census', emoji:'\u2460'},
+        {year:1911, label:'1911 Census', emoji:'\u2461'},
+        {year:1912, label:'Titanic sinks', emoji:'\u2744'},
+        {year:1914, label:'WW1 begins', emoji:'\u2620'},
+        {year:1916, label:'Easter Rising', emoji:'\u2721'},
+        {year:1918, label:'WW1 ends / flu pandemic', emoji:'\u2695'},
+        {year:1919, label:'War of Independence', emoji:'\u2694'},
+        {year:1922, label:'Irish Free State', emoji:'\u2618'},
+        {year:1923, label:'Civil War ends', emoji:'\u262E'},
+        {year:1926, label:'1926 Census', emoji:'\u2462'},
+        {year:1939, label:'WW2 (Ireland neutral)', emoji:'\u26A0'}
+      ];
+      var TL_MIN = 1800, TL_MAX = 1950, TL_X0 = 20, TL_X1 = 580;
+      function tlX(y){ return TL_X0 + (y - TL_MIN) * (TL_X1 - TL_X0) / (TL_MAX - TL_MIN); }
+      (function renderTimelineEvents(){
+        var g = document.getElementById('tl-events');
+        if (!g) return;
+        // sort by year, then greedily place on first row whose last label doesn't overlap
+        var evs = TL_EVENTS.slice().sort(function(a,b){ return a.year - b.year; });
+        var rowYLabel = [88, 72, 56, 40, 24];
+        var rowLastX = [-999, -999, -999, -999, -999];
+        var minGap = 55; // px between labels on same row
+        evs.forEach(function(ev){
+          var x = tlX(ev.year);
+          var row = 0;
+          for (var r = 0; r < rowYLabel.length; r++){
+            if (x - rowLastX[r] >= minGap){ row = r; break; }
+            row = r + 1;
+          }
+          if (row >= rowYLabel.length) row = rowYLabel.length - 1;
+          rowLastX[row] = x;
+          var yLabel = rowYLabel[row];
+          var yTickTop = yLabel + 2;
+          g.innerHTML += '<line x1="'+x+'" y1="'+yTickTop+'" x2="'+x+'" y2="98" stroke="#d4c28a" stroke-width="1"/>'
+            + '<text x="'+x+'" y="'+yLabel+'">'+ev.emoji+' '+ev.label+'</text>';
+        });
+      })();
+      function generationLabel(y){
+        var now = new Date().getFullYear();
+        var gens = Math.round((now - y) / 30);
+        if (gens < 1) return '';
+        if (gens === 1) return '~1 generation ago';
+        return '~' + gens + ' generations ago';
+      }
+      function timelineCaption(y){
+        if (y < 1845) return 'Before the Great Famine — most families farmed small plots of land.';
+        if (y < 1852) return 'Famine years — a million died, a million more sailed on coffin ships.';
+        if (y < 1864) return 'Just after the Famine — mass emigration still reshaping every parish.';
+        if (y < 1880) return 'Civil records had started — births and deaths being written down.';
+        if (y < 1901) return 'Land War era — peak emigration, ~80,000 leaving each year for America.';
+        if (y < 1912) return 'Edwardian Ireland — counted in the 1901 and 1911 censuses.';
+        if (y < 1918) return 'Would have lived through WW1 and the Easter Rising.';
+        if (y < 1923) return 'War of Independence and Civil War — a violent birth for the new state.';
+        if (y < 1939) return 'Grew up in the young Irish Free State.';
+        return 'Teenager or young adult when WW2 broke out (Ireland stayed neutral).';
+      }
+      function updateTimeline(){
+        var wrap = document.getElementById('timeline-wrap');
+        var pin = document.getElementById('tl-pin');
+        var yr = parseInt(hiddenYear.value, 10);
+        if (!wrap) return;
+        if (!yr || isNaN(yr)) { wrap.style.display = 'none'; return; }
+        wrap.style.display = 'block';
+        var clamped = Math.min(TL_MAX, Math.max(TL_MIN, yr));
+        var x = tlX(clamped);
+        document.getElementById('tl-pin-line').setAttribute('x1', x);
+        document.getElementById('tl-pin-line').setAttribute('x2', x);
+        var dot = document.getElementById('tl-pin-dot');
+        dot.setAttribute('cx', x);
+        var lbl = document.getElementById('tl-pin-label');
+        lbl.setAttribute('x', x);
+        lbl.textContent = yr;
+        pin.style.display = '';
+        document.getElementById('tl-gen').textContent = '— born ~' + yr + ' · ' + generationLabel(yr);
+        document.getElementById('tl-caption').textContent = timelineCaption(yr);
+      }
+
       function pickDecade(btn){
         decadeBtns.forEach(function(x){ x.classList.remove('selected'); });
         btn.classList.add('selected');
@@ -615,6 +725,7 @@ INDEX_HTML = """
         if (exactInput) exactInput.value = '';
         updateQuality();
         updateCensusAges();
+        updateTimeline();
       }
       decadeBtns.forEach(function(b){
         b.addEventListener('click', function(){ pickDecade(b); });
@@ -632,6 +743,7 @@ INDEX_HTML = """
           }
           updateQuality();
           updateCensusAges();
+          updateTimeline();
         });
       }
 
