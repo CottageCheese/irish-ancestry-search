@@ -125,10 +125,15 @@ def score_record(person: Person, rec: Record) -> tuple[int, dict[str, int]]:
             bw = person.year_window()
             if cy and age is not None and bw:
                 implied = cy - age
-                # ±2y tolerance: census ages often rounded or off-by-one
-                if bw[0] - 2 <= implied <= bw[1] + 2:
+                # Tight (±1y) rewarded more than loose (±2y); >5y off penalised.
+                if bw[0] - 1 <= implied <= bw[1] + 1:
+                    breakdown["census_age"] = 4
+                    matched_narrow = True
+                elif bw[0] - 2 <= implied <= bw[1] + 2:
                     breakdown["census_age"] = 3
                     matched_narrow = True
+                elif implied < bw[0] - 5 or implied > bw[1] + 5:
+                    breakdown["census_age_mismatch"] = -3
         if not matched_narrow:
             year = _extract_year(rec.age_or_year, rec.name_found, rec.record_type)
             expected = _expected_event_window(rec.record_type, person.year_window())

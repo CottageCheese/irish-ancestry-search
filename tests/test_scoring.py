@@ -100,7 +100,7 @@ def test_census_age_implies_birth_year_in_window():
     r = _rec(record_type="Census 1901", name_found="John Furey",
              age_or_year="26", place="Galway")
     _, bd = score_record(_person(), r)
-    assert bd.get("census_age") == 3
+    assert bd.get("census_age") == 4  # tight ±1y match
     assert "year_window" not in bd  # census-age path wins, year path skipped
 
 
@@ -118,13 +118,14 @@ def test_census_age_outside_window_no_bonus():
              age_or_year="60", place="Galway")
     _, bd = score_record(_person(), r)
     assert "census_age" not in bd
+    assert bd.get("census_age_mismatch") == -3
 
 
 def test_census_age_with_units_parses():
     r = _rec(record_type="Census 1911", name_found="John Furey",
              age_or_year="36 years", place="Galway")
     _, bd = score_record(_person(), r)
-    assert bd.get("census_age") == 3  # 1911 - 36 = 1875
+    assert bd.get("census_age") == 4  # 1911 - 36 = 1875, tight ±1y
 
 
 def test_census_infant_age_zero_parses():
@@ -133,7 +134,7 @@ def test_census_infant_age_zero_parses():
     r = _rec(record_type="Census 1901", name_found="Baby Furey",
              age_or_year="0", place="Galway")
     _, bd = score_record(p, r)
-    assert bd.get("census_age") == 3
+    assert bd.get("census_age") == 4  # tight ±1y match
 
 
 def test_non_census_row_ignores_age_path():

@@ -273,6 +273,10 @@ INDEX_HTML = """
         <input type="hidden" id="birth_year" name="birth_year">
         <input type="hidden" id="year_mode" name="year_mode" value="approx">
         <div class="hint">A decade is plenty &mdash; we&rsquo;ll search a few years either side.</div>
+        <div id="census-age-readout" style="display:none;margin-top:.5rem;padding:.5rem .7rem;background:#f4fdf4;border-left:3px solid var(--moss);border-radius:6px;font-size:.88rem;line-height:1.55">
+          <div style="font-weight:600;color:var(--moss-dark);margin-bottom:.2rem">&#128200; How old at each census?</div>
+          <div id="census-age-list"></div>
+        </div>
       </div>
     </div>
 
@@ -548,6 +552,56 @@ INDEX_HTML = """
       var hiddenMode = document.getElementById('year_mode');
       var exactInput = document.getElementById('exact_year');
       var decadeBtns = document.querySelectorAll('.decade-btn');
+
+      // --- Census age readout + checkbox gating ---
+      function updateCensusAges(){
+        var readout = document.getElementById('census-age-readout');
+        var list = document.getElementById('census-age-list');
+        if (!readout || !list) return;
+        var yr = parseInt(hiddenYear.value, 10);
+        var years = [1901, 1911, 1926];
+        if (!yr || isNaN(yr)) {
+          readout.style.display = 'none';
+          years.forEach(function(cy){
+            var cb = form.querySelector('input[name="census_year"][value="'+cy+'"]');
+            if (cb) { cb.disabled = false; cb.parentElement.title = ''; cb.parentElement.style.opacity = ''; }
+          });
+          return;
+        }
+        var lines = [];
+        years.forEach(function(cy){
+          var age = cy - yr;
+          var cb = form.querySelector('input[name="census_year"][value="'+cy+'"]');
+          var label = cb ? cb.parentElement : null;
+          var text, implausible = false, reason = '';
+          if (age < 0) {
+            text = '<span style="color:#888">Not born yet in '+cy+' &mdash; too early.</span>';
+            implausible = true; reason = 'Not born yet in ' + cy;
+          } else if (age > 95) {
+            text = '<span style="color:#888">In '+cy+" they'd be <strong>"+age+'</strong> &mdash; unlikely still alive.</span>';
+            implausible = true; reason = 'Would be ' + age + ' in ' + cy + ' — unlikely alive';
+          } else if (age === 0) {
+            text = 'In <strong>'+cy+'</strong>: a <strong>newborn baby</strong> &#128700;';
+          } else {
+            text = 'In <strong>'+cy+'</strong>: aged <strong>'+age+'</strong>';
+          }
+          lines.push('<div>'+text+'</div>');
+          if (cb) {
+            if (implausible) {
+              if (cb.checked) cb.checked = false;
+              cb.disabled = true;
+              if (label) { label.title = reason; label.style.opacity = '.45'; }
+            } else {
+              cb.disabled = false;
+              if (label) { label.title = ''; label.style.opacity = ''; }
+            }
+          }
+        });
+        list.innerHTML = lines.join('');
+        readout.style.display = 'block';
+        if (typeof updateSearchCount === 'function') updateSearchCount();
+      }
+
       function pickDecade(btn){
         decadeBtns.forEach(function(x){ x.classList.remove('selected'); });
         btn.classList.add('selected');
@@ -555,6 +609,7 @@ INDEX_HTML = """
         hiddenMode.value = 'approx';
         if (exactInput) exactInput.value = '';
         updateQuality();
+        updateCensusAges();
       }
       decadeBtns.forEach(function(b){
         b.addEventListener('click', function(){ pickDecade(b); });
@@ -571,6 +626,7 @@ INDEX_HTML = """
             hiddenMode.value = 'approx';
           }
           updateQuality();
+          updateCensusAges();
         });
       }
 
