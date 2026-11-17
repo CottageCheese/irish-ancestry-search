@@ -244,6 +244,25 @@ def person_page(slug: str):
     total = sum(len(v) for v in tiers.values())
     confirmed_cards = [c for tier in TIER_ORDER for c in tiers.get(tier, []) if c.get("status") == "confirmed"]
 
+    tier_prio = {t: i for i, t in enumerate(TIER_ORDER)}
+    era_buckets: dict[str, list[dict]] = {}
+    for tier in TIER_ORDER:
+        for card in tiers.get(tier, []):
+            if card.get("year"):
+                _, era = _era_for_year(str(card["year"]))
+            else:
+                era = "Undated"
+            era_buckets.setdefault(era, []).append(card)
+    for cards in era_buckets.values():
+        cards.sort(key=lambda c: (c["year"] or 9999, tier_prio.get(c["tier"], 9)))
+
+    def _era_sort_key(e: str) -> int:
+        if e == "Undated":
+            return 999
+        return ERA_RANK.get(e, 99)
+
+    era_groups = [(e, era_buckets[e]) for e in sorted(era_buckets.keys(), key=_era_sort_key)]
+
     timeline = []
     if years:
         y_min, y_max = min(years), max(years)
@@ -341,4 +360,5 @@ def person_page(slug: str):
         bucket_meta=bucket_meta,
         map_data=map_data,
         confirmed_cards=confirmed_cards,
+        era_groups=era_groups,
     )

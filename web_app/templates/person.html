@@ -51,6 +51,27 @@
     padding:.35rem .7rem; border-radius:6px; display:inline-block;
   }
   .tier-blurb { font-size:.88rem; color:#666; margin-bottom:.4rem; }
+  .view-tabs { display:flex; gap:.4rem; margin:.4rem 0 1rem; }
+  .view-tabs button {
+    cursor:pointer; padding:.3rem .9rem; border-radius:16px; font-size:.85rem;
+    border:2px solid var(--cream-dark); background:#fffaef; color:var(--sepia);
+    font-family:inherit; font-weight:600; transition:all .12s;
+  }
+  .view-tabs button:hover { border-color:var(--gold); }
+  .view-tabs button.active { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+  .era-head {
+    font-family:inherit; color:var(--moss-dark); font-size:1.1rem;
+    margin: 1.1rem 0 .4rem; padding: .25rem .9rem; display:inline-block;
+    background: linear-gradient(90deg, rgba(201,160,74,.25), rgba(201,160,74,0));
+    border-left: 4px solid var(--gold); letter-spacing:.03em;
+    font-weight:700; font-style:italic;
+  }
+  .era-group:first-of-type .era-head { margin-top: 0; }
+  .tier-chip {
+    display:inline-block; font-size:.72rem; font-weight:700; padding:.08rem .45rem;
+    border-radius:10px; margin-left:.5rem; letter-spacing:.03em;
+    background:#f1ecd8; color:var(--sepia);
+  }
   .rec-card {
     background:#fff; border-left:4px solid #ccc; padding:.7rem 1rem;
     margin:.4rem 0; border-radius:4px; font-size:.98rem; line-height:1.5;
@@ -292,6 +313,27 @@
 {% endif %}
 
 <p class="summary">Found {{ total }} record(s) in the old books.</p>
+{% if era_groups %}
+<div class="view-tabs" id="view-tabs">
+  <button data-view="era" class="active">&#128197; By era</button>
+  <button data-view="tier">&#11088; By confidence</button>
+</div>
+<div id="view-era">
+  {% for era, cards in era_groups %}
+  <div class="era-group">
+    <h2 class="era-head">{{ era }} &middot; {{ cards|length }}</h2>
+    {% for r in cards %}
+    <div class="rec-card {% if r.status == 'confirmed' %}confirmed-card{% endif %}" id="{{ r.anchor }}" style="border-left-color:{{ tier_color[r.tier] }}">
+      {{ r.sentence|safe }}
+      <span class="tier-chip" style="color:{{ tier_color[r.tier] }}">{{ tier_stars[r.tier] }} {{ r.tier }}</span>
+      {% if r.link %}<a class="src" href="{{ r.link }}" target="_blank">open source &#8599;</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+<div id="view-tier" style="display:none">
+{% endif %}
 {% for tier in tier_order %}
   {% set recs = tiers.get(tier, []) %}
   {% if recs %}
@@ -301,7 +343,7 @@
     </div>
     <p class="tier-blurb">{{ tier_blurb[tier] }}</p>
     {% for r in recs %}
-    <div class="rec-card {% if r.status == 'confirmed' %}confirmed-card{% endif %}" id="{{ r.anchor }}" style="border-left-color:{{ tier_color[tier] }}">
+    <div class="rec-card {% if r.status == 'confirmed' %}confirmed-card{% endif %}" id="{{ r.anchor }}-t" style="border-left-color:{{ tier_color[tier] }}">
       {{ r.sentence|safe }}
       {% if r.link %}<a class="src" href="{{ r.link }}" target="_blank">open source &#8599;</a>{% endif %}
     </div>
@@ -309,5 +351,24 @@
   </div>
   {% endif %}
 {% endfor %}
+{% if era_groups %}
+</div>
+<script>
+  (function(){
+    var tabs = document.querySelectorAll('#view-tabs button');
+    var viewEra = document.getElementById('view-era');
+    var viewTier = document.getElementById('view-tier');
+    tabs.forEach(function(t){
+      t.addEventListener('click', function(){
+        tabs.forEach(function(x){ x.classList.remove('active'); });
+        t.classList.add('active');
+        var isEra = t.dataset.view === 'era';
+        viewEra.style.display = isEra ? '' : 'none';
+        viewTier.style.display = isEra ? 'none' : '';
+      });
+    });
+  })();
+</script>
+{% endif %}
 {% endif %}
 <p class="site-foot"><span class="glyph">&#9752;</span> Sl&aacute;inte <span class="glyph">&#9752;</span> built with love for the diaspora <span class="glyph">&#9752;</span></p>
