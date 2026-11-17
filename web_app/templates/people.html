@@ -1,0 +1,119 @@
+<style>
+  html {
+    background:
+      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
+                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
+                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
+                              transparent 18px),
+      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
+      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
+      #f4ecd8;
+    background-attachment: fixed;
+  }
+  body { background: transparent !important; padding-top: 1.4rem !important; }
+  .site-foot {
+    text-align:center; margin: 1.6rem 0 .3rem; color:#8b6f47;
+    font-style: italic; font-size:.95rem; letter-spacing:.02em;
+  }
+  .site-foot .glyph { color:#1f4722; font-style:normal; margin: 0 .35rem; }
+</style>
+<!doctype html>
+<meta charset="utf-8">
+<title>Ancestors</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+  th, td { border: 1px solid #ddd; padding: .3rem .4rem; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; position: sticky; top: 0; }
+  td input { width: 100%; border: 0; padding: .2rem; font: inherit; background: transparent; }
+  td input:focus { background: #fffbd8; outline: 1px solid #4a90e2; }
+  .del { color: #b00; background: none; border: 0; cursor: pointer; font-size: 1rem; }
+  .add { padding: .4rem .8rem; margin: .8rem 0; cursor: pointer; }
+  .chips { font-size: .75rem; color: #555; }
+  .chip { display:inline-block; padding:.05rem .3rem; margin:.05rem; border-radius:8px; background:#e8f0ff; }
+</style>
+
+<h1>Ancestors <small style="font-weight:400"><a href="{{ url_for('runs.index') }}">&larr; back</a></small></h1>
+<p>Edits save automatically when a field loses focus. Columns: forename and surname drive the search. Separate multiple variants with <code>;</code>. Townland unknown is fine — leave it blank and the search just uses the county (e.g. Galway).</p>
+
+<table id="tbl">
+  <thead>
+    <tr>
+      {% for c in cols %}<th>{{ c }}</th>{% endfor %}
+      <th>Preview</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}
+    <tr data-i="{{ loop.index0 }}">
+      {% for c in cols %}<td><input name="{{ c }}" value="{{ row[c] }}"></td>{% endfor %}
+      <td class="chips"></td>
+      <td><button class="del" title="Delete">&times;</button></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<button class="add" id="add">+ Add person</button>
+
+<script>
+const COLS = {{ cols|tojson }};
+
+function rowPreview(tr) {
+  const fore = tr.querySelector('[name=forename]').value.trim();
+  const sur = tr.querySelector('[name=surname]').value.trim();
+  const vars_ = tr.querySelector('[name=surname_variants]').value.trim();
+  const out = tr.querySelector('.chips');
+  if (!fore && !sur && !vars_) { out.innerHTML = ''; return; }
+  const q = `forename=${encodeURIComponent(fore)}&surname=${encodeURIComponent(sur)}&variants=${encodeURIComponent(vars_)}`;
+  fetch(`{{ url_for('runs.api_preview') }}?${q}`)
+    .then(r => r.json())
+    .then(d => {
+      const parts = [];
+      if (d.forenames && d.forenames.length > 1) {
+        parts.push(d.forenames.slice(1).map(n => `<span class="chip">${n}</span>`).join(''));
+      }
+      if (d.surnames && d.surnames.length) {
+        parts.push(d.surnames.map(s => `<span class="chip" style="background:#ffe9c2">${s.name}&rarr;${s.soundex}</span>`).join(''));
+        if (d.soundex_match) parts.push('<span style="color:#060">&#10003;</span>');
+        else if (d.surnames.length > 1) parts.push('<span style="color:#b00">&#9888;</span>');
+      }
+      out.innerHTML = parts.join(' ');
+    });
+}
+
+function rowToObj(tr) {
+  const o = {};
+  COLS.forEach(c => o[c] = tr.querySelector(`[name="${c}"]`).value);
+  return o;
+}
+
+async function saveRow(tr) {
+  const i = tr.dataset.i;
+  const body = rowToObj(tr);
+  await fetch(`{{ url_for('people.people_save', idx=0) }}`.replace('/0', '/' + i), {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  rowPreview(tr);
+}
+
+async function deleteRow(tr) {
+  const i = tr.dataset.i;
+  await fetch(`{{ url_for('people.people_delete', idx=0) }}`.replace('/0', '/' + i), {method: 'POST'});
+  location.reload();
+}
+
+async function addRow() {
+  await fetch('{{ url_for('people.people_add') }}', {method: 'POST'});
+  location.reload();
+}
+
+document.querySelectorAll('#tbl tbody tr').forEach(tr => {
+  tr.querySelectorAll('input').forEach(inp => inp.addEventListener('change', () => saveRow(tr)));
+  tr.querySelector('.del').addEventListener('click', () => deleteRow(tr));
+  rowPreview(tr);
+});
+document.getElementById('add').addEventListener('click', addRow);
+</script>
+<p class="site-foot"><span class="glyph">&#9752;</span> Sl&aacute;inte <span class="glyph">&#9752;</span> built with love for the diaspora <span class="glyph">&#9752;</span></p>

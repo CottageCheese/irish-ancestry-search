@@ -1,0 +1,313 @@
+<style>
+  html {
+    background:
+      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
+                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
+                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
+                              transparent 18px),
+      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
+      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
+      #f4ecd8;
+    background-attachment: fixed;
+  }
+  body { background: transparent !important; padding-top: 1.4rem !important; }
+  .site-foot {
+    text-align:center; margin: 1.6rem 0 .3rem; color:#8b6f47;
+    font-style: italic; font-size:.95rem; letter-spacing:.02em;
+  }
+  .site-foot .glyph { color:#1f4722; font-style:normal; margin: 0 .35rem; }
+</style>
+<!doctype html>
+<meta charset="utf-8">
+<title>{{ person.forename }} {{ person.surname }} &mdash; Family Finder</title>
+<style>
+  :root {
+    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
+    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
+  }
+  * { box-sizing:border-box; }
+  body {
+    font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    max-width:860px; margin:0 auto; padding:1rem;
+    background:var(--cream); color:var(--ink); min-height:100vh;
+  }
+  .nav { margin-bottom:1rem; display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
+  .nav a { color:var(--moss); text-decoration:none; font-weight:600; }
+  .nav a:hover { text-decoration:underline; }
+  .hero-card {
+    background:#fffcf2; border:2px solid var(--gold); border-radius:12px;
+    padding:1.2rem 1.4rem; margin-bottom:1.2rem; display:flex; align-items:center; gap:1rem;
+  }
+  .avatar {
+    width:72px; height:72px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:2.1rem; font-weight:700; border:3px solid rgba(0,0,0,.07);
+  }
+  .hero-name { font-size:1.75rem; font-weight:700; color:var(--moss-dark); margin:0 0 .2rem; }
+  .hero-sub { color:var(--sepia); font-size:1rem; }
+  .tier { margin:1rem 0; }
+  .tier-head {
+    font-weight:700; font-size:1.05rem; margin-bottom:.35rem;
+    padding:.35rem .7rem; border-radius:6px; display:inline-block;
+  }
+  .tier-blurb { font-size:.88rem; color:#666; margin-bottom:.4rem; }
+  .rec-card {
+    background:#fff; border-left:4px solid #ccc; padding:.7rem 1rem;
+    margin:.4rem 0; border-radius:4px; font-size:.98rem; line-height:1.5;
+  }
+  a.src { color:var(--moss); font-size:.9rem; margin-left:.6rem; }
+  .badge-confirmed { font-size:.8rem; color:#155724; font-weight:700; margin-left:.5rem; }
+  .empty { text-align:center; padding:2rem; color:var(--sepia); font-style:italic; font-size:1.05rem; }
+  .search-btn {
+    display:inline-block; margin-top:1rem; padding:.65rem 1.5rem;
+    background:var(--moss); color:#fff; border-radius:8px; text-decoration:none;
+    font-weight:700; font-size:1rem;
+  }
+  .search-btn:hover { background:var(--moss-dark); }
+  .summary { color:var(--sepia); font-style:italic; margin:.2rem 0 1rem; }
+  .fun-fact {
+    background:linear-gradient(135deg,#fff6d8 0%,#ffe7a8 100%);
+    border:2px dashed var(--gold); border-radius:12px;
+    padding:.8rem 1rem; margin:0 0 1rem; font-size:1.02rem;
+    display:flex; align-items:center; gap:.7rem;
+  }
+  .fun-fact .ff-icon { font-size:2rem; line-height:1; }
+  .fun-fact .ff-text { flex:1; }
+  .fun-fact .ff-text strong { color:var(--moss-dark); }
+  .badges {
+    display:flex; flex-wrap:wrap; gap:.5rem; margin:.2rem 0 1rem;
+  }
+  .badge {
+    background:#fff; border:2px solid var(--cream-dark); border-radius:20px;
+    padding:.35rem .8rem; font-size:.95rem; font-weight:600;
+    display:inline-flex; align-items:center; gap:.4rem; color:var(--ink);
+  }
+  .badge.zero { opacity:.35; }
+  .badge .b-ico { font-size:1.1rem; }
+  .badge .b-num { background:var(--moss); color:#fff; border-radius:12px;
+    padding:0 .55rem; font-size:.85rem; min-width:1.5rem; text-align:center; }
+  .badge.zero .b-num { background:#bbb; }
+  .timeline-wrap {
+    background:#fffcf2; border:2px solid var(--cream-dark); border-radius:12px;
+    padding:1rem 1.2rem .8rem; margin:0 0 1.2rem;
+  }
+  .timeline-title {
+    font-weight:700; color:var(--moss-dark); margin-bottom:.6rem; font-size:1rem;
+  }
+  .timeline-title .tl-hint { font-weight:400; color:var(--sepia); font-size:.85rem; margin-left:.4rem; }
+  .timeline {
+    position:relative; height:70px; margin:0 .5rem;
+  }
+  .tl-track {
+    position:absolute; left:0; right:0; top:34px; height:4px;
+    background:linear-gradient(90deg,var(--sepia),var(--gold),var(--moss));
+    border-radius:2px;
+  }
+  .tl-dot {
+    position:absolute; top:22px; transform:translateX(-50%);
+    width:28px; height:28px; border-radius:50%; background:#fff;
+    border:3px solid var(--moss); cursor:pointer; text-decoration:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; transition:transform .15s, box-shadow .15s;
+    box-shadow:0 2px 4px rgba(0,0,0,.15);
+  }
+  .tl-dot:hover { transform:translateX(-50%) scale(1.25); box-shadow:0 3px 8px rgba(0,0,0,.25); z-index:2; }
+  .tl-dot .tl-year {
+    position:absolute; bottom:-22px; left:50%; transform:translateX(-50%);
+    font-size:.78rem; color:var(--sepia); white-space:nowrap; font-weight:600;
+  }
+  .tl-ends { display:flex; justify-content:space-between; font-size:.82rem; color:var(--sepia); margin-top:.3rem; }
+  .map-wrap {
+    background:#eaf3ea; border:2px solid var(--moss); border-radius:12px;
+    padding:1rem; margin:0 0 1.2rem; display:flex; gap:1rem; align-items:center; flex-wrap:wrap;
+  }
+  .map-svg { flex:0 0 auto; }
+  .map-svg svg { display:block; max-width:180px; height:auto; }
+  .map-coast { fill:#c8e0c3; stroke:var(--moss-dark); stroke-width:1.5; stroke-linejoin:round; }
+  .map-dot { fill:#7ea974; opacity:.55; }
+  .map-dot-target {
+    fill:#d9472a; stroke:#fff; stroke-width:2;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
+    animation:pulseMap 1.8s ease-in-out infinite;
+    transform-origin:center;
+            transform-box:fill-box;
+  }
+  @keyframes pulseMap {
+    0%,100% { transform:scale(1); }
+    50%     { transform:scale(1.4); }
+  }
+  .map-label {
+    font-family:"Palatino Linotype",Georgia,serif;
+    font-weight:700; font-size:11px; fill:#d9472a;
+    paint-order:stroke; stroke:#fff; stroke-width:3;
+  }
+  .map-text { flex:1; min-width:180px; }
+  .map-text h3 { margin:0 0 .4rem; color:var(--moss-dark); font-size:1.1rem; }
+  .map-text p { margin:.2rem 0; font-size:.95rem; color:var(--ink); }
+  .map-text .map-pin { font-size:2.2rem; line-height:1; display:inline-block; vertical-align:middle; }
+  .trophy-wrap {
+    background:linear-gradient(135deg,#fff4cc 0%,#ffe08a 55%,#ffd04a 100%);
+    border:3px solid var(--gold); border-radius:14px;
+    padding:1rem 1.2rem 1.1rem; margin:0 0 1.3rem;
+    box-shadow:0 4px 14px rgba(201,160,74,.35);
+    position:relative; overflow:hidden;
+  }
+  .trophy-wrap::before {
+    content:""; position:absolute; top:-30px; right:-30px;
+    width:120px; height:120px; background:radial-gradient(circle,#fff6d8,transparent 70%);
+    pointer-events:none;
+  }
+  .trophy-title {
+    font-size:1.3rem; font-weight:700; color:var(--moss-dark);
+    display:flex; align-items:center; gap:.5rem; margin-bottom:.2rem;
+  }
+  .trophy-title .t-ico { font-size:1.7rem; animation:bounce 1.6s ease-in-out infinite; display:inline-block; }
+  @keyframes bounce {
+    0%,100% { transform:translateY(0); }
+    50%     { transform:translateY(-5px); }
+  }
+  .trophy-sub { color:#6b5a1f; font-size:.92rem; margin-bottom:.7rem; font-style:italic; }
+  .trophy-card {
+    background:#fffef7; border:2px solid var(--gold); border-radius:10px;
+    padding:.8rem 1rem; margin:.5rem 0; font-size:1rem; line-height:1.5;
+    position:relative; padding-left:3rem;
+  }
+  .trophy-card::before {
+    content:"⭐"; position:absolute; left:.8rem; top:.7rem; font-size:1.5rem;
+  }
+  .trophy-card a.src { color:var(--moss-dark); font-weight:600; }
+  .trophy-card .ribbon {
+    display:inline-block; background:var(--moss); color:#fff;
+    font-size:.72rem; font-weight:700; padding:.15rem .5rem; border-radius:10px;
+    margin-left:.4rem; vertical-align:middle; letter-spacing:.3px;
+  }
+  .rec-card.confirmed-card {
+    background:#fffef7; border:2px solid var(--gold); border-left-width:6px;
+    box-shadow:0 2px 6px rgba(201,160,74,.25);
+  }
+  .rec-card.confirmed-card::after {
+    content:"⭐ confirmed"; float:right; background:var(--gold); color:#fff;
+    font-size:.75rem; font-weight:700; padding:.15rem .55rem; border-radius:10px;
+    margin-left:.5rem;
+  }
+  .rec-card:target {
+    background:#fff6d8; border-left-width:6px;
+    animation:flash 1.2s ease-out;
+  }
+  @keyframes flash {
+    0% { background:#ffe7a8; }
+    100% { background:#fff6d8; }
+  }
+</style>
+
+<div class="nav">
+  <a href="{{ url_for('ancestors.ancestors_page') }}">&#8592; Our family</a>
+</div>
+
+<div class="hero-card">
+  <div class="avatar" style="background:{{ person.avatar_bg }};color:{{ person.avatar_fg }}">
+    {{ person.forename[0]|upper }}
+  </div>
+  <div>
+    <div class="hero-name">{{ person.forename }} {{ person.surname }}</div>
+    <div class="hero-sub">
+      {%- if person.county %}{{ person.county }}{% endif %}
+      {%- if person.year %} &middot; born around {{ person.year }}{% endif -%}
+    </div>
+  </div>
+</div>
+
+{% if map_data and map_data.target %}
+<div class="map-wrap">
+  <div class="map-svg">
+    <svg width="180" height="240" viewBox="0 0 {{ map_data.w }} {{ map_data.h }}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Map of Ireland showing {{ map_data.county_label }}">
+      <polygon class="map-coast" points="{{ map_data.outline }}"/>
+      {% for d in map_data.dots %}
+        {% if not d.target %}<circle class="map-dot" cx="{{ d.x }}" cy="{{ d.y }}" r="2.5"/>{% endif %}
+      {% endfor %}
+      <circle class="map-dot-target" cx="{{ map_data.target.x }}" cy="{{ map_data.target.y }}" r="6"/>
+      <text class="map-label" x="{{ map_data.target.x + 9 }}" y="{{ map_data.target.y + 4 }}">{{ map_data.target.name }}</text>
+    </svg>
+  </div>
+  <div class="map-text">
+    <h3><span class="map-pin">📍</span> From {{ map_data.county_label }}</h3>
+    <p>{{ person.forename }}'s family came from <strong>County {{ map_data.county_label }}</strong> in Ireland.</p>
+    <p style="color:var(--sepia);font-size:.88rem">The red dot shows where on the island. Those green dots are all the other counties.</p>
+  </div>
+</div>
+{% endif %}
+
+{% if fun_fact %}
+<div class="fun-fact">
+  <div class="ff-icon">🕰️</div>
+  <div class="ff-text"><strong>Did you know?</strong> {{ fun_fact }}</div>
+</div>
+{% endif %}
+
+{% if total == 0 %}
+<div class="empty">
+  <p>We have not searched for {{ person.forename }} yet.</p>
+  <a href="{{ url_for('runs.index') }}" class="search-btn">&#128269; Search for {{ person.forename }}</a>
+</div>
+{% else %}
+{% if confirmed_cards %}
+<div class="trophy-wrap">
+  <div class="trophy-title"><span class="t-ico">🏆</span> {{ confirmed_cards|length }} confirmed match{{ 'es' if confirmed_cards|length != 1 else '' }}!</div>
+  <div class="trophy-sub">You already said these are definitely {{ person.forename }}. Nice work!</div>
+  {% for r in confirmed_cards %}
+  <div class="trophy-card">
+    <a href="#{{ r.anchor }}" style="color:inherit;text-decoration:none">{{ r.sentence|safe }}</a>
+    <span class="ribbon">{{ tier_stars[r.tier] }} {{ r.tier }}</span>
+    {% if r.link %}<a class="src" href="{{ r.link }}" target="_blank">open source &#8599;</a>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+<div class="badges">
+  {% for key, icon, label in bucket_meta %}
+    {% set n = type_counts.get(key, 0) %}
+    <span class="badge {% if n == 0 %}zero{% endif %}" title="{{ n }} {{ label }}">
+      <span class="b-ico">{{ icon }}</span>
+      <span>{{ label }}</span>
+      <span class="b-num">{{ n }}</span>
+    </span>
+  {% endfor %}
+</div>
+
+{% if timeline %}
+<div class="timeline-wrap">
+  <div class="timeline-title">📅 Life timeline <span class="tl-hint">tap a dot to jump to that record</span></div>
+  <div class="timeline">
+    <div class="tl-track"></div>
+    {% for d in timeline %}
+      {% set emoji = {'census':'🏘️','birth':'🎂','marriage':'💍','death':'⚰️','land':'🗺️','other':'📜'}[d.bucket] %}
+      <a class="tl-dot" href="#{{ d.anchor }}" style="left:{{ d.pct }}%;border-color:{{ tier_color[d.tier] }}" title="{{ d.year }} — {{ d.bucket }}">
+        <span>{{ emoji }}</span>
+        <span class="tl-year">{{ d.year }}</span>
+      </a>
+    {% endfor %}
+  </div>
+  <div class="tl-ends"><span>{{ tl_min }}</span><span>{{ tl_max }}</span></div>
+</div>
+{% endif %}
+
+<p class="summary">Found {{ total }} record(s) in the old books.</p>
+{% for tier in tier_order %}
+  {% set recs = tiers.get(tier, []) %}
+  {% if recs %}
+  <div class="tier">
+    <div class="tier-head" style="color:{{ tier_color[tier] }}">
+      {{ tier_stars[tier] }} {{ tier }} &mdash; {{ recs|length }} record(s)
+    </div>
+    <p class="tier-blurb">{{ tier_blurb[tier] }}</p>
+    {% for r in recs %}
+    <div class="rec-card {% if r.status == 'confirmed' %}confirmed-card{% endif %}" id="{{ r.anchor }}" style="border-left-color:{{ tier_color[tier] }}">
+      {{ r.sentence|safe }}
+      {% if r.link %}<a class="src" href="{{ r.link }}" target="_blank">open source &#8599;</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endfor %}
+{% endif %}
+<p class="site-foot"><span class="glyph">&#9752;</span> Sl&aacute;inte <span class="glyph">&#9752;</span> built with love for the diaspora <span class="glyph">&#9752;</span></p>
