@@ -29,6 +29,17 @@ Working list. Tick when done. Add free-form.
 
 ## Done
 
+### Split web.py into blueprint package (Nov 2026)
+- [x] 3642-line `web.py` carved into `web_app/` package: `state.py` (RUN dict + locks + paths), `worker.py` (background thread + log regex), `helpers.py` (avatars, tiers, county coords, next-suggestions, rows I/O), four blueprints (`runs`, `people`, `ancestors`, `results`).
+- [x] Six inline `*_HTML` string constants extracted to `web_app/templates/*.html`; `render_template_string` → `render_template`. Theme wrapper baked into the four templates that needed it at extraction time.
+- [x] `web.py` reduced to 25-line shim (`create_app()` + `__main__`) so `python web.py` still boots; re-exports `_next_suggestions` + `CSV_COLUMNS` for existing tests.
+- [x] One-way import chain: blueprints → worker → state. 145 tests pass; smoke GET on /, /status.json, /ancestors return 200.
+
+### Results page: record-type visuals + source-aware links (Nov 2026)
+- [x] `_record_category(record_type)` bucket helper → `rec-cat-{census,civil,church,griffith,manual}` class on each `.rec-card`.
+- [x] Census + civil (official records) get parchment gradient bg, bronze inset stripe, "OFFICIAL ·" uppercase prefix on title. Church cream, Griffith earthy. Dark-mode variants. Tier left-border + confirm/save/reject status still win.
+- [x] `_site_short(site)` maps raw site string → friendly name. Open button now `🔎 Open on National Archives ↗` / `IrishGenealogy` / `Griffith's`, `rel='noopener'`, tooltip shows full site.
+
 ### "Who next?" cards on done screen (Nov 2026)
 - [x] `_next_suggestions(person_label, rows)` in `web.py`: reads subject's father/mother/spouse from ancestors.csv; when the relative is unrecorded, emits a `prefill_only` slot instead of nothing so there's always a next step. Spouse only shown when explicitly named (too speculative otherwise). Dad slot inherits subject's surname; mum surname stays blank (maiden name unknown); parent birth year defaults to subject − 30, spouse to subject's year.
 - [x] `/next-suggestions.json` endpoint returns suggestions for `RUN.label` when state=='done' and not stopped; served via `fetch` from the done-panel JS after the poll detects completion (server-render only fires on fresh page loads, so JS covers the mid-poll case).
