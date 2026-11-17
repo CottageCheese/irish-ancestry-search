@@ -22,6 +22,10 @@ Working list. Tick when done. Add free-form.
 - [ ] Era ribbon polish: click an era to filter Our Family to that era.
 - [ ] Recent-finds strip: use record thumbnails where available; wire click to the record detail (currently plain text card).
 
+### Bugs
+- [ ] Loader spinner can stick after run finishes. Server flips `RUN["state"]` to `done` correctly (verified via `/status.json`), but the open index.html tab keeps showing the "Looking for …" loader. Likely a silent JS error in `tick()` before the `state !== 'running'` branch hides `#loader-screen`. Repro: start a run, watch loader after completion. Instrument the `catch (e)` on line ~1431 of `web_app/templates/index.html` to surface the error.
+- [ ] `results.html` must be opened via Flask (`http://127.0.0.1:8000/results.html`), not file://. Opening the on-disk file breaks Save/Confirm (relative `fetch('/confirm')` → `TypeError: Failed to fetch`). Options: (a) make CLI/web stop writing a standalone `results.html` and only serve via route, or (b) inject an absolute `window.API_BASE` into the static HTML when it's written from a known server session.
+
 ### Ideas — UX / learning
 - [ ] Mini family tree per person: draw boxes for father/mother/spouse from `ancestors.csv`, highlight ones with confirmed records.
 - [ ] Mobile layout: cards stack better; conf-buttons full-width on <600px.
@@ -35,8 +39,36 @@ Working list. Tick when done. Add free-form.
 - [ ] "Export my family tree" button — build a GEDCOM from confirmed records across all ancestors with inferred relationships.
 - [ ] Import GEDCOM to seed `ancestors.csv`.
 
+### Ideas — architecture / tech debt
+- [ ] Split `genealogy_core/render.py` (909 LOC) into `render/html.py`, `render/gedcom.py`, `render/json.py`, `render/summary.py`.
+- [ ] Trim `genealogy_search.py` (826 LOC): extract `cli/args.py`, `cli/io.py` (CSV read/write), `cli/callbacks.py` (progress + incremental save). Keep `main()` thin.
+- [ ] Break up `web_app/helpers.py` junk-drawer (487 LOC): `slugs.py`, `html_patch.py`, `record_keys.py`, `portal_stats.py`.
+- [ ] Replace global mutable state (`scrape_settings.set_max_results`, `RUNTIME_FLAGS` dict) with frozen `RunConfig` dataclass threaded into `run_search`. Testability + concurrency.
+- [ ] Migrate flat-file state (`confirmations.json`, `.search_cache.json`, maybe `results.csv`) to SQLite. Atomic writes, query-driven HTML renders, kills CLI↔web race.
+- [ ] Incremental save re-renders full HTML each person → O(n²). Fix with SQLite + partial refresh (htmx) or template fragment.
+- [ ] Promote pure-parser pattern across `ig.py` + `griffiths.py`: `fetch_rows(page) -> raw` + `parse_rows(raw, person) -> list[Record]`. Fixture-based tests, no Playwright mocks.
+- [ ] Scraper registry: decorator-based registration replaces hardcoded dispatch in `sites.py` + `runner.py`. New site = one file.
+- [ ] Lift circuit breaker out of `runner`: `SiteHealth` object injected into scrapers. Easier timeout/cooldown tests.
+- [x] Add `pyproject.toml` with ruff rules (`I`, `UP`, `B`, `SIM`) + mypy on `genealogy_core`. (Nov 2026)
+- [x] CI: `.github/workflows/tests.yml` lint job (ruff check + ruff format --check + mypy) alongside pytest. (Nov 2026)
+- [ ] HTML fixture corpus per scraper site; regression tests off saved snapshots.
+- [ ] Services layer between blueprints and core (`people_service`, `run_service`); blueprints become thin.
+- [ ] Replace `/status.json` + `/log.json` polling with SSE `/events` generator. One connection, push updates.
+- [ ] Background worker survivability: swap single in-process thread for `rq` or SQLite job queue; survives crash/restart.
+- [ ] Structured logging: `logger.info(..., extra={})` + JSON formatter so `run.log` is greppable.
+- [ ] Global rate budget on top of per-host `polite_pause` (cap total req/min across run).
+- [ ] Cache TTL / eviction on `.storage_state.json` + `.search_cache.json`. Age-based purge.
+
 
 ## Done
+
+### Lint + typecheck gates: pyproject + mypy + CI (Nov 2026)
+- [x] `pyproject.toml` added: ruff `E,F,I,UP,B,SIM` with line-length 120, target py312; mypy on `genealogy_core` (`check_untyped_defs`, `warn_unused_ignores`, `warn_redundant_casts`, `no_implicit_optional`); playwright import stubs ignored.
+- [x] `genealogy_core/feedback.py`: `load_records_csv` kwargs typed as `dict[str, object]`; `int()` coerced via `str()`; single `# type: ignore[arg-type]` on dynamic `Record(**kw)` splat. Mypy clean on 12 core files.
+- [x] Ruff autofix pass: 26 fixes across 20+ files (I001 unsorted imports, F401 unused, UP035 deprecated imports, E702 split-statement semicolons, SIM118 `dict.keys()`, F541 empty f-string).
+- [x] Ruff format pass: 43 files normalized.
+- [x] `web.py` re-exports (`_next_suggestions`, `CSV_COLUMNS`) marked `# noqa: F401` to keep test imports working.
+- [x] `.github/workflows/tests.yml` grew a `lint` job: ruff check + ruff format --check + mypy on py3.12. Pytest job unchanged. 145 tests pass.
 
 ### Portal landing — hero, map, era ribbon, tiles (Nov 2026)
 - [x] `/` idle+done branch now renders `portal.html` when ancestors exist; welcome quick-search preserved via `?find=1` or when zero ancestors.
