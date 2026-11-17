@@ -29,6 +29,17 @@ Working list. Tick when done. Add free-form.
 
 ## Done
 
+### Era grouping on person page (Nov 2026)
+- [x] `era_groups` built server-side in `person_page`: each record bucketed via `_era_for_year(record.year)`, undated records pinned last, within each era sort by year then tier priority.
+- [x] New "By era / By confidence" toggle in `person.html`; era view is default. Existing tier blocks kept intact behind the second tab (anchors suffixed `-t` to avoid duplicate IDs with era-view anchors).
+- [x] Each era card shows a small `.tier-chip` (stars + tier label, tier-coloured) so confidence is visible without the tier heading.
+
+### Era groups + generation filter + progress rings on Our Family (Nov 2026)
+- [x] `ERA_ORDER`/`ERA_RANK` and `_generation(year, youngest)` added to `helpers.py`; `GEN_LABELS` with emoji chips.
+- [x] `ancestors_page` groups cards under chronological era headings (Famine, Land War, Rising…). Within each era: sort by confirmed desc, found desc, label asc.
+- [x] Generation filter row (👶 Youngest · 👪 Parents · 👴 Grandparents · 🕰️ Great-grans · 📜 Further back) shown when ≥2 generations present; derived from each person's birth year vs youngest known. Two-axis filter (found × gen) with empty-era auto-hide.
+- [x] SVG progress ring around each avatar (gold stroke, 226.2 circumference, `stroke-dasharray` animated) + `%` pill badge. Hidden when no records found.
+
 ### Split web.py into blueprint package (Nov 2026)
 - [x] 3642-line `web.py` carved into `web_app/` package: `state.py` (RUN dict + locks + paths), `worker.py` (background thread + log regex), `helpers.py` (avatars, tiers, county coords, next-suggestions, rows I/O), four blueprints (`runs`, `people`, `ancestors`, `results`).
 - [x] Six inline `*_HTML` string constants extracted to `web_app/templates/*.html`; `render_template_string` → `render_template`. Theme wrapper baked into the four templates that needed it at extraction time.
