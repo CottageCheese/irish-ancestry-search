@@ -114,6 +114,12 @@ _BASE_CSS = (
     ".rec-card.tier-Possible{border-left-color:#b48a1a}"
     ".rec-card.tier-Weak{border-left-color:#888}"
     ".rec-card.tier-Manual{border-left-color:#bbb}"
+    ".rec-cat-census,.rec-cat-civil{background:linear-gradient(180deg,#fdfbf2,#f6efd9);"
+    "box-shadow:0 1px 3px rgba(139,111,71,.18),inset 3px 0 0 #c7a46b}"
+    ".rec-cat-census .rec-title::before{content:'Official \\00B7 ';color:#8b6f47;font-weight:700;letter-spacing:.3px;text-transform:uppercase;font-size:.72em}"
+    ".rec-cat-civil .rec-title::before{content:'Official \\00B7 ';color:#8b6f47;font-weight:700;letter-spacing:.3px;text-transform:uppercase;font-size:.72em}"
+    ".rec-cat-church{background:#fbf7f0}"
+    ".rec-cat-griffith{background:#f5efe3}"
     ".rec-head{display:flex;align-items:center;gap:.5em;margin-bottom:.3em}"
     ".rec-icon{font-size:1.4em;cursor:help}"
     ".rec-title{font-weight:600;flex:1}"
@@ -202,6 +208,12 @@ _DARK_CSS = (
     "body.dark .story-list{color:#ddd}"
     "body.dark .story-fact{color:#c7a46b}"
     "body.dark .rec-card{background:#242424}"
+    "body.dark .rec-cat-census,body.dark .rec-cat-civil{"
+    "background:linear-gradient(180deg,#2d2920,#3a3224);"
+    "box-shadow:0 1px 3px rgba(0,0,0,.4),inset 3px 0 0 #c7a46b}"
+    "body.dark .rec-cat-census .rec-title::before,body.dark .rec-cat-civil .rec-title::before{color:#d4b896}"
+    "body.dark .rec-cat-church{background:#2a2620}"
+    "body.dark .rec-cat-griffith{background:#2d2820}"
     "body.dark .chip{background:#333;color:#ccc}"
     "body.dark .chip-place{background:#1e3b1e;color:#9c9}"
     "body.dark .chip-year{background:#3b2e1e;color:#e5c58a}"
@@ -457,6 +469,38 @@ def _record_icon(record_type: str) -> str:
     return RECORD_ICONS.get(_record_icon_key(record_type), "📄")
 
 
+def _site_short(site: str) -> str:
+    """Short friendly site name for the open-record button."""
+    s = (site or "").lower()
+    if "nai" in s or "archives" in s:
+        return "National Archives"
+    if "irishgenealogy" in s or s == "ig":
+        return "IrishGenealogy"
+    if "griff" in s:
+        return "Griffith's"
+    if "findmypast" in s:
+        return "FindMyPast"
+    if "rootsireland" in s:
+        return "RootsIreland"
+    return site or "source"
+
+
+def _record_category(record_type: str) -> str:
+    """Broad bucket used for visual grouping: official vs church vs land vs manual."""
+    k = _record_icon_key(record_type)
+    if k == "census":
+        return "census"
+    if k.startswith("civil"):
+        return "civil"
+    if k.startswith("church"):
+        return "church"
+    if k == "griffith":
+        return "griffith"
+    if k == "manual":
+        return "manual"
+    return "other"
+
+
 def _record_fact(record_type: str) -> str:
     return RECORD_FACTS.get(_record_icon_key(record_type), "A genealogy record.")
 
@@ -662,8 +706,10 @@ def _render_card(r: Record) -> str:
     if r.other_details:
         other = f"<div class='rec-other'>{_esc(r.other_details)}</div>"
 
+    cat = _record_category(r.record_type)
+
     return (
-        f"<article class='rec-card tier-{tier}{status_cls}' data-key='{key}' data-person='{_esc(r.person_searched)}'>"
+        f"<article class='rec-card tier-{tier} rec-cat-{cat}{status_cls}' data-key='{key}' data-person='{_esc(r.person_searched)}'>"
         f"<div class='rec-head'>"
         f"<span class='rec-icon' title='{_esc(fact)}'>{icon}</span>"
         f"<span class='rec-title'>{title}</span>"
@@ -677,7 +723,8 @@ def _render_card(r: Record) -> str:
         f"{other}"
         f"{notes_html}"
         f"<div class='rec-actions'>"
-        f"<a class='btn-open' href='{_esc(r.link)}' target='_blank'>🔎 Open the record</a>"
+        f"<a class='btn-open' href='{_esc(r.link)}' target='_blank' rel='noopener'"
+        f" title='Opens {_esc(r.site)} in a new tab'>🔎 Open on {_esc(_site_short(r.site))} \u2197</a>"
         f"<div class='conf-btns'>"
         f"<button type='button' data-action='confirmed' class='{c_on.strip()}' title='That\\u2019s them (adds to Our Family)'>👍 That\u2019s them</button>"
         f"<button type='button' data-action='saved' class='{s_on.strip()}' title='Keep in Bookmarks (not family, but worth remembering)'>\U0001F516 Keep</button>"
