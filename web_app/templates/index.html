@@ -157,7 +157,12 @@
 {% endif %}
 
 {% if run.state == 'idle' %}
-<div class="hero">
+{% if request.args.get('find') %}
+<div style="margin:.2rem 0 .8rem">
+  <a href="{{ url_for('runs.index') }}" style="color:var(--moss-dark);text-decoration:none;font-size:.95rem">&larr; Back to portal</a>
+</div>
+{% endif %}
+<div class="hero" id="quick-search">
   <h2>&#128269; Who do you want to find?</h2>
   <p style="margin:.2rem 0 0;color:#666">Someone from your family who lived in Ireland. We will search old records to find them.</p>
 

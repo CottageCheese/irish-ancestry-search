@@ -407,13 +407,13 @@ def _portal_stats(people_rows: list[dict]) -> dict:
     progress_pct = round(100 * reviewed / denom) if denom else 0
 
     if ancestors == 0:
-        cta = {"kind": "add", "label": "Add first ancestor", "href": "/#quick-search"}
+        cta = {"kind": "add", "label": "Add first ancestor", "href": "/?find=1#quick-search"}
     elif pending > 0:
         cta = {"kind": "review", "label": f"Review {pending} clue{'s' if pending != 1 else ''}", "href": "/ancestors"}
     elif records_total == 0:
         cta = {"kind": "run", "label": "Run a search", "href": "/start", "method": "post"}
     else:
-        cta = {"kind": "find", "label": "Find someone new", "href": "/#quick-search"}
+        cta = {"kind": "find", "label": "Find someone new", "href": "/?find=1#quick-search"}
 
     return {
         "ancestors": ancestors,
