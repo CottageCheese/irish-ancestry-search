@@ -24,9 +24,11 @@
   button.unkeep:hover { background:#f4f4f4; }
 </style>
 <div class="nav">
-  <a href="{{ url_for('runs.index') }}">&#8592; Find someone</a>
+  <a href="{{ url_for('runs.index') }}">&#8592; Home</a>
   <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
   <a href="{{ url_for('ancestors.ancestors_page') }}">&#128106; Our Family</a>
+  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
+  <a href="{{ url_for('runs.index') }}?find=1#quick-search">&#128269; Find someone</a>
 </div>
 <h1>&#128278; Bookmarks</h1>
 <p class="subtitle">Records you kept &mdash; interesting, but not confirmed family.</p>

@@ -413,7 +413,7 @@ def _portal_stats(people_rows: list[dict]) -> dict:
     elif records_total == 0:
         cta = {"kind": "run", "label": "Run a search", "href": "/start", "method": "post"}
     else:
-        cta = {"kind": "find", "label": "Find someone new", "href": "/?find=1#quick-search"}
+        cta = {"kind": "rerun", "label": "Re-run search for new records", "href": "/start", "method": "post"}
 
     return {
         "ancestors": ancestors,

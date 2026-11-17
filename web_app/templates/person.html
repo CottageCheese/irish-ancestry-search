@@ -222,7 +222,11 @@
 </style>
 
 <div class="nav">
-  <a href="{{ url_for('ancestors.ancestors_page') }}">&#8592; Our family</a>
+  <a href="{{ url_for('runs.index') }}">&#8592; Home</a>
+  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
+  <a href="{{ url_for('ancestors.ancestors_page') }}">&#128106; Our family</a>
+  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
+  <a href="{{ url_for('results.bookmarks_page') }}">&#128278; Bookmarks</a>
 </div>
 
 <div class="hero-card">

@@ -14,17 +14,13 @@ Working list. Tick when done. Add free-form.
 - [x] Household grouping: when a census row is found, also fetch other names living at same address and attach as kin suggestions.
 
 ### Ideas — portal landing
-- [ ] Landing rework: `/` idle branch becomes portal dashboard, not just quick-search form.
-- [ ] Hero strip: counts (ancestors / confirmed / bookmarked) + progress ring + oldest-ancestor one-liner.
-- [ ] Three tiles: Our Family · Bookmarks · Find Someone (current form lives behind tile 3 or collapsed below).
-- [ ] Smart CTA: "Add first ancestor" / "Review N pending" / "Re-run search" based on state.
-- [ ] Mystery-box: pending-review count framed as "N clues waiting".
-- [ ] Map pin cloud: Ireland SVG, dots per confirmed-ancestor county, click filters Our Family.
-- [ ] Era timeline ribbon: horizontal 1800s→now, coverage density; reuses `ERA_ORDER`.
-- [ ] Recently-found strip: last 3-5 new records with thumbnails.
-- [ ] Streak / last-activity line ("Last find: 3 days ago").
-- [ ] Persistent top-bar search + help/tour button on every screen.
+- [ ] Streak / last-activity line ("Last find: 3 days ago"). Needs timestamps on `confirmations.json` or use `results.csv` mtime as proxy.
+- [ ] Persistent top-bar search + help/tour button on every screen (current nav is per-template; home/our-family/bookmarks/find links duplicated across templates).
 - [ ] First-visit 3-slide tour (extends existing welcome overlay).
+- [ ] Add `/find` route as cleaner alias for `/?find=1#quick-search` (sharable link).
+- [ ] Map pin cloud polish: pin size could weight by confirmed-record count instead of ancestor count; hover-expand with mini name list.
+- [ ] Era ribbon polish: click an era to filter Our Family to that era.
+- [ ] Recent-finds strip: use record thumbnails where available; wire click to the record detail (currently plain text card).
 
 ### Ideas — UX / learning
 - [ ] Mini family tree per person: draw boxes for father/mother/spouse from `ancestors.csv`, highlight ones with confirmed records.
@@ -41,6 +37,16 @@ Working list. Tick when done. Add free-form.
 
 
 ## Done
+
+### Portal landing — hero, map, era ribbon, tiles (Nov 2026)
+- [x] `/` idle+done branch now renders `portal.html` when ancestors exist; welcome quick-search preserved via `?find=1` or when zero ancestors.
+- [x] Hero strip: progress ring (reviewed vs pending %), counts (ancestors / confirmed / bookmarked / clues waiting), smart CTA (`Add first ancestor` / `Review N clues` / `Run a search` / `Re-run search`).
+- [x] Three tiles: Our Family · Bookmarks · Find Someone. CTA and tile don't double up — tile is evergreen entry to form, CTA rotates based on urgency.
+- [x] Map pin cloud: Ireland SVG from `IRELAND_OUTLINE`, pins from `COUNTY_COORDS`, radius scales to ancestor count. Click → `/ancestors?county=X` which filters the grid client-side and shows a "Filtered by X · clear" banner.
+- [x] Era timeline ribbon: bar height = confirmed records per era, number above = ancestors born in that era, tinted with existing era tints.
+- [x] Recent-finds strip: top 4 new (or scored) records.
+- [x] `_portal_stats()` in `web_app/helpers.py` aggregates everything server-side; one pass over `results.csv` + `confirmations.json`.
+- [x] Nav consistency: `← Home` link added to `ancestors.html`, `bookmarks.html`, `person.html`, and the `?find=1` form view. Replaced the ambiguous "← Find someone" that previously meant "home".
 
 ### Era grouping on person page (Nov 2026)
 - [x] `era_groups` built server-side in `person_page`: each record bucketed via `_era_for_year(record.year)`, undated records pinned last, within each era sort by year then tier priority.

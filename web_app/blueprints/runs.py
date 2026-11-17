@@ -60,7 +60,7 @@ def index():
             next_suggestions = []
 
     show_portal = (
-        RUN.get("state") == "idle"
+        RUN.get("state") in ("idle", "done")
         and not request.args.get("find")
         and any((r.get("forename") or "").strip() and (r.get("surname") or "").strip() for r in people_rows)
     )
