@@ -18,6 +18,8 @@ from genealogy_search import (
 
 from ..helpers import (
     COUNTY_COORDS,
+    ERA_RANK,
+    GEN_LABELS,
     IRELAND_OUTLINE,
     TIER_BLURB,
     TIER_COLOR,
@@ -25,6 +27,7 @@ from ..helpers import (
     TIER_STARS,
     _avatar,
     _era_for_year,
+    _generation,
     _narrate,
     _purge_person_trail,
     _read_rows,
@@ -72,6 +75,9 @@ def ancestors_page():
         bg, fg = _avatar(label)
         year = row.get("birth_year_approx", "").strip()
         tint, era = _era_for_year(year)
+        found = record_counts.get(label, 0)
+        confirmed = confirmed_counts.get(label, 0)
+        pct = round(100 * confirmed / found) if found else 0
         people_data.append({
             "label": label,
             "forename": forename,
@@ -79,16 +85,41 @@ def ancestors_page():
             "slug": slugify(label),
             "county": row.get("county", "").strip(),
             "year": year,
-            "found": record_counts.get(label, 0),
-            "confirmed": confirmed_counts.get(label, 0),
+            "found": found,
+            "confirmed": confirmed,
+            "pct_confirmed": pct,
             "avatar_bg": bg,
             "avatar_fg": fg,
             "tint": tint,
             "era": era,
             "silhouette": _silhouette(row.get("sex", "")),
         })
-    people_data.sort(key=lambda p: (-p["confirmed"], -p["found"], p["label"]))
-    return render_template("ancestors.html", people=people_data)
+
+    years = [int(p["year"][:4]) for p in people_data if p["year"][:4].isdigit()]
+    youngest = max(years) if years else None
+    for p in people_data:
+        p["generation"] = _generation(p["year"], youngest)
+
+    people_data.sort(key=lambda p: (
+        ERA_RANK.get(p["era"], 99),
+        -p["confirmed"], -p["found"], p["label"],
+    ))
+
+    groups: list[tuple[str, list[dict]]] = []
+    for p in people_data:
+        if not groups or groups[-1][0] != p["era"]:
+            groups.append((p["era"], []))
+        groups[-1][1].append(p)
+
+    gens_present = sorted({p["generation"] for p in people_data if p["generation"] >= 0})
+    gen_chips = [(n, lbl) for n, lbl in GEN_LABELS if n in gens_present]
+
+    return render_template(
+        "ancestors.html",
+        people=people_data,
+        groups=groups,
+        gen_chips=gen_chips,
+    )
 
 
 @bp.route("/ancestors/<slug>/delete", methods=["POST"])

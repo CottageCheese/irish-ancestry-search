@@ -106,6 +106,39 @@ def _silhouette(sex: str) -> str:
     return "\U0001F464"
 
 
+ERA_ORDER = [
+    "Before the Famine",
+    "The Great Hunger",
+    "After the Famine",
+    "Land War Ireland",
+    "Home Rule era",
+    "Rising & Revolution",
+    "Irish Free State",
+    "Republic of Ireland",
+    "Long ago",
+]
+ERA_RANK = {e: i for i, e in enumerate(ERA_ORDER)}
+
+GEN_LABELS = [
+    (0, "\U0001F476 Youngest"),
+    (1, "\U0001F46A Parents"),
+    (2, "\U0001F474 Grandparents"),
+    (3, "\U0001F570\ufe0f Great-grans"),
+    (4, "\U0001F4DC Further back"),
+]
+
+
+def _generation(year_str: str, youngest: int | None) -> int:
+    """Generation steps from youngest known ancestor. -1 if unknown."""
+    if youngest is None:
+        return -1
+    try:
+        y = int(str(year_str).strip()[:4])
+    except (ValueError, TypeError):
+        return -1
+    return min(4, max(0, round((youngest - y) / 25)))
+
+
 def _era_for_year(year_str: str) -> tuple[str, str]:
     try:
         y = int(str(year_str).strip()[:4])

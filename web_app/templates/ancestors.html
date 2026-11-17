@@ -52,6 +52,26 @@
   }
   .filter-tabs button:hover { border-color:var(--gold); }
   .filter-tabs button.active { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+  .era-section { margin: 0 0 1.5rem; }
+  .era-head {
+    font-family:inherit; color:var(--moss-dark); font-size:1.15rem;
+    margin: 1.3rem 0 .6rem; padding: .25rem .9rem; display:inline-block;
+    background: linear-gradient(90deg, rgba(201,160,74,.25), rgba(201,160,74,0));
+    border-left: 4px solid var(--gold); letter-spacing:.03em;
+    font-weight:700; font-style:italic;
+  }
+  .era-section:first-of-type .era-head { margin-top: 0; }
+  .gen-tabs {
+    display:flex; gap:.4rem; justify-content:center; margin:0 0 .9rem;
+    flex-wrap:wrap;
+  }
+  .gen-tabs button {
+    cursor:pointer; padding:.3rem .85rem; border-radius:16px; font-size:.85rem;
+    border:2px solid var(--cream-dark); background:#fffaef; color:var(--sepia);
+    font-family:inherit; font-weight:600; transition:all .12s;
+  }
+  .gen-tabs button:hover { border-color:var(--gold); }
+  .gen-tabs button.active { background:var(--gold); color:#fff; border-color:#a07d2a; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:1.1rem; }
   .card {
     background:#fffcf2; border:2px solid var(--cream-dark); border-radius:14px;
@@ -85,11 +105,27 @@
     border-radius:4px; transition:color .12s, background .12s;
   }
   .card-del:hover { color:#b00; background:#ffeaea; }
+  .avatar-wrap {
+    position:relative; width:78px; height:78px; margin:0 auto .75rem;
+  }
+  .ring { position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-bg { fill:none; stroke:rgba(0,0,0,.07); stroke-width:4; }
+  .ring-fg {
+    fill:none; stroke:var(--gold); stroke-width:4; stroke-linecap:round;
+    transition: stroke-dasharray .6s ease-out;
+  }
   .avatar {
-    width:66px; height:66px; border-radius:50%; margin:0 auto .75rem;
+    position:absolute; top:6px; left:6px;
+    width:66px; height:66px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
     font-size:1.9rem; font-weight:700; border:3px solid rgba(0,0,0,.07);
     flex-shrink:0;
+  }
+  .ring-pct {
+    position:absolute; bottom:-2px; right:-2px;
+    background:var(--gold); color:#fff; font-size:.65rem; font-weight:700;
+    padding:.08rem .3rem; border-radius:10px; border:2px solid #fffcf2;
+    line-height:1;
   }
   .card-name { font-size:1.15rem; font-weight:700; color:var(--moss-dark); margin-bottom:.25rem; line-height:1.2; }
   .card-sub { font-size:.88rem; color:var(--sepia); margin-bottom:.6rem; min-height:1.2em; }
@@ -257,49 +293,96 @@
     </button>
   </form>
 </div>
-<div class="grid" id="ancestor-grid">
-  {% for p in people %}
-  <div class="card{% if p.confirmed > 0 %} card-confirmed{% endif %}"
-       data-found="{{ 1 if p.found > 0 else 0 }}"
-       style="background:{{ p.tint }}">
-    <a class="card-inner" href="{{ url_for('ancestors.person_page', slug=p.slug) }}">
-      <div class="avatar" style="background:{{ p.avatar_bg }};color:{{ p.avatar_fg }}">
-        {{ p.silhouette }}
-      </div>
-      <div class="ribbon">{{ p.era }}</div>
-      <div class="card-name">{{ p.forename }} {{ p.surname }}</div>
-      <div class="card-sub">
-        {%- if p.county %}{{ p.county }}{% endif %}
-        {%- if p.year %} &middot; b.&nbsp;~{{ p.year }}{% endif -%}
-      </div>
-      {% if p.confirmed > 0 %}
-        <span class="badge badge-confirmed">&#11088; {{ p.confirmed }} confirmed</span>
-      {% elif p.found > 0 %}
-        <span class="badge badge-found">&#128270; {{ p.found }} found</span>
-      {% else %}
-        <span class="badge badge-none">Not searched yet</span>
-      {% endif %}
-    </a>
-    <form method="post" action="{{ url_for('ancestors.ancestors_delete', slug=p.slug) }}" style="display:inline">
-      <button class="card-del" title="Remove {{ p.forename }} {{ p.surname }}"
-        onclick="return confirm('Remove {{ p.forename }} {{ p.surname }} from the list?')">&#10005;</button>
-    </form>
-  </div>
+{% if gen_chips and gen_chips|length > 1 %}
+<div class="gen-tabs" id="gen-tabs">
+  <button data-gen="all" class="active">All generations</button>
+  {% for n, lbl in gen_chips %}
+  <button data-gen="{{ n }}">{{ lbl }}</button>
   {% endfor %}
 </div>
+{% endif %}
+{% for era, items in groups %}
+<section class="era-section" data-era="{{ era }}">
+  <h2 class="era-head">{{ era }}</h2>
+  <div class="grid">
+    {% for p in items %}
+    <div class="card{% if p.confirmed > 0 %} card-confirmed{% endif %}"
+         data-found="{{ 1 if p.found > 0 else 0 }}"
+         data-gen="{{ p.generation }}"
+         style="background:{{ p.tint }}">
+      <a class="card-inner" href="{{ url_for('ancestors.person_page', slug=p.slug) }}">
+        <div class="avatar-wrap">
+          <svg class="ring" viewBox="0 0 78 78" aria-hidden="true">
+            <circle cx="39" cy="39" r="36" class="ring-bg"/>
+            {% if p.found > 0 %}
+            <circle cx="39" cy="39" r="36" class="ring-fg"
+                    style="stroke-dasharray: {{ (p.pct_confirmed * 2.2619) | round(1) }} 226.2;"/>
+            {% endif %}
+          </svg>
+          <div class="avatar" style="background:{{ p.avatar_bg }};color:{{ p.avatar_fg }}">
+            {{ p.silhouette }}
+          </div>
+          {% if p.found > 0 %}
+          <span class="ring-pct" title="{{ p.confirmed }} confirmed of {{ p.found }} found">{{ p.pct_confirmed }}%</span>
+          {% endif %}
+        </div>
+        <div class="card-name">{{ p.forename }} {{ p.surname }}</div>
+        <div class="card-sub">
+          {%- if p.county %}{{ p.county }}{% endif %}
+          {%- if p.year %} &middot; b.&nbsp;~{{ p.year }}{% endif -%}
+        </div>
+        {% if p.confirmed > 0 %}
+          <span class="badge badge-confirmed">&#11088; {{ p.confirmed }} confirmed</span>
+        {% elif p.found > 0 %}
+          <span class="badge badge-found">&#128270; {{ p.found }} found</span>
+        {% else %}
+          <span class="badge badge-none">Not searched yet</span>
+        {% endif %}
+      </a>
+      <form method="post" action="{{ url_for('ancestors.ancestors_delete', slug=p.slug) }}" style="display:inline">
+        <button class="card-del" title="Remove {{ p.forename }} {{ p.surname }}"
+          onclick="return confirm('Remove {{ p.forename }} {{ p.surname }} from the list?')">&#10005;</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
 <script>
   (function(){
-    var tabs = document.querySelectorAll('#filter-tabs button');
-    var cards = document.querySelectorAll('#ancestor-grid .card');
-    tabs.forEach(function(t){
+    var foundTabs = document.querySelectorAll('#filter-tabs button[data-filter]');
+    var genTabs = document.querySelectorAll('#gen-tabs button');
+    var cards = document.querySelectorAll('.era-section .card');
+    var sections = document.querySelectorAll('.era-section');
+    var state = { found: 'all', gen: 'all' };
+
+    function apply(){
+      cards.forEach(function(c){
+        var okFound = state.found === 'all' || c.dataset.found === '1';
+        var okGen = state.gen === 'all' || c.dataset.gen === state.gen;
+        c.style.display = (okFound && okGen) ? '' : 'none';
+      });
+      sections.forEach(function(s){
+        var visible = s.querySelectorAll('.card').length
+          && Array.from(s.querySelectorAll('.card')).some(function(c){ return c.style.display !== 'none'; });
+        s.style.display = visible ? '' : 'none';
+      });
+    }
+
+    foundTabs.forEach(function(t){
       t.addEventListener('click', function(){
-        var f = t.dataset.filter;
-        tabs.forEach(function(x){ x.classList.remove('active'); });
+        foundTabs.forEach(function(x){ x.classList.remove('active'); });
         t.classList.add('active');
-        cards.forEach(function(c){
-          var show = (f === 'all') || c.dataset.found === '1';
-          c.style.display = show ? '' : 'none';
-        });
+        state.found = t.dataset.filter;
+        apply();
+      });
+    });
+    genTabs.forEach(function(t){
+      t.addEventListener('click', function(){
+        genTabs.forEach(function(x){ x.classList.remove('active'); });
+        t.classList.add('active');
+        state.gen = t.dataset.gen;
+        apply();
       });
     });
   })();
