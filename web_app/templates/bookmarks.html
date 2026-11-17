@@ -1,16 +1,7 @@
-
-<!doctype html>
-<meta charset="utf-8">
-<title>Bookmarks &mdash; Family Finder</title>
+{% extends "base.html" %}
+{% block title %}Bookmarks &mdash; Family Finder{% endblock %}
+{% block head %}
 <style>
-  :root { --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
-          --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416; }
-  body { font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-         max-width:960px; margin:0 auto; padding:1rem; background:var(--cream); color:var(--ink); }
-  .nav a { color:var(--moss); text-decoration:none; font-weight:600; }
-  .nav a:hover { text-decoration:underline; }
-  h1 { color:var(--moss-dark); margin:.4rem 0 .2rem; }
-  .subtitle { color:var(--sepia); font-style:italic; margin:0 0 1rem; }
   .group { background:#fff; border:1px solid var(--cream-dark); border-radius:10px;
            padding:.8rem 1rem; margin:.8rem 0; }
   .group h2 { margin:.1rem 0 .5rem; color:var(--moss-dark); font-size:1.2rem; }
@@ -18,18 +9,16 @@
          background:#fff8e8; border-radius:4px; }
   .rec a.src { color:var(--moss); font-size:.85rem; margin-left:.4rem; }
   .meta { color:var(--sepia); font-size:.85rem; }
+  .subtitle { color:var(--sepia); font-style:italic; margin:0 0 1rem; }
+  h1 { color:var(--moss-dark); margin:.4rem 0 .2rem; }
   .empty { color:var(--sepia); font-style:italic; text-align:center; padding:2rem; }
   button.unkeep { background:#fff; border:1px solid #bbb; border-radius:6px;
                   padding:.15rem .5rem; font-size:.8rem; cursor:pointer; margin-left:.5rem; }
   button.unkeep:hover { background:#f4f4f4; }
 </style>
-<div class="nav">
-  <a href="{{ url_for('runs.index') }}">&#8592; Home</a>
-  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
-  <a href="{{ url_for('ancestors.ancestors_page') }}">&#128106; Our Family</a>
-  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
-  <a href="{{ url_for('runs.index') }}?find=1#quick-search">&#128269; Find someone</a>
-</div>
+{% endblock %}
+{% block nav %}{% set active = 'bookmarks' %}{% include "_nav.html" %}{% endblock %}
+{% block content %}
 <h1>&#128278; Bookmarks</h1>
 <p class="subtitle">Records you kept &mdash; interesting, but not confirmed family.</p>
 
@@ -56,7 +45,8 @@
   {% endfor %}
 </div>
 {% endfor %}
-
+{% endblock %}
+{% block scripts %}
 <script>
 document.querySelectorAll('button.unkeep').forEach(function(b){
   b.addEventListener('click',function(){
@@ -68,3 +58,4 @@ document.querySelectorAll('button.unkeep').forEach(function(b){
   });
 });
 </script>
+{% endblock %}

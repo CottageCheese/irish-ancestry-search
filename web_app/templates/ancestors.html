@@ -1,41 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Our Family &mdash; Family Finder{% endblock %}
+{% block head %}
 <style>
-  html {
-    background:
-      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
-                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
-                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
-                              transparent 18px),
-      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
-      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
-      #f4ecd8;
-    background-attachment: fixed;
-  }
-  body { background: transparent !important; padding-top: 1.4rem !important; }
-  .site-foot {
-    text-align:center; margin: 1.6rem 0 .3rem; color:#8b6f47;
-    font-style: italic; font-size:.95rem; letter-spacing:.02em;
-  }
-  .site-foot .glyph { color:#1f4722; font-style:normal; margin: 0 .35rem; }
-</style>
-<!doctype html>
-<meta charset="utf-8">
-<title>Our Family &mdash; Family Finder</title>
-<style>
-  :root {
-    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
-    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
-  }
-  * { box-sizing:border-box; }
-  body {
-    font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    max-width:960px; margin:0 auto; padding:0;
-    background:var(--cream); color:var(--ink); min-height:100vh;
-  }
+  body { max-width:960px; padding:0; }
   .scene { display:block; width:100%; height:auto; border-radius:0; margin-bottom:0; }
   .page-body { padding:1rem; }
-  .nav { margin-bottom:.8rem; }
-  .nav a { color:var(--moss); text-decoration:none; font-size:1rem; font-weight:600; }
-  .nav a:hover { color:var(--moss-dark); text-decoration:underline; }
   h1 { font-size:2.2rem; color:var(--moss-dark); margin:.2rem 0 .1rem; text-align:center; letter-spacing:.02em; }
   .subtitle { text-align:center; color:var(--sepia); font-style:italic; margin:0 0 .6rem; font-size:1.05rem; }
   .summary-bar {
@@ -140,7 +109,9 @@
   .empty a { color:var(--moss); font-weight:700; text-decoration:none; }
   .empty a:hover { text-decoration:underline; }
 </style>
-
+{% endblock %}
+{% block nav %}{% endblock %}
+{% block content %}
 <svg class="scene" viewBox="0 0 800 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
     <linearGradient id="asky" x1="0" x2="0" y1="0" y2="1">
@@ -165,7 +136,6 @@
   <path d="M0 85 Q200 45 400 75 T800 68 L800 130 L0 130 Z" fill="url(#ah1)" opacity=".9"/>
   <path d="M0 100 Q180 78 400 95 T800 90 L800 130 L0 130 Z" fill="url(#ah2)"/>
   <path d="M0 108 L800 103 L800 130 L0 130 Z" fill="#7aa54d"/>
-  <!-- drystone wall -->
   <rect x="0" y="106" width="800" height="3" fill="#9c9684"/>
   <g fill="#b5b09e">
     <rect x="30" y="106" width="14" height="3"/>
@@ -176,20 +146,17 @@
     <rect x="690" y="106" width="16" height="3"/>
     <rect x="735" y="106" width="14" height="3"/>
   </g>
-  <!-- haycock -->
   <g transform="translate(50,94)">
     <path d="M-16 14 Q-12 -4 0 -9 Q12 -4 16 14 Z" fill="#c9a961" stroke="#8a6d3a" stroke-width=".5"/>
     <path d="M-8 9 L0 -2" stroke="#8a6d3a" stroke-width=".4"/>
     <path d="M6 10 L2 -3" stroke="#8a6d3a" stroke-width=".4"/>
   </g>
-  <!-- hawthorn -->
   <g transform="translate(470,78)">
     <rect x="-2" y="12" width="4" height="18" fill="#4a3220"/>
     <ellipse cx="0" cy="6" rx="14" ry="13" fill="#5a7a3a"/>
     <ellipse cx="-8" cy="0" rx="9" ry="9" fill="#6a8a4a"/>
     <ellipse cx="8" cy="2" rx="10" ry="9" fill="#6a8a4a"/>
   </g>
-  <!-- cottage -->
   <g transform="translate(550,72)">
     <rect x="-1" y="40" width="74" height="6" fill="#9c9684"/>
     <rect x="0" y="16" width="72" height="26" fill="url(#awall)" stroke="#a89a78" stroke-width=".8"/>
@@ -217,7 +184,6 @@
     <line x1="57" y1="22" x2="57" y2="32" stroke="#e8dcc0" stroke-width=".5"/>
     <line x1="51" y1="27" x2="63" y2="27" stroke="#e8dcc0" stroke-width=".5"/>
   </g>
-  <!-- turf stack -->
   <g transform="translate(660,108)">
     <rect x="0" y="0" width="34" height="12" fill="#5a3a20" stroke="#3a2210" stroke-width=".3"/>
     <g stroke="#3a2210" stroke-width=".3">
@@ -227,7 +193,6 @@
       <line x1="0" y1="6" x2="34" y2="6"/>
     </g>
   </g>
-  <!-- sheep 1 -->
   <g transform="translate(185,112)">
     <ellipse cx="0" cy="0" rx="13" ry="7" fill="#f0e8d8"/>
     <circle cx="-9" cy="-2" r="4" fill="#f5efe0"/>
@@ -239,7 +204,6 @@
     <rect x="-5" y="5" width="2" height="4" fill="#3a2a1a"/>
     <rect x="3" y="5" width="2" height="4" fill="#3a2a1a"/>
   </g>
-  <!-- sheep 2 -->
   <g transform="translate(250,118)">
     <ellipse cx="0" cy="0" rx="10" ry="6" fill="#f0e8d8"/>
     <circle cx="-6" cy="-3" r="3.5" fill="#f5efe0"/>
@@ -250,7 +214,6 @@
     <rect x="-4" y="4" width="2" height="4" fill="#3a2a1a"/>
     <rect x="3" y="4" width="2" height="4" fill="#3a2a1a"/>
   </g>
-  <!-- hen -->
   <g transform="translate(330,122)">
     <ellipse cx="0" cy="0" rx="6" ry="4" fill="#8a4a2a"/>
     <circle cx="5" cy="-3" r="2.3" fill="#8a4a2a"/>
@@ -265,13 +228,7 @@
 </svg>
 
 <div class="page-body">
-<div class="nav">
-  <a href="{{ url_for('runs.index') }}">&#8592; Home</a>
-  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
-  <a href="{{ url_for('runs.index') }}?find=1#quick-search">&#128269; Find someone</a>
-  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
-  <a href="{{ url_for('results.bookmarks_page') }}">&#128278; Bookmarks</a>
-</div>
+{% set active = 'family' %}{% include "_nav.html" %}
 
 <h1>&#128106; Our Family</h1>
 <p class="subtitle">Everyone we have been searching for</p>
@@ -351,6 +308,16 @@
   </div>
 </section>
 {% endfor %}
+{% else %}
+<div class="empty">
+  <p>No one here yet!</p>
+  <a href="{{ url_for('runs.index') }}">Go find someone &#8594;</a>
+</div>
+{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+{% if people %}
 <script>
   (function(){
     var foundTabs = document.querySelectorAll('#filter-tabs button[data-filter]');
@@ -401,11 +368,5 @@
     apply();
   })();
 </script>
-{% else %}
-<div class="empty">
-  <p>No one here yet!</p>
-  <a href="{{ url_for('runs.index') }}">Go find someone &#8594;</a>
-</div>
 {% endif %}
-</div>
-<p class="site-foot"><span class="glyph">&#9752;</span> Sl&aacute;inte <span class="glyph">&#9752;</span> built with love for the diaspora <span class="glyph">&#9752;</span></p>
+{% endblock %}

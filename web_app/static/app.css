@@ -1,0 +1,81 @@
+:root {
+  --cream:#f4ecd8;
+  --cream-dark:#e8dcc0;
+  --moss:#4a7c3a;
+  --moss-dark:#1f4722;
+  --sepia:#8b6f47;
+  --gold:#c9a04a;
+  --ink:#2b2416;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background:
+    linear-gradient(180deg,
+      rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
+      rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
+      rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
+      transparent 18px),
+    radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
+    var(--cream);
+  background-attachment: fixed;
+}
+
+body {
+  font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.4rem 1rem 1rem;
+  color: var(--ink);
+  min-height: 100vh;
+  background: transparent;
+}
+
+.nav { margin-bottom: .8rem; }
+.nav a {
+  color: var(--moss);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav a:hover { color: var(--moss-dark); text-decoration: underline; }
+.nav a.active { color: var(--moss-dark); text-decoration: underline; }
+.nav .sep { margin: 0 .4rem; color: var(--sepia); }
+
+:focus-visible {
+  outline: 2px solid var(--moss);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--moss-dark);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.site-foot {
+  text-align: center;
+  margin: 1.6rem 0 .3rem;
+  color: var(--sepia);
+  font-style: italic;
+  font-size: .95rem;
+  letter-spacing: .02em;
+}
+.site-foot .glyph {
+  color: var(--moss-dark);
+  font-style: normal;
+  margin: 0 .35rem;
+}

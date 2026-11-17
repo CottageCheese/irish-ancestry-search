@@ -1,25 +1,6 @@
-<style>
-  html {
-    background:
-      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
-                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
-                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
-                              transparent 18px),
-      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
-      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
-      #f4ecd8;
-    background-attachment: fixed;
-  }
-  body { background: transparent !important; padding-top: 1.4rem !important; }
-  .site-foot {
-    text-align:center; margin: 1.6rem 0 .3rem; color:#8b6f47;
-    font-style: italic; font-size:.95rem; letter-spacing:.02em;
-  }
-  .site-foot .glyph { color:#1f4722; font-style:normal; margin: 0 .35rem; }
-</style>
-<!doctype html>
-<meta charset="utf-8">
-<title>Ancestors</title>
+{% extends "base.html" %}
+{% block title %}Ancestors{% endblock %}
+{% block head %}
 <style>
   body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; }
   table { border-collapse: collapse; width: 100%; font-size: .85rem; }
@@ -32,7 +13,8 @@
   .chips { font-size: .75rem; color: #555; }
   .chip { display:inline-block; padding:.05rem .3rem; margin:.05rem; border-radius:8px; background:#e8f0ff; }
 </style>
-
+{% endblock %}
+{% block content %}
 <h1>Ancestors <small style="font-weight:400"><a href="{{ url_for('runs.index') }}">&larr; back</a></small></h1>
 <p>Edits save automatically when a field loses focus. Columns: forename and surname drive the search. Separate multiple variants with <code>;</code>. Townland unknown is fine — leave it blank and the search just uses the county (e.g. Galway).</p>
 
@@ -55,7 +37,8 @@
 </table>
 
 <button class="add" id="add">+ Add person</button>
-
+{% endblock %}
+{% block scripts %}
 <script>
 const COLS = {{ cols|tojson }};
 
@@ -116,4 +99,4 @@ document.querySelectorAll('#tbl tbody tr').forEach(tr => {
 });
 document.getElementById('add').addEventListener('click', addRow);
 </script>
-<p class="site-foot"><span class="glyph">&#9752;</span> Sl&aacute;inte <span class="glyph">&#9752;</span> built with love for the diaspora <span class="glyph">&#9752;</span></p>
+{% endblock %}

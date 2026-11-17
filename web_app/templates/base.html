@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Irish ancestry search{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+{% block nav %}{% endblock %}
+{% block content %}{% endblock %}
+{% block footer %}
+<p class="site-foot"><span class="glyph">&#9752;</span> Sl&aacute;inte <span class="glyph">&#9752;</span> built with love for the diaspora <span class="glyph">&#9752;</span></p>
+{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

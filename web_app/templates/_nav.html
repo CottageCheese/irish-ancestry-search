@@ -1,0 +1,10 @@
+{# Shared top nav. Pass `active` = home|family|find|bookmarks to mark current. #}
+<div class="nav">
+  <a href="{{ url_for('runs.index') }}"{% if active == 'home' %} class="active"{% endif %}>&#8592; Home</a>
+  <span class="sep">&middot;</span>
+  <a href="{{ url_for('ancestors.ancestors_page') }}"{% if active == 'family' %} class="active"{% endif %}>&#128106; Our Family</a>
+  <span class="sep">&middot;</span>
+  <a href="{{ url_for('runs.index') }}?find=1#quick-search"{% if active == 'find' %} class="active"{% endif %}>&#128269; Find someone</a>
+  <span class="sep">&middot;</span>
+  <a href="{{ url_for('results.bookmarks_page') }}"{% if active == 'bookmarks' %} class="active"{% endif %}>&#128278; Bookmarks</a>
+</div>

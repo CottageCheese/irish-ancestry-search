@@ -1,39 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ person.forename }} {{ person.surname }} &mdash; Family Finder{% endblock %}
+{% block head %}
 <style>
-  html {
-    background:
-      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
-                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
-                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
-                              transparent 18px),
-      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
-      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
-      #f4ecd8;
-    background-attachment: fixed;
-  }
-  body { background: transparent !important; padding-top: 1.4rem !important; }
-  .site-foot {
-    text-align:center; margin: 1.6rem 0 .3rem; color:#8b6f47;
-    font-style: italic; font-size:.95rem; letter-spacing:.02em;
-  }
-  .site-foot .glyph { color:#1f4722; font-style:normal; margin: 0 .35rem; }
-</style>
-<!doctype html>
-<meta charset="utf-8">
-<title>{{ person.forename }} {{ person.surname }} &mdash; Family Finder</title>
-<style>
-  :root {
-    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
-    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
-  }
-  * { box-sizing:border-box; }
-  body {
-    font-family:"Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
-    max-width:860px; margin:0 auto; padding:1rem;
-    background:var(--cream); color:var(--ink); min-height:100vh;
-  }
+  body { max-width:860px; padding:1rem; }
   .nav { margin-bottom:1rem; display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
-  .nav a { color:var(--moss); text-decoration:none; font-weight:600; }
-  .nav a:hover { text-decoration:underline; }
   .hero-card {
     background:#fffcf2; border:2px solid var(--gold); border-radius:12px;
     padding:1.2rem 1.4rem; margin-bottom:1.2rem; display:flex; align-items:center; gap:1rem;
@@ -220,15 +190,9 @@
     100% { background:#fff6d8; }
   }
 </style>
-
-<div class="nav">
-  <a href="{{ url_for('runs.index') }}">&#8592; Home</a>
-  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
-  <a href="{{ url_for('ancestors.ancestors_page') }}">&#128106; Our family</a>
-  <span style="margin:0 .4rem;color:var(--sepia)">&middot;</span>
-  <a href="{{ url_for('results.bookmarks_page') }}">&#128278; Bookmarks</a>
-</div>
-
+{% endblock %}
+{% block nav %}{% set active = 'family' %}{% include "_nav.html" %}{% endblock %}
+{% block content %}
 <div class="hero-card">
   <div class="avatar" style="background:{{ person.avatar_bg }};color:{{ person.avatar_fg }}">
     {{ person.forename[0]|upper }}
@@ -357,6 +321,11 @@
 {% endfor %}
 {% if era_groups %}
 </div>
+{% endif %}
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if era_groups %}
 <script>
   (function(){
     var tabs = document.querySelectorAll('#view-tabs button');
@@ -374,5 +343,4 @@
   })();
 </script>
 {% endif %}
-{% endif %}
-<p class="site-foot"><span class="glyph">&#9752;</span> Sl&aacute;inte <span class="glyph">&#9752;</span> built with love for the diaspora <span class="glyph">&#9752;</span></p>
+{% endblock %}

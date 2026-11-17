@@ -1,28 +1,7 @@
-<!doctype html>
-<meta charset="utf-8">
-<title>Irish genealogy search</title>
+{% extends "base.html" %}
+{% block title %}Irish genealogy search{% endblock %}
+{% block head %}
 <style>
-  :root {
-    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
-    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
-  }
-  * { box-sizing: border-box; }
-  html {
-    background:
-      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
-                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
-                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
-                              transparent 18px),
-      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
-      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
-      var(--cream);
-    background-attachment: fixed;
-  }
-  body {
-    font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-    max-width: 960px; margin: 0 auto; padding: 1.4rem 1rem 1rem;
-    color: var(--ink); min-height: 100vh;
-  }
   h1 { font-size: 2.2rem; margin:.2rem 0 .1rem; color: var(--moss-dark); text-align:center; letter-spacing:.02em; }
   .tagline { text-align:center; color: var(--sepia); font-style:italic; margin:0 0 .9rem; font-size:1.05rem; }
 
@@ -110,10 +89,9 @@
              line-height:1.1; min-width:0; }
   .r-label strong { display:block; color:var(--moss-dark); font-size:.78rem; font-weight:700; }
   .ribbon-legend { font-size:.78rem; color:var(--sepia); margin-top:.5rem; text-align:right; font-style:italic; }
-  .site-foot { text-align:center; margin:1.4rem 0 .3rem; color:var(--sepia); font-style:italic; font-size:.95rem; }
-  .site-foot .glyph { color:var(--moss-dark); font-style:normal; margin:0 .35rem; }
 </style>
-
+{% endblock %}
+{% block content %}
 <h1>&#9752; Irish ancestry search</h1>
 <p class="tagline">Welcome back. Pick up where you left off.</p>
 
@@ -223,7 +201,9 @@
   </div>
 </div>
 {% endif %}
-
+{% endblock %}
+{% block footer %}
 <div class="site-foot">
   <span class="glyph">&#9752;</span> Sl&aacute;inte <span class="glyph">&#9752;</span>
 </div>
+{% endblock %}

@@ -1,35 +1,8 @@
-
-<!doctype html>
-<meta charset="utf-8">
-<title>Irish genealogy search</title>
+{% extends "base.html" %}
+{% block title %}Irish genealogy search{% endblock %}
+{% block head %}
 <style>
-  :root {
-    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
-    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
-  }
-  * { box-sizing: border-box; }
-  html {
-    background:
-      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
-                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
-                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
-                              transparent 18px),
-      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
-      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
-      var(--cream);
-    background-attachment: fixed;
-  }
-  body {
-    font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-    max-width: 900px; margin: 0 auto; padding: 1.4rem 1rem 1rem;
-    color: var(--ink); min-height: 100vh;
-    background: transparent;
-  }
-  .site-foot {
-    text-align:center; margin: 1.6rem 0 .3rem; color: var(--sepia);
-    font-style: italic; font-size:.95rem; letter-spacing:.02em;
-  }
-  .site-foot .glyph { color: var(--moss-dark); font-style: normal; margin: 0 .35rem; }
+  body { max-width: 900px; }
   h1 { font-size: 2.2rem; margin:.2rem 0 .1rem; color: var(--moss-dark); text-align:center; letter-spacing:.02em; }
   .tagline { text-align:center; color: var(--sepia); font-style:italic; margin:0 0 .5rem; font-size:1.05rem; }
   .hero {
@@ -142,8 +115,133 @@
   .next-emoji { font-size: 1.6rem; line-height: 1; }
   .next-btn span:nth-child(2) { font-weight: 700; font-size: .95rem; }
   .next-btn small { color: var(--sepia); font-size: .82rem; }
-</style>
 
+  #tl-modal { display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center; padding:1.5rem;
+    background: radial-gradient(ellipse at center, rgba(40,25,5,.78) 0%, rgba(20,12,0,.92) 100%); }
+  #tl-modal-panel {
+    position:relative; max-width:1200px; width:100%; max-height:92vh; overflow:auto;
+    padding:1.6rem 2.2rem 1.4rem;
+    font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;
+    color:#3a2a10;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(255,248,210,.9) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 90%, rgba(230,200,140,.6) 0%, transparent 55%),
+      repeating-linear-gradient(115deg, rgba(180,140,60,.045) 0 2px, transparent 2px 7px),
+      linear-gradient(180deg, #f8ecc8 0%, #ecd9a6 100%);
+    border-radius:6px;
+    box-shadow:
+      inset 0 0 0 2px #c9a24a,
+      inset 0 0 0 4px #fffcf2,
+      inset 0 0 0 5px #8b6d2e,
+      inset 0 0 40px rgba(160,110,30,.25),
+      0 18px 60px rgba(0,0,0,.6);
+  }
+  #tl-modal-panel::before, #tl-modal-panel::after {
+    content:"\2618"; position:absolute; font-size:1.5rem; color:#8b6d2e; opacity:.6;
+  }
+  #tl-modal-panel::before { top:.7rem; left:1rem; }
+  #tl-modal-panel::after { bottom:.7rem; right:1rem; }
+  .tl-corner { position:absolute; font-size:1.5rem; color:#8b6d2e; opacity:.6; }
+  .tl-corner.tr { top:.7rem; right:3rem; }
+  .tl-corner.bl { bottom:.7rem; left:1rem; }
+  .tl-title {
+    text-align:center; font-size:2rem; margin:0 0 .1rem;
+    color:#5a3f10; letter-spacing:.06em; font-variant:small-caps; font-weight:700;
+    text-shadow:0 1px 0 rgba(255,255,255,.4);
+  }
+  .tl-title .orn { color:#c9a24a; font-size:1.1rem; vertical-align:middle; margin:0 .4rem; }
+  .tl-subtitle {
+    text-align:center; font-style:italic; color:#7a5a2a; font-size:1.05rem; margin:0 0 .3rem;
+  }
+  .tl-divider {
+    text-align:center; color:#c9a24a; letter-spacing:.6em; margin:.1rem 0 .5rem; font-size:.9rem;
+  }
+  #tl-modal-caption {
+    margin-top:.7rem; padding:.7rem 1rem;
+    background:rgba(255,252,226,.55);
+    border-left:4px solid #c9a24a; border-right:4px solid #c9a24a;
+    border-radius:3px;
+    font-size:1.1rem; color:#5a3f10; line-height:1.5; font-style:italic;
+    text-align:center; min-height:1em;
+  }
+  #tl-close-btn {
+    position:absolute; top:.7rem; right:.9rem;
+    font-size:1.15rem; cursor:pointer;
+    border:1px solid #8b6d2e; background:#fffcf2; color:#5a3f10;
+    border-radius:50%; width:2.1rem; height:2.1rem;
+    font-family:inherit; font-weight:700;
+    box-shadow:inset 0 0 0 1px #c9a24a;
+  }
+  #tl-close-btn:hover { background:#f3e6c2; }
+  #tl-expand-btn {
+    font-family:"Palatino Linotype",Georgia,serif;
+    background:linear-gradient(180deg,#fffcf2,#f3e6c2);
+    border:1px solid #8b6d2e; color:#5a3f10;
+  }
+  #tl-expand-btn:hover { background:linear-gradient(180deg,#f8ecc8,#ecd9a6); }
+
+  .filter-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .filter-lbl { font-size:.92rem; font-weight:700; color:var(--moss-dark); min-width:85px; flex-shrink:0; }
+  .filter-hint { font-size:.82rem; color:var(--sepia); margin-top:.45rem; margin-left:91px; font-style:italic; }
+  .btn-group { display:flex; gap:.35rem; flex-wrap:wrap; }
+  .tog-btn {
+    display:inline-block; cursor:pointer; padding:.32rem .8rem;
+    border-radius:20px; font-size:.92rem; border:2px solid var(--cream-dark);
+    background:#fff; color:var(--sepia); transition:all .12s; user-select:none;
+    font-family:inherit;
+  }
+  .tog-btn input { display:none; }
+  .tog-btn:has(input:checked), .tog-btn.on {
+    background:var(--moss); color:#fff; border-color:var(--moss-dark);
+  }
+  .tog-btn:hover { border-color:var(--gold); }
+  .sex-btn {
+    display:inline-block; cursor:pointer; padding:.38rem 1rem;
+    border-radius:20px; font-size:1rem; border:2px solid var(--cream-dark);
+    background:#fff; color:var(--sepia); transition:all .12s; user-select:none;
+    font-family:inherit;
+  }
+  .sex-btn input { display:none; }
+  .sex-btn:has(input:checked) { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+  .sex-btn:hover { border-color:var(--gold); }
+  .gen-btn {
+    cursor:pointer; padding:.3rem .75rem; border-radius:16px; font-size:.85rem;
+    border:1px solid var(--gold); background:#fff; color:var(--sepia);
+    font-family:inherit; transition:all .12s;
+  }
+  .gen-btn:hover { background:var(--gold); color:#fff; }
+  .decade-btn {
+    cursor:pointer; padding:.22rem .55rem; border-radius:14px; font-size:.82rem;
+    border:2px solid var(--cream-dark); background:#fff; color:var(--sepia);
+    font-family:inherit; font-weight:600; transition:all .12s;
+  }
+  .decade-btn:hover { border-color:var(--gold); }
+  .decade-btn.selected { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
+  .seg { display:inline-flex; border:1px solid var(--cream-dark); border-radius:16px; overflow:hidden; background:#fff; }
+  .seg-btn {
+    cursor:pointer; padding:.3rem .8rem; font-size:.85rem; font-family:inherit; font-weight:600;
+    border:0; background:transparent; color:var(--sepia); transition:all .12s;
+    border-right:1px solid var(--cream-dark);
+  }
+  .seg-btn:last-child { border-right:0; }
+  .seg-btn:hover { background:#fffcf2; }
+  .seg-btn.selected { background:var(--moss); color:#fff; }
+
+  .sheep-spin { font-size:2.4rem; display:inline-block; animation: sheep-bounce 1s infinite ease-in-out; }
+  @keyframes sheep-bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+
+  .loader-wrap { text-align:center; padding:1rem 0 2rem; }
+  .loader-scene svg { width:100%; max-width:700px; height:auto; border-radius:12px; }
+  .loader-heading { font-size:2rem; color:var(--moss-dark); margin:.8rem 0 .3rem; }
+  .loader-msg { font-size:1.25rem; color:var(--sepia); font-style:italic; min-height:1.8em; margin:.2rem 0 .8rem; transition:opacity .4s; }
+  .loader-progress-text { color:var(--sepia); font-size:1rem; margin-bottom:.4rem; }
+  .loader-bar-wrap { max-width:500px; margin:0 auto .4rem; height:14px; background:var(--cream-dark); border-radius:7px; overflow:hidden; }
+  .loader-bar-fill { height:100%; background:var(--moss); border-radius:7px; transition:width .4s; }
+  .loader-pause { margin:.8rem auto; max-width:460px; padding:.5rem .8rem; background:#fff6d8; border-left:4px solid #e0a800; border-radius:6px; font-size:.95rem; display:none; }
+  .sheep-big { font-size:3.5rem; display:inline-block; animation:sheep-bounce 1.1s infinite ease-in-out; }
+</style>
+{% endblock %}
+{% block content %}
 <h1>&#9752; Family Finder &#9752;</h1>
 <p class="tagline">&mdash; <em>Fáilte</em> &mdash; hunting your Irish ancestors in the old books and papers &mdash;</p>
 
@@ -262,71 +360,6 @@
           </button>
         </div>
 
-        <style>
-          #tl-modal { display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center; padding:1.5rem;
-            background: radial-gradient(ellipse at center, rgba(40,25,5,.78) 0%, rgba(20,12,0,.92) 100%); }
-          #tl-modal-panel {
-            position:relative; max-width:1200px; width:100%; max-height:92vh; overflow:auto;
-            padding:1.6rem 2.2rem 1.4rem;
-            font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;
-            color:#3a2a10;
-            background:
-              radial-gradient(ellipse at 20% 10%, rgba(255,248,210,.9) 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 90%, rgba(230,200,140,.6) 0%, transparent 55%),
-              repeating-linear-gradient(115deg, rgba(180,140,60,.045) 0 2px, transparent 2px 7px),
-              linear-gradient(180deg, #f8ecc8 0%, #ecd9a6 100%);
-            border-radius:6px;
-            box-shadow:
-              inset 0 0 0 2px #c9a24a,
-              inset 0 0 0 4px #fffcf2,
-              inset 0 0 0 5px #8b6d2e,
-              inset 0 0 40px rgba(160,110,30,.25),
-              0 18px 60px rgba(0,0,0,.6);
-          }
-          #tl-modal-panel::before, #tl-modal-panel::after {
-            content:"\2618"; position:absolute; font-size:1.5rem; color:#8b6d2e; opacity:.6;
-          }
-          #tl-modal-panel::before { top:.7rem; left:1rem; }
-          #tl-modal-panel::after { bottom:.7rem; right:1rem; }
-          .tl-corner { position:absolute; font-size:1.5rem; color:#8b6d2e; opacity:.6; }
-          .tl-corner.tr { top:.7rem; right:3rem; }
-          .tl-corner.bl { bottom:.7rem; left:1rem; }
-          .tl-title {
-            text-align:center; font-size:2rem; margin:0 0 .1rem;
-            color:#5a3f10; letter-spacing:.06em; font-variant:small-caps; font-weight:700;
-            text-shadow:0 1px 0 rgba(255,255,255,.4);
-          }
-          .tl-title .orn { color:#c9a24a; font-size:1.1rem; vertical-align:middle; margin:0 .4rem; }
-          .tl-subtitle {
-            text-align:center; font-style:italic; color:#7a5a2a; font-size:1.05rem; margin:0 0 .3rem;
-          }
-          .tl-divider {
-            text-align:center; color:#c9a24a; letter-spacing:.6em; margin:.1rem 0 .5rem; font-size:.9rem;
-          }
-          #tl-modal-caption {
-            margin-top:.7rem; padding:.7rem 1rem;
-            background:rgba(255,252,226,.55);
-            border-left:4px solid #c9a24a; border-right:4px solid #c9a24a;
-            border-radius:3px;
-            font-size:1.1rem; color:#5a3f10; line-height:1.5; font-style:italic;
-            text-align:center; min-height:1em;
-          }
-          #tl-close-btn {
-            position:absolute; top:.7rem; right:.9rem;
-            font-size:1.15rem; cursor:pointer;
-            border:1px solid #8b6d2e; background:#fffcf2; color:#5a3f10;
-            border-radius:50%; width:2.1rem; height:2.1rem;
-            font-family:inherit; font-weight:700;
-            box-shadow:inset 0 0 0 1px #c9a24a;
-          }
-          #tl-close-btn:hover { background:#f3e6c2; }
-          #tl-expand-btn {
-            font-family:"Palatino Linotype",Georgia,serif;
-            background:linear-gradient(180deg,#fffcf2,#f3e6c2);
-            border:1px solid #8b6d2e; color:#5a3f10;
-          }
-          #tl-expand-btn:hover { background:linear-gradient(180deg,#f8ecc8,#ecd9a6); }
-        </style>
         <div id="tl-modal">
           <div id="tl-modal-panel">
             <span class="tl-corner tr">&#x2618;</span>
@@ -411,69 +444,12 @@
     </div>
 
     <div id="search-quality" style="visibility:hidden;margin:.7rem 0 .2rem;padding:.55rem .8rem;border-radius:8px;background:#f4fdf4;border:1px solid #c0dfc0;font-size:.95rem"></div>
-    <style>
-      .filter-row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
-      .filter-lbl { font-size:.92rem; font-weight:700; color:var(--moss-dark); min-width:85px; flex-shrink:0; }
-      .filter-hint { font-size:.82rem; color:var(--sepia); margin-top:.45rem; margin-left:91px; font-style:italic; }
-      .btn-group { display:flex; gap:.35rem; flex-wrap:wrap; }
-      .tog-btn {
-        display:inline-block; cursor:pointer; padding:.32rem .8rem;
-        border-radius:20px; font-size:.92rem; border:2px solid var(--cream-dark);
-        background:#fff; color:var(--sepia); transition:all .12s; user-select:none;
-        font-family:inherit;
-      }
-      .tog-btn input { display:none; }
-      /* Both the modern :has() selector and the JS-synced .on class keep the
-         pill visibly selected. .on is the fallback for browsers without :has()
-         support — otherwise the preset button looks selected but the pills
-         look white, which is confusing on first page load. */
-      .tog-btn:has(input:checked), .tog-btn.on {
-        background:var(--moss); color:#fff; border-color:var(--moss-dark);
-      }
-      .tog-btn:hover { border-color:var(--gold); }
-      .sex-btn {
-        display:inline-block; cursor:pointer; padding:.38rem 1rem;
-        border-radius:20px; font-size:1rem; border:2px solid var(--cream-dark);
-        background:#fff; color:var(--sepia); transition:all .12s; user-select:none;
-        font-family:inherit;
-      }
-      .sex-btn input { display:none; }
-      .sex-btn:has(input:checked) { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
-      .sex-btn:hover { border-color:var(--gold); }
-      .gen-btn {
-        cursor:pointer; padding:.3rem .75rem; border-radius:16px; font-size:.85rem;
-        border:1px solid var(--gold); background:#fff; color:var(--sepia);
-        font-family:inherit; transition:all .12s;
-      }
-      .gen-btn:hover { background:var(--gold); color:#fff; }
-      .decade-btn {
-        cursor:pointer; padding:.22rem .55rem; border-radius:14px; font-size:.82rem;
-        border:2px solid var(--cream-dark); background:#fff; color:var(--sepia);
-        font-family:inherit; font-weight:600; transition:all .12s;
-      }
-      .decade-btn:hover { border-color:var(--gold); }
-      .decade-btn.selected { background:var(--moss); color:#fff; border-color:var(--moss-dark); }
-      .seg { display:inline-flex; border:1px solid var(--cream-dark); border-radius:16px; overflow:hidden; background:#fff; }
-      .seg-btn {
-        cursor:pointer; padding:.3rem .8rem; font-size:.85rem; font-family:inherit; font-weight:600;
-        border:0; background:transparent; color:var(--sepia); transition:all .12s;
-        border-right:1px solid var(--cream-dark);
-      }
-      .seg-btn:last-child { border-right:0; }
-      .seg-btn:hover { background:#fffcf2; }
-      .seg-btn.selected { background:var(--moss); color:#fff; }
-    </style>
-
     <button type="submit" class="go" id="qs-btn">&#9752; Begin the hunt &#127808;</button>
     <div id="qs-spinner" style="display:none;margin-top:.8rem;text-align:center">
       <div class="sheep-spin" aria-hidden="true">&#128017;</div>
       <div style="color:var(--sepia);font-style:italic;margin-top:.3rem">Asking the old books…</div>
     </div>
   </form>
-  <style>
-    .sheep-spin { font-size:2.4rem; display:inline-block; animation: sheep-bounce 1s infinite ease-in-out; }
-    @keyframes sheep-bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
-  </style>
   <script>
     (function(){
       const form = document.querySelector('form[action="{{ url_for('runs.quick_search') }}"]');
@@ -904,19 +880,6 @@
 </div>
 
 {% else %}
-
-<style>
-  .loader-wrap { text-align:center; padding:1rem 0 2rem; }
-  .loader-scene svg { width:100%; max-width:700px; height:auto; border-radius:12px; }
-  .loader-heading { font-size:2rem; color:var(--moss-dark); margin:.8rem 0 .3rem; }
-  .loader-msg { font-size:1.25rem; color:var(--sepia); font-style:italic; min-height:1.8em; margin:.2rem 0 .8rem; transition:opacity .4s; }
-  .loader-progress-text { color:var(--sepia); font-size:1rem; margin-bottom:.4rem; }
-  .loader-bar-wrap { max-width:500px; margin:0 auto .4rem; height:14px; background:var(--cream-dark); border-radius:7px; overflow:hidden; }
-  .loader-bar-fill { height:100%; background:var(--moss); border-radius:7px; transition:width .4s; }
-  .loader-pause { margin:.8rem auto; max-width:460px; padding:.5rem .8rem; background:#fff6d8; border-left:4px solid #e0a800; border-radius:6px; font-size:.95rem; display:none; }
-  .sheep-big { font-size:3.5rem; display:inline-block; animation:sheep-bounce 1.1s infinite ease-in-out; }
-  @keyframes sheep-bounce { 0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)} }
-</style>
 
 <div class="loader-wrap" id="loader-screen" style="{{ 'display:none' if run.state != 'running' else '' }}">
   <div class="loader-scene" aria-hidden="true">
@@ -1518,4 +1481,7 @@ async function renderNextSuggestions() {
 tick();
 </script>
 {% endif %}
+{% endblock %}
+{% block footer %}
 <p class="site-foot"><span class="glyph">&#9752;</span> Sláinte <span class="glyph">&#9752;</span> built with love for the diaspora <span class="glyph">&#9752;</span></p>
+{% endblock %}
