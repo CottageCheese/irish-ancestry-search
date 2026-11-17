@@ -1284,14 +1284,32 @@ async function cancelSearch() {
 }
 
 async function tick() {
+  let s = null, l = null;
   try {
-    const [s, l] = await Promise.all([
+    [s, l] = await Promise.all([
       fetch('{{ url_for("runs.status_json") }}').then(r => r.json()),
       fetch('{{ url_for("runs.log_json") }}').then(r => r.json()),
     ]);
+  } catch (e) {
+    console.warn('tick fetch failed:', e);
+    setTimeout(tick, 3000);
+    return;
+  }
 
+  // CRITICAL: toggle visibility first so a later DOM error can't strand the loader.
+  try {
     const loaderScreen = document.getElementById('loader-screen');
     const statusPanel = document.getElementById('status-panel');
+    if (s.state === 'running') {
+      if (loaderScreen) loaderScreen.style.display = '';
+      if (statusPanel) statusPanel.style.display = 'none';
+    } else {
+      if (loaderScreen) loaderScreen.style.display = 'none';
+      if (statusPanel) statusPanel.style.display = '';
+    }
+  } catch (e) { console.warn('tick visibility toggle failed:', e); }
+
+  try {
     const loaderName = document.getElementById('loader-name');
     if (loaderName && s.person_name) loaderName.textContent = s.person_name;
     const lc = document.getElementById('loader-current'); if (lc) lc.textContent = s.current;
@@ -1300,16 +1318,10 @@ async function tick() {
     const lq = document.getElementById('loader-query');
     if (lq) lq.textContent = s.current_query ? 'Trying name: ' + s.current_query : '';
     updateLoaderStep(s.step || '');
+    if (s.state !== 'running') { _stepLog = []; _lastSeenStep = ''; }
+  } catch (e) { console.warn('tick loader-pane update failed:', e); }
 
-    if (s.state === 'running') {
-      if (loaderScreen) loaderScreen.style.display = '';
-      if (statusPanel) statusPanel.style.display = 'none';
-    } else {
-      if (loaderScreen) loaderScreen.style.display = 'none';
-      if (statusPanel) statusPanel.style.display = '';
-      _stepLog = []; _lastSeenStep = '';
-    }
-
+  try {
     document.getElementById('st-state').textContent = s.state;
     document.getElementById('st-current').textContent = s.current;
     document.getElementById('st-total').textContent = s.total;
@@ -1339,25 +1351,25 @@ async function tick() {
       };
       const prettySite = raw => {
         let m;
-        if ((m = raw.match(/\\[NAI (\\d+)\\]/))) return 'old census books (' + m[1] + ')';
-        if ((m = raw.match(/\\[IG ([^\\]]+)\\]/))) {
+        if ((m = raw.match(/\[NAI (\d+)\]/))) return 'old census books (' + m[1] + ')';
+        if ((m = raw.match(/\[IG ([^\]]+)\]/))) {
           const key = m[1];
           return IG_PHRASE[key] || key.replace(/-/g,' ').toLowerCase() + ' records';
         }
-        if (/\\[Griff|\\[griffiths\\]/.test(raw)) return "old land records";
+        if (/\[Griff|\[griffiths\]/.test(raw)) return "old land records";
         return '';
       };
-      const stripUrls = t => t.replace(/https?:\\/\\/\\S+/g, '').replace(/\\s+/g,' ').trim();
+      const stripUrls = t => t.replace(/https?:\/\/\S+/g, '').replace(/\s+/g,' ').trim();
       const items = lines.map(raw => {
-        if (/\\[(nai_census|irishgenealogy_civil|irishgenealogy_church|griffiths)\\]/.test(raw)) return '';
-        if (/Incremental save|storage_state|cookies|polite_pause|safe_goto|cache key|\\.search_cache/i.test(raw)) return '';
+        if (/\[(nai_census|irishgenealogy_civil|irishgenealogy_church|griffiths)\]/.test(raw)) return '';
+        if (/Incremental save|storage_state|cookies|polite_pause|safe_goto|cache key|\.search_cache/i.test(raw)) return '';
         const site = prettySite(raw);
-        let parsed = raw.match(/parsed (\\d+) rows/);
-        let cached = raw.match(/cache hit:.*\\((\\d+) records\\)/);
-        let generic = raw.match(/\\] (\\d+) records for/);
-        const zero = /\\b0 records\\b/.test(raw) || /no results/i.test(raw);
+        let parsed = raw.match(/parsed (\d+) rows/);
+        let cached = raw.match(/cache hit:.*\((\d+) records\)/);
+        let generic = raw.match(/\] (\d+) records for/);
+        const zero = /\b0 records\b/.test(raw) || /no results/i.test(raw);
         const hits = parsed ? +parsed[1] : (cached ? +cached[1] : (generic ? +generic[1] : (zero ? 0 : -1)));
-        const who = (raw.match(/for ([A-Z][^\\n,]+?)(?:\\s+\\(|$)/) || [,''])[1];
+        const who = (raw.match(/for ([A-Z][^\n,]+?)(?:\s+\(|$)/) || [,''])[1];
         const whoBit = who ? ' <span style="color:#9cf">' + esc(who) + '</span>' : '';
         const fromCache = !!cached;
         if (hits > 0) {
@@ -1367,7 +1379,7 @@ async function tick() {
         if (hits === 0) {
           return '<div style="color:#888;padding:.15rem .6rem">&#128270; Nothing here &mdash; ' + esc(site || 'search') + whoBit + '</div>';
         }
-        let pm = raw.match(/Pausing ([\\d.]+) seconds(?:.*host=([^)]+))?/);
+        let pm = raw.match(/Pausing ([\d.]+) seconds(?:.*host=([^)]+))?/);
         if (pm) {
           return '<div style="color:#e0a800;padding:.15rem .6rem">&#9203; Being polite &mdash; wait ' + Math.round(+pm[1]) + 's' + (pm[2]?' before next '+esc(pm[2]):'') + '</div>';
         }
@@ -1375,7 +1387,7 @@ async function tick() {
           return '<div style="color:#cfc;padding:.15rem .6rem">&#128269; Looking in ' + esc(site) + whoBit + '…</div>';
         }
         if (/ERROR|failed/i.test(raw)) {
-          const cleaned = stripUrls(raw.replace(/^[\\d\\-: ]+/, '').replace(/\\[[^\\]]+\\]/g,'').replace(/safe_goto|polite_pause/g,''));
+          const cleaned = stripUrls(raw.replace(/^[\d\-: ]+/, '').replace(/\[[^\]]+\]/g,'').replace(/safe_goto|polite_pause/g,''));
           return '<div style="color:#f99;padding:.15rem .6rem">&#9888; Something went wrong &mdash; ' + esc(cleaned) + '</div>';
         }
         if (/CAPTCHA|captcha/.test(raw)) {
@@ -1427,8 +1439,11 @@ async function tick() {
       if (progressBlock) progressBlock.style.display = '';
       if (stoppedNote) stoppedNote.style.display = 'none';
     }
-    if (s.state === 'running') setTimeout(tick, 2000);
-  } catch (e) { setTimeout(tick, 3000); }
+  } catch (e) { console.warn('tick status-panel update failed:', e); }
+
+  if (s.state !== 'done' && s.state !== 'error') {
+    setTimeout(tick, 2000);
+  }
 }
 
 async function renderNextSuggestions() {

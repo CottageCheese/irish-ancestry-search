@@ -23,7 +23,7 @@ Working list. Tick when done. Add free-form.
 - [ ] Recent-finds strip: use record thumbnails where available; wire click to the record detail (currently plain text card).
 
 ### Bugs
-- [ ] Loader spinner can stick after run finishes. Server flips `RUN["state"]` to `done` correctly (verified via `/status.json`), but the open index.html tab keeps showing the "Looking for …" loader. Likely a silent JS error in `tick()` before the `state !== 'running'` branch hides `#loader-screen`. Repro: start a run, watch loader after completion. Instrument the `catch (e)` on line ~1431 of `web_app/templates/index.html` to surface the error.
+- [x] Loader spinner can stick after run finishes. Fixed: `tick()` split into separate try/catch blocks; visibility toggle runs first before any risky DOM op, and reschedule happens unconditionally unless state is `done`/`error`. Silent errors now console.warn without stranding loader.
 - [ ] `results.html` must be opened via Flask (`http://127.0.0.1:8000/results.html`), not file://. Opening the on-disk file breaks Save/Confirm (relative `fetch('/confirm')` → `TypeError: Failed to fetch`). Options: (a) make CLI/web stop writing a standalone `results.html` and only serve via route, or (b) inject an absolute `window.API_BASE` into the static HTML when it's written from a known server session.
 
 ### Ideas — UX / learning

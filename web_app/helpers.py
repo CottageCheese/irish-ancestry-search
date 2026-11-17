@@ -527,14 +527,18 @@ def _portal_stats(people_rows: list[dict]) -> dict:
     }
 
 
+def _map_bounds() -> tuple[float, float, float, float]:
+    """Shared projection bounds — outline drives extents so coastline fits."""
+    lats = [lat for lat, _ in COUNTY_COORDS.values()] + [lat for _, lat in IRELAND_OUTLINE]
+    lons = [lon for _, lon in COUNTY_COORDS.values()] + [lon for lon, _ in IRELAND_OUTLINE]
+    return min(lats) - 0.15, max(lats) + 0.15, min(lons) - 0.15, max(lons) + 0.15
+
+
 def _county_pins(county_ancestors: dict[str, list[str]]) -> list[dict]:
     """Project COUNTY_COORDS into SVG-space pins sized by ancestor count."""
     if not county_ancestors:
         return []
-    lats = [lat for lat, _ in COUNTY_COORDS.values()]
-    lons = [lon for _, lon in COUNTY_COORDS.values()]
-    lat_min, lat_max = min(lats) - 0.2, max(lats) + 0.2
-    lon_min, lon_max = min(lons) - 0.2, max(lons) + 0.2
+    lat_min, lat_max, lon_min, lon_max = _map_bounds()
     w, h = 300, 420
     max_count = max(len(v) for v in county_ancestors.values())
     pins = []
@@ -559,10 +563,7 @@ def _county_pins(county_ancestors: dict[str, list[str]]) -> list[dict]:
 
 def _ireland_svg_path() -> str:
     """Convert IRELAND_OUTLINE coords to SVG-space path matching _county_pins()."""
-    lats = [lat for lat, _ in COUNTY_COORDS.values()]
-    lons = [lon for _, lon in COUNTY_COORDS.values()]
-    lat_min, lat_max = min(lats) - 0.2, max(lats) + 0.2
-    lon_min, lon_max = min(lons) - 0.2, max(lons) + 0.2
+    lat_min, lat_max, lon_min, lon_max = _map_bounds()
     w, h = 300, 420
     parts = []
     for i, (lon, lat) in enumerate(IRELAND_OUTLINE):
