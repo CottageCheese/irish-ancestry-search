@@ -1,4 +1,5 @@
 """Shared helpers and data constants for the web app."""
+
 from __future__ import annotations
 
 import csv
@@ -24,11 +25,10 @@ from .state import (
     CONFIRMS_LOCK,
     CSV_COLUMNS,
     HERE,
+    RUN,
     RUN_LOCK,
     UPLOAD_CSV,
-    RUN,
 )
-
 
 TIER_ORDER = ["Likely", "Possible", "Weak", "Manual"]
 TIER_STARS = {"Likely": "★★★", "Possible": "★★", "Weak": "★", "Manual": "🔍"}
@@ -39,48 +39,119 @@ TIER_BLURB = {
     "Manual": "Needs a human eye.",
 }
 TIER_COLOR = {
-    "Likely": "#0a7d2b", "Possible": "#b57b00",
-    "Weak": "#9a6f6f", "Manual": "#555",
+    "Likely": "#0a7d2b",
+    "Possible": "#b57b00",
+    "Weak": "#9a6f6f",
+    "Manual": "#555",
 }
 
 COUNTY_COORDS = {
-    "antrim": (54.90, -6.30), "armagh": (54.35, -6.45),
-    "carlow": (52.70, -6.80), "cavan": (54.00, -7.30),
-    "clare": (52.90, -9.00), "cork": (51.95, -8.50),
-    "derry": (54.90, -7.00), "londonderry": (54.90, -7.00),
-    "donegal": (54.90, -8.00), "down": (54.33, -5.90),
-    "dublin": (53.35, -6.25), "fermanagh": (54.35, -7.60),
-    "galway": (53.30, -9.00), "kerry": (52.10, -9.60),
-    "kildare": (53.20, -6.80), "kilkenny": (52.60, -7.25),
-    "laois": (52.90, -7.35), "leitrim": (54.10, -8.00),
-    "limerick": (52.50, -8.60), "longford": (53.70, -7.80),
-    "louth": (53.95, -6.50), "mayo": (54.00, -9.40),
-    "meath": (53.60, -6.65), "monaghan": (54.25, -6.95),
-    "offaly": (53.20, -7.50), "roscommon": (53.70, -8.30),
-    "sligo": (54.15, -8.60), "tipperary": (52.60, -8.00),
-    "tyrone": (54.60, -7.30), "waterford": (52.20, -7.60),
-    "westmeath": (53.50, -7.50), "wexford": (52.50, -6.55),
+    "antrim": (54.90, -6.30),
+    "armagh": (54.35, -6.45),
+    "carlow": (52.70, -6.80),
+    "cavan": (54.00, -7.30),
+    "clare": (52.90, -9.00),
+    "cork": (51.95, -8.50),
+    "derry": (54.90, -7.00),
+    "londonderry": (54.90, -7.00),
+    "donegal": (54.90, -8.00),
+    "down": (54.33, -5.90),
+    "dublin": (53.35, -6.25),
+    "fermanagh": (54.35, -7.60),
+    "galway": (53.30, -9.00),
+    "kerry": (52.10, -9.60),
+    "kildare": (53.20, -6.80),
+    "kilkenny": (52.60, -7.25),
+    "laois": (52.90, -7.35),
+    "leitrim": (54.10, -8.00),
+    "limerick": (52.50, -8.60),
+    "longford": (53.70, -7.80),
+    "louth": (53.95, -6.50),
+    "mayo": (54.00, -9.40),
+    "meath": (53.60, -6.65),
+    "monaghan": (54.25, -6.95),
+    "offaly": (53.20, -7.50),
+    "roscommon": (53.70, -8.30),
+    "sligo": (54.15, -8.60),
+    "tipperary": (52.60, -8.00),
+    "tyrone": (54.60, -7.30),
+    "waterford": (52.20, -7.60),
+    "westmeath": (53.50, -7.50),
+    "wexford": (52.50, -6.55),
     "wicklow": (52.95, -6.30),
 }
 
 IRELAND_OUTLINE = [
-    (-7.40, 55.38), (-6.95, 55.18), (-6.03, 55.21), (-5.65, 55.00),
-    (-5.85, 54.65), (-5.49, 54.43), (-5.86, 54.21), (-6.00, 54.05),
-    (-6.25, 54.08), (-6.07, 53.75), (-6.03, 53.33), (-6.03, 52.99),
-    (-6.11, 52.72), (-6.38, 52.18), (-6.95, 52.14), (-7.56, 52.11),
-    (-8.14, 51.84), (-8.56, 51.60), (-9.47, 51.44), (-9.95, 51.47),
-    (-10.37, 51.99), (-10.16, 52.26), (-9.73, 52.62), (-9.93, 52.95),
-    (-9.47, 53.15), (-9.90, 53.42), (-10.18, 53.62), (-9.83, 53.92),
-    (-10.08, 54.28), (-9.06, 54.28), (-8.70, 54.49), (-8.70, 54.71),
-    (-8.37, 55.17), (-7.95, 55.21), (-7.40, 55.38),
+    (-7.40, 55.38),
+    (-6.95, 55.18),
+    (-6.03, 55.21),
+    (-5.65, 55.00),
+    (-5.85, 54.65),
+    (-5.49, 54.43),
+    (-5.86, 54.21),
+    (-6.00, 54.05),
+    (-6.25, 54.08),
+    (-6.07, 53.75),
+    (-6.03, 53.33),
+    (-6.03, 52.99),
+    (-6.11, 52.72),
+    (-6.38, 52.18),
+    (-6.95, 52.14),
+    (-7.56, 52.11),
+    (-8.14, 51.84),
+    (-8.56, 51.60),
+    (-9.47, 51.44),
+    (-9.95, 51.47),
+    (-10.37, 51.99),
+    (-10.16, 52.26),
+    (-9.73, 52.62),
+    (-9.93, 52.95),
+    (-9.47, 53.15),
+    (-9.90, 53.42),
+    (-10.18, 53.62),
+    (-9.83, 53.92),
+    (-10.08, 54.28),
+    (-9.06, 54.28),
+    (-8.70, 54.49),
+    (-8.70, 54.71),
+    (-8.37, 55.17),
+    (-7.95, 55.21),
+    (-7.40, 55.38),
 ]
 
 IRISH_COUNTIES = [
-    "Antrim", "Armagh", "Carlow", "Cavan", "Clare", "Cork", "Derry", "Donegal",
-    "Down", "Dublin", "Fermanagh", "Galway", "Kerry", "Kildare", "Kilkenny",
-    "Laois", "Leitrim", "Limerick", "Longford", "Louth", "Mayo", "Meath",
-    "Monaghan", "Offaly", "Roscommon", "Sligo", "Tipperary", "Tyrone",
-    "Waterford", "Westmeath", "Wexford", "Wicklow",
+    "Antrim",
+    "Armagh",
+    "Carlow",
+    "Cavan",
+    "Clare",
+    "Cork",
+    "Derry",
+    "Donegal",
+    "Down",
+    "Dublin",
+    "Fermanagh",
+    "Galway",
+    "Kerry",
+    "Kildare",
+    "Kilkenny",
+    "Laois",
+    "Leitrim",
+    "Limerick",
+    "Longford",
+    "Louth",
+    "Mayo",
+    "Meath",
+    "Monaghan",
+    "Offaly",
+    "Roscommon",
+    "Sligo",
+    "Tipperary",
+    "Tyrone",
+    "Waterford",
+    "Westmeath",
+    "Wexford",
+    "Wicklow",
 ]
 
 AVATAR_PALETTES = [
@@ -101,10 +172,10 @@ def _avatar(name: str) -> tuple[str, str]:
 def _silhouette(sex: str) -> str:
     s = (sex or "").strip().upper()
     if s == "M":
-        return "\U0001F468"
+        return "\U0001f468"
     if s == "F":
-        return "\U0001F469"
-    return "\U0001F464"
+        return "\U0001f469"
+    return "\U0001f464"
 
 
 ERA_ORDER = [
@@ -121,11 +192,11 @@ ERA_ORDER = [
 ERA_RANK = {e: i for i, e in enumerate(ERA_ORDER)}
 
 GEN_LABELS = [
-    (0, "\U0001F476 Youngest"),
-    (1, "\U0001F46A Parents"),
-    (2, "\U0001F474 Grandparents"),
-    (3, "\U0001F570\ufe0f Great-grans"),
-    (4, "\U0001F4DC Further back"),
+    (0, "\U0001f476 Youngest"),
+    (1, "\U0001f46a Parents"),
+    (2, "\U0001f474 Grandparents"),
+    (3, "\U0001f570\ufe0f Great-grans"),
+    (4, "\U0001f4dc Further back"),
 ]
 
 
@@ -253,18 +324,18 @@ def _next_suggestions(person_label: str, rows: list[dict]) -> list[dict]:
     forename = parts[0] if parts else ""
     surname = parts[1] if len(parts) > 1 else ""
     row = next(
-        (r for r in rows
-         if (r.get("forename", "").strip().lower(),
-             r.get("surname", "").strip().lower()) == (forename.lower(), surname.lower())),
+        (
+            r
+            for r in rows
+            if (r.get("forename", "").strip().lower(), r.get("surname", "").strip().lower())
+            == (forename.lower(), surname.lower())
+        ),
         None,
     )
     if row is None:
         return []
 
-    existing = {
-        (r.get("forename", "").strip().lower(), r.get("surname", "").strip().lower())
-        for r in rows
-    }
+    existing = {(r.get("forename", "").strip().lower(), r.get("surname", "").strip().lower()) for r in rows}
     try:
         birth = int(row.get("birth_year_approx") or 0) or None
     except ValueError:
@@ -284,33 +355,48 @@ def _next_suggestions(person_label: str, rows: list[dict]) -> list[dict]:
     f_have = bool(f_fore) and (f_fore.lower(), f_surn.lower()) not in existing
     f_missing = not f_fore
     if f_have or f_missing:
-        out.append({
-            "label": f"{forename}'s dad",
-            "emoji": "\U0001F468",
-            "forename": f_fore, "surname": f_surn or surname,
-            "birth_year": parent_year, "sex": "M", "county": county,
-            "prefill_only": not f_have,
-        })
+        out.append(
+            {
+                "label": f"{forename}'s dad",
+                "emoji": "\U0001f468",
+                "forename": f_fore,
+                "surname": f_surn or surname,
+                "birth_year": parent_year,
+                "sex": "M",
+                "county": county,
+                "prefill_only": not f_have,
+            }
+        )
     m_fore, m_surn = _parse_relative("mother", "")
     m_have = bool(m_fore) and (m_fore.lower(), m_surn.lower()) not in existing
     m_missing = not m_fore
     if m_have or m_missing:
-        out.append({
-            "label": f"{forename}'s mum",
-            "emoji": "\U0001F469",
-            "forename": m_fore, "surname": m_surn,
-            "birth_year": parent_year, "sex": "F", "county": county,
-            "prefill_only": not m_have,
-        })
+        out.append(
+            {
+                "label": f"{forename}'s mum",
+                "emoji": "\U0001f469",
+                "forename": m_fore,
+                "surname": m_surn,
+                "birth_year": parent_year,
+                "sex": "F",
+                "county": county,
+                "prefill_only": not m_have,
+            }
+        )
     s_fore, s_surn = _parse_relative("spouse", "")
     if s_fore and (s_fore.lower(), s_surn.lower()) not in existing:
-        out.append({
-            "label": f"{forename}'s partner",
-            "emoji": "\U0001F49E",
-            "forename": s_fore, "surname": s_surn,
-            "birth_year": str(birth) if birth else "", "sex": "", "county": county,
-            "prefill_only": False,
-        })
+        out.append(
+            {
+                "label": f"{forename}'s partner",
+                "emoji": "\U0001f49e",
+                "forename": s_fore,
+                "surname": s_surn,
+                "birth_year": str(birth) if birth else "",
+                "sex": "",
+                "county": county,
+                "prefill_only": False,
+            }
+        )
     return out
 
 
@@ -320,10 +406,7 @@ def _portal_stats(people_rows: list[dict]) -> dict:
     Returns ancestor count, confirmed/saved record counts, pending review count
     (confirm-worthy records with no decision), progress percent, latest finds,
     and a smart-CTA recommendation."""
-    ancestors = sum(
-        1 for r in people_rows
-        if (r.get("forename") or "").strip() and (r.get("surname") or "").strip()
-    )
+    ancestors = sum(1 for r in people_rows if (r.get("forename") or "").strip() and (r.get("surname") or "").strip())
 
     with CONFIRMS_LOCK:
         confs = load_confirmations(CONFIRMS_FILE)
@@ -353,15 +436,17 @@ def _portal_stats(people_rows: list[dict]) -> dict:
             pool = new_recs or recs
             pool_sorted = sorted(pool, key=lambda r: r.score, reverse=True)
             for r in pool_sorted[:4]:
-                latest.append({
-                    "person": r.person_searched,
-                    "name": r.name_found,
-                    "site": r.site,
-                    "type": r.record_type,
-                    "year": r.age_or_year,
-                    "place": r.place,
-                    "tier": confidence_tier(r.score),
-                })
+                latest.append(
+                    {
+                        "person": r.person_searched,
+                        "name": r.name_found,
+                        "site": r.site,
+                        "type": r.record_type,
+                        "year": r.age_or_year,
+                        "place": r.place,
+                        "tier": confidence_tier(r.score),
+                    }
+                )
         except Exception:
             pass
 
@@ -379,12 +464,17 @@ def _portal_stats(people_rows: list[dict]) -> dict:
             county_ancestors.setdefault(county, []).append(f"{fname} {sname}")
 
     era_sample = {
-        "Before the Famine": "1830", "The Great Hunger": "1848",
-        "After the Famine": "1870", "Land War Ireland": "1890",
-        "Home Rule era": "1910", "Rising & Revolution": "1920",
-        "Irish Free State": "1935", "Republic of Ireland": "1960",
+        "Before the Famine": "1830",
+        "The Great Hunger": "1848",
+        "After the Famine": "1870",
+        "Land War Ireland": "1890",
+        "Home Rule era": "1910",
+        "Rising & Revolution": "1920",
+        "Irish Free State": "1935",
+        "Republic of Ireland": "1960",
     }
-    era_max = max(era_record_counts.values(), default=0)
+    era_rc_max = max(era_record_counts.values(), default=0)
+    era_ac_max = max(era_ancestor_counts.values(), default=0)
     era_ribbon = []
     for e in ERA_ORDER:
         if e == "Long ago":
@@ -392,15 +482,22 @@ def _portal_stats(people_rows: list[dict]) -> dict:
         tint, _ = _era_for_year(era_sample.get(e, ""))
         rc = era_record_counts.get(e, 0)
         ac = era_ancestor_counts.get(e, 0)
-        density = round(100 * rc / era_max) if era_max else 0
-        era_ribbon.append({
-            "era": e,
-            "tint": tint,
-            "records": rc,
-            "ancestors": ac,
-            "density": density,
-            "has_data": rc > 0 or ac > 0,
-        })
+        if era_rc_max:
+            density = round(100 * rc / era_rc_max)
+        elif era_ac_max:
+            density = round(100 * ac / era_ac_max)
+        else:
+            density = 0
+        era_ribbon.append(
+            {
+                "era": e,
+                "tint": tint,
+                "records": rc,
+                "ancestors": ac,
+                "density": density,
+                "has_data": rc > 0 or ac > 0,
+            }
+        )
 
     reviewed = confirmed + saved + sum(1 for v in confs.values() if v.get("status") == "rejected")
     denom = reviewed + pending
@@ -447,12 +544,16 @@ def _county_pins(county_ancestors: dict[str, list[str]]) -> list[dict]:
         y = (lat_max - lat) / (lat_max - lat_min) * h
         n = len(names)
         r = 5 + 10 * (n / max_count) if max_count else 5
-        pins.append({
-            "county": county.title(),
-            "x": round(x, 1), "y": round(y, 1),
-            "r": round(r, 1), "count": n,
-            "names": names,
-        })
+        pins.append(
+            {
+                "county": county.title(),
+                "x": round(x, 1),
+                "y": round(y, 1),
+                "r": round(r, 1),
+                "count": n,
+                "names": names,
+            }
+        )
     return pins
 
 
@@ -477,11 +578,18 @@ def _reset_run_state() -> bool:
     with RUN_LOCK:
         if RUN["state"] == "running":
             return False
-        RUN.update({
-            "state": "idle",
-            "current": 0, "total": 0, "label": "",
-            "started": None, "finished": None, "error": "",
-            "new_count": 0, "record_count": 0,
-            "person_name": "",
-        })
+        RUN.update(
+            {
+                "state": "idle",
+                "current": 0,
+                "total": 0,
+                "label": "",
+                "started": None,
+                "finished": None,
+                "error": "",
+                "new_count": 0,
+                "record_count": 0,
+                "person_name": "",
+            }
+        )
     return True
