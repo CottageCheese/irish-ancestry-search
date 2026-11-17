@@ -309,6 +309,7 @@
     <div class="card{% if p.confirmed > 0 %} card-confirmed{% endif %}"
          data-found="{{ 1 if p.found > 0 else 0 }}"
          data-gen="{{ p.generation }}"
+         data-county="{{ p.county|lower }}"
          style="background:{{ p.tint }}">
       <a class="card-inner" href="{{ url_for('ancestors.person_page', slug=p.slug) }}">
         <div class="avatar-wrap">
@@ -354,13 +355,23 @@
     var genTabs = document.querySelectorAll('#gen-tabs button');
     var cards = document.querySelectorAll('.era-section .card');
     var sections = document.querySelectorAll('.era-section');
-    var state = { found: 'all', gen: 'all' };
+    var urlCounty = new URLSearchParams(window.location.search).get('county') || '';
+    var state = { found: 'all', gen: 'all', county: urlCounty.toLowerCase() };
+
+    if (state.county) {
+      var banner = document.createElement('div');
+      banner.style.cssText = 'text-align:center;margin:.3rem 0 .6rem;font-size:.95rem;color:var(--sepia)';
+      banner.innerHTML = 'Filtered by county: <strong>' + state.county.charAt(0).toUpperCase() + state.county.slice(1) + '</strong> &middot; <a href="?" style="color:var(--moss-dark)">clear</a>';
+      var tabs = document.getElementById('filter-tabs');
+      if (tabs && tabs.parentNode) tabs.parentNode.insertBefore(banner, tabs.nextSibling);
+    }
 
     function apply(){
       cards.forEach(function(c){
         var okFound = state.found === 'all' || c.dataset.found === '1';
         var okGen = state.gen === 'all' || c.dataset.gen === state.gen;
-        c.style.display = (okFound && okGen) ? '' : 'none';
+        var okCounty = !state.county || c.dataset.county === state.county;
+        c.style.display = (okFound && okGen && okCounty) ? '' : 'none';
       });
       sections.forEach(function(s){
         var visible = s.querySelectorAll('.card').length
@@ -385,6 +396,7 @@
         apply();
       });
     });
+    apply();
   })();
 </script>
 {% else %}

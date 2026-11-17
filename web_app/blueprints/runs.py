@@ -27,6 +27,7 @@ from genealogy_search import LOG_FILE
 from ..helpers import (
     IRISH_COUNTIES,
     _next_suggestions,
+    _portal_stats,
     _read_rows,
     _reset_run_state,
     _write_rows,
@@ -57,6 +58,20 @@ def index():
             next_suggestions = _next_suggestions(RUN.get("label") or "", people_rows)
         except Exception:
             next_suggestions = []
+
+    show_portal = (
+        RUN.get("state") == "idle"
+        and not request.args.get("find")
+        and any((r.get("forename") or "").strip() and (r.get("surname") or "").strip() for r in people_rows)
+    )
+    if show_portal:
+        try:
+            stats = _portal_stats(people_rows)
+        except Exception:
+            stats = None
+        if stats:
+            return render_template("portal.html", run=RUN, people=people_rows, stats=stats)
+
     return render_template(
         "index.html",
         run=RUN,

@@ -6,6 +6,7 @@ import logging
 
 from genealogy_core import (
     apply_confirmations,
+    confidence_tier,
     load_confirmations,
     load_records_csv,
     record_key,
@@ -311,6 +312,163 @@ def _next_suggestions(person_label: str, rows: list[dict]) -> list[dict]:
             "prefill_only": False,
         })
     return out
+
+
+def _portal_stats(people_rows: list[dict]) -> dict:
+    """Aggregate counts for the portal landing dashboard.
+
+    Returns ancestor count, confirmed/saved record counts, pending review count
+    (confirm-worthy records with no decision), progress percent, latest finds,
+    and a smart-CTA recommendation."""
+    ancestors = sum(
+        1 for r in people_rows
+        if (r.get("forename") or "").strip() and (r.get("surname") or "").strip()
+    )
+
+    with CONFIRMS_LOCK:
+        confs = load_confirmations(CONFIRMS_FILE)
+    confirmed = sum(1 for v in confs.values() if v.get("status") == "confirmed")
+    saved = sum(1 for v in confs.values() if v.get("status") == "saved")
+
+    records_total = 0
+    pending = 0
+    latest: list[dict] = []
+    era_record_counts: dict[str, int] = {e: 0 for e in ERA_ORDER}
+    results_csv_path = HERE / RESULTS_CSV
+    if results_csv_path.exists():
+        try:
+            recs = load_records_csv(results_csv_path)
+            records_total = len(recs)
+            for r in recs:
+                status = confs.get(record_key(r), {}).get("status") or ""
+                if status == "confirmed":
+                    _, era = _era_for_year(r.age_or_year)
+                    era_record_counts[era] = era_record_counts.get(era, 0) + 1
+                if status:
+                    continue
+                tier = confidence_tier(r.score)
+                if tier in ("Likely", "Possible"):
+                    pending += 1
+            new_recs = [r for r in recs if getattr(r, "is_new", False)]
+            pool = new_recs or recs
+            pool_sorted = sorted(pool, key=lambda r: r.score, reverse=True)
+            for r in pool_sorted[:4]:
+                latest.append({
+                    "person": r.person_searched,
+                    "name": r.name_found,
+                    "site": r.site,
+                    "type": r.record_type,
+                    "year": r.age_or_year,
+                    "place": r.place,
+                    "tier": confidence_tier(r.score),
+                })
+        except Exception:
+            pass
+
+    era_ancestor_counts: dict[str, int] = {e: 0 for e in ERA_ORDER}
+    county_ancestors: dict[str, list[str]] = {}
+    for r in people_rows:
+        fname = (r.get("forename") or "").strip()
+        sname = (r.get("surname") or "").strip()
+        if not (fname and sname):
+            continue
+        _, era = _era_for_year(r.get("birth_year_approx", ""))
+        era_ancestor_counts[era] = era_ancestor_counts.get(era, 0) + 1
+        county = (r.get("county") or "").strip().lower()
+        if county and county in COUNTY_COORDS:
+            county_ancestors.setdefault(county, []).append(f"{fname} {sname}")
+
+    era_sample = {
+        "Before the Famine": "1830", "The Great Hunger": "1848",
+        "After the Famine": "1870", "Land War Ireland": "1890",
+        "Home Rule era": "1910", "Rising & Revolution": "1920",
+        "Irish Free State": "1935", "Republic of Ireland": "1960",
+    }
+    era_max = max(era_record_counts.values(), default=0)
+    era_ribbon = []
+    for e in ERA_ORDER:
+        if e == "Long ago":
+            continue
+        tint, _ = _era_for_year(era_sample.get(e, ""))
+        rc = era_record_counts.get(e, 0)
+        ac = era_ancestor_counts.get(e, 0)
+        density = round(100 * rc / era_max) if era_max else 0
+        era_ribbon.append({
+            "era": e,
+            "tint": tint,
+            "records": rc,
+            "ancestors": ac,
+            "density": density,
+            "has_data": rc > 0 or ac > 0,
+        })
+
+    reviewed = confirmed + saved + sum(1 for v in confs.values() if v.get("status") == "rejected")
+    denom = reviewed + pending
+    progress_pct = round(100 * reviewed / denom) if denom else 0
+
+    if ancestors == 0:
+        cta = {"kind": "add", "label": "Add first ancestor", "href": "/#quick-search"}
+    elif pending > 0:
+        cta = {"kind": "review", "label": f"Review {pending} clue{'s' if pending != 1 else ''}", "href": "/ancestors"}
+    elif records_total == 0:
+        cta = {"kind": "run", "label": "Run a search", "href": "/start", "method": "post"}
+    else:
+        cta = {"kind": "find", "label": "Find someone new", "href": "/#quick-search"}
+
+    return {
+        "ancestors": ancestors,
+        "confirmed": confirmed,
+        "saved": saved,
+        "pending": pending,
+        "records_total": records_total,
+        "progress_pct": progress_pct,
+        "latest": latest,
+        "cta": cta,
+        "era_ribbon": era_ribbon,
+        "county_pins": _county_pins(county_ancestors),
+        "ireland_path": _ireland_svg_path(),
+    }
+
+
+def _county_pins(county_ancestors: dict[str, list[str]]) -> list[dict]:
+    """Project COUNTY_COORDS into SVG-space pins sized by ancestor count."""
+    if not county_ancestors:
+        return []
+    lats = [lat for lat, _ in COUNTY_COORDS.values()]
+    lons = [lon for _, lon in COUNTY_COORDS.values()]
+    lat_min, lat_max = min(lats) - 0.2, max(lats) + 0.2
+    lon_min, lon_max = min(lons) - 0.2, max(lons) + 0.2
+    w, h = 300, 420
+    max_count = max(len(v) for v in county_ancestors.values())
+    pins = []
+    for county, names in county_ancestors.items():
+        lat, lon = COUNTY_COORDS[county]
+        x = (lon - lon_min) / (lon_max - lon_min) * w
+        y = (lat_max - lat) / (lat_max - lat_min) * h
+        n = len(names)
+        r = 5 + 10 * (n / max_count) if max_count else 5
+        pins.append({
+            "county": county.title(),
+            "x": round(x, 1), "y": round(y, 1),
+            "r": round(r, 1), "count": n,
+            "names": names,
+        })
+    return pins
+
+
+def _ireland_svg_path() -> str:
+    """Convert IRELAND_OUTLINE coords to SVG-space path matching _county_pins()."""
+    lats = [lat for lat, _ in COUNTY_COORDS.values()]
+    lons = [lon for _, lon in COUNTY_COORDS.values()]
+    lat_min, lat_max = min(lats) - 0.2, max(lats) + 0.2
+    lon_min, lon_max = min(lons) - 0.2, max(lons) + 0.2
+    w, h = 300, 420
+    parts = []
+    for i, (lon, lat) in enumerate(IRELAND_OUTLINE):
+        x = (lon - lon_min) / (lon_max - lon_min) * w
+        y = (lat_max - lat) / (lat_max - lat_min) * h
+        parts.append(f"{'M' if i == 0 else 'L'}{x:.1f},{y:.1f}")
+    return " ".join(parts) + " Z"
 
 
 def _reset_run_state() -> bool:

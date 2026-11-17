@@ -1,0 +1,229 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Irish genealogy search</title>
+<style>
+  :root {
+    --cream:#f4ecd8; --cream-dark:#e8dcc0; --moss:#4a7c3a; --moss-dark:#1f4722;
+    --sepia:#8b6f47; --gold:#c9a04a; --ink:#2b2416;
+  }
+  * { box-sizing: border-box; }
+  html {
+    background:
+      linear-gradient(180deg, rgba(0,155,58,.55) 0, rgba(0,155,58,.55) 6px,
+                              rgba(255,255,255,.75) 6px, rgba(255,255,255,.75) 12px,
+                              rgba(255,136,0,.55) 12px, rgba(255,136,0,.55) 18px,
+                              transparent 18px),
+      radial-gradient(1200px 500px at 50% -10%, #fff7df 0%, transparent 60%),
+      radial-gradient(900px 600px at 10% 110%, #efe3c2 0%, transparent 55%),
+      var(--cream);
+    background-attachment: fixed;
+  }
+  body {
+    font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    max-width: 960px; margin: 0 auto; padding: 1.4rem 1rem 1rem;
+    color: var(--ink); min-height: 100vh;
+  }
+  h1 { font-size: 2.2rem; margin:.2rem 0 .1rem; color: var(--moss-dark); text-align:center; letter-spacing:.02em; }
+  .tagline { text-align:center; color: var(--sepia); font-style:italic; margin:0 0 .9rem; font-size:1.05rem; }
+
+  .hero-strip {
+    background:#fffcf2; border:2px solid var(--gold); border-radius:14px;
+    padding:1.1rem 1.3rem; margin:.4rem 0 1rem;
+    box-shadow: 0 0 0 4px #fffcf2, 0 0 0 5px var(--sepia), 0 6px 14px rgba(0,0,0,.1);
+    display:grid; grid-template-columns: auto 1fr auto; gap:1.2rem; align-items:center;
+  }
+  @media (max-width:640px) { .hero-strip { grid-template-columns: auto 1fr; } .hero-cta { grid-column: 1 / -1; } }
+  .ring { width:96px; height:96px; }
+  .ring .bg { fill:none; stroke:var(--cream-dark); stroke-width:10; }
+  .ring .fg { fill:none; stroke:var(--moss); stroke-width:10; stroke-linecap:round;
+              transform:rotate(-90deg); transform-origin:50% 50%; transition: stroke-dasharray .5s; }
+  .ring text { font:700 1.1rem "Palatino Linotype",serif; fill:var(--moss-dark); }
+  .counts { display:flex; gap:1.1rem; flex-wrap:wrap; }
+  .count { text-align:left; }
+  .count .n { font-size:1.6rem; font-weight:700; color:var(--moss-dark); line-height:1; }
+  .count .l { font-size:.85rem; color:var(--sepia); letter-spacing:.02em; margin-top:.15rem; }
+  .hero-cta a, .hero-cta button {
+    display:inline-block; padding:.7rem 1.3rem; font: inherit; font-size:1.05rem; font-weight:700;
+    background: linear-gradient(180deg, #e8c468 0%, var(--gold) 55%, #a87a2c 100%);
+    color:#fff; text-decoration:none; border:0; border-radius:10px; cursor:pointer;
+    box-shadow: 0 3px 0 #6b4a0e, 0 6px 14px rgba(0,0,0,.18);
+  }
+  .hero-cta a:hover, .hero-cta button:hover { background: linear-gradient(180deg,#f3d07a,#d6ad55 55%,#b8862f); }
+
+  .tiles { display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; margin:0 0 1.2rem; }
+  @media (max-width:720px) { .tiles { grid-template-columns: 1fr; } }
+  .tile {
+    display:block; background:#fffcf2; border:2px solid var(--gold); border-radius:12px;
+    padding:1.1rem 1.1rem 1rem; text-decoration:none; color:var(--ink);
+    box-shadow: 0 3px 0 rgba(139,111,71,.25), 0 6px 14px rgba(0,0,0,.08);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .tile:hover { transform: translateY(-2px); box-shadow: 0 5px 0 rgba(139,111,71,.3), 0 10px 20px rgba(0,0,0,.12); }
+  .tile .emoji { font-size:2rem; line-height:1; }
+  .tile h3 { margin:.5rem 0 .2rem; color:var(--moss-dark); font-size:1.2rem; }
+  .tile p { margin:0; color:var(--sepia); font-size:.95rem; }
+  .tile .meta { margin-top:.5rem; font-size:.85rem; color:var(--moss-dark); font-weight:600; }
+  .tile.disabled { opacity:.65; cursor:default; }
+
+  .latest { margin:.5rem 0 1rem; }
+  .latest h2 { margin:.3rem 0 .5rem; color:var(--moss-dark); font-size:1.15rem; }
+  .finds { display:grid; grid-template-columns: repeat(auto-fill, minmax(230px,1fr)); gap:.6rem; }
+  .find {
+    background:#fffcf2; border:1px solid var(--cream-dark); border-left:4px solid var(--moss);
+    border-radius:8px; padding:.55rem .75rem;
+  }
+  .find .n { font-weight:700; color:var(--ink); font-size:.98rem; }
+  .find .m { font-size:.82rem; color:var(--sepia); }
+  .find .t { display:inline-block; font-size:.72rem; padding:.05rem .4rem; border-radius:10px;
+             background:var(--cream-dark); color:var(--ink); margin-left:.3rem; vertical-align:middle; }
+
+  .map-wrap { background:#fffcf2; border:2px solid var(--gold); border-radius:12px;
+              padding:.85rem 1.1rem 1rem; margin:0 0 1.2rem;
+              box-shadow: 0 3px 0 rgba(139,111,71,.2), 0 6px 14px rgba(0,0,0,.08);
+              display:grid; grid-template-columns: auto 1fr; gap:1.1rem; align-items:center; }
+  @media (max-width:640px){ .map-wrap { grid-template-columns: 1fr; } }
+  .map-wrap h2 { margin:0 0 .35rem; font-size:1.05rem; color:var(--moss-dark); }
+  .map-wrap p { margin:.2rem 0; color:var(--sepia); font-size:.9rem; }
+  .ireland-svg { width:220px; max-width:100%; height:auto; display:block; }
+  .ireland-svg .land { fill:#e3eecb; stroke:var(--moss-dark); stroke-width:1.2; }
+  .ireland-svg .pin { fill:var(--moss); fill-opacity:.65; stroke:var(--moss-dark); stroke-width:1.2;
+                      cursor:pointer; transition:fill-opacity .15s, transform .15s; transform-origin:center; transform-box:fill-box; }
+  .ireland-svg a:hover .pin { fill-opacity:1; transform:scale(1.15); }
+  .ireland-svg .pin-label { font: 700 10px "Palatino Linotype",serif; fill:var(--moss-dark); pointer-events:none; }
+  .ribbon-wrap { background:#fffcf2; border:2px solid var(--gold); border-radius:12px;
+                 padding:.85rem 1.1rem 1rem; margin:0 0 1.2rem;
+                 box-shadow: 0 3px 0 rgba(139,111,71,.2), 0 6px 14px rgba(0,0,0,.08); }
+  .ribbon-wrap h2 { margin:0 0 .5rem; font-size:1.05rem; color:var(--moss-dark); }
+  .ribbon { display:flex; gap:4px; align-items:flex-end; height:70px;
+            border-bottom:2px solid var(--sepia); padding-bottom:2px; }
+  .r-era { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+           min-width:0; height:100%; position:relative; }
+  .r-bar { width:100%; min-height:4px; background:var(--moss); border-radius:4px 4px 0 0;
+           opacity:.85; transition:height .4s; }
+  .r-bar.empty { background:var(--cream-dark); opacity:.6; }
+  .r-era[data-ancestors]:not([data-ancestors="0"]) .r-bar::after {
+    content:attr(data-ancestors); position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+    font-size:.7rem; color:var(--sepia); font-weight:700;
+  }
+  .r-labels { display:flex; gap:4px; margin-top:.3rem; }
+  .r-label { flex:1; text-align:center; font-size:.68rem; color:var(--sepia);
+             line-height:1.1; min-width:0; }
+  .r-label strong { display:block; color:var(--moss-dark); font-size:.78rem; font-weight:700; }
+  .ribbon-legend { font-size:.78rem; color:var(--sepia); margin-top:.5rem; text-align:right; font-style:italic; }
+  .site-foot { text-align:center; margin:1.4rem 0 .3rem; color:var(--sepia); font-style:italic; font-size:.95rem; }
+  .site-foot .glyph { color:var(--moss-dark); font-style:normal; margin:0 .35rem; }
+</style>
+
+<h1>&#9752; Irish ancestry search</h1>
+<p class="tagline">Welcome back. Pick up where you left off.</p>
+
+{% set pct = stats.progress_pct %}
+{% set circ = 283 %}
+<div class="hero-strip">
+  <svg class="ring" viewBox="0 0 100 100" aria-label="Review progress">
+    <circle class="bg" cx="50" cy="50" r="45"/>
+    <circle class="fg" cx="50" cy="50" r="45"
+            stroke-dasharray="{{ (circ * pct / 100)|round(1) }} {{ circ }}"/>
+    <text x="50" y="56" text-anchor="middle">{{ pct }}%</text>
+  </svg>
+  <div class="counts">
+    <div class="count"><div class="n">{{ stats.ancestors }}</div><div class="l">ancestors</div></div>
+    <div class="count"><div class="n">{{ stats.confirmed }}</div><div class="l">confirmed</div></div>
+    <div class="count"><div class="n">{{ stats.saved }}</div><div class="l">bookmarked</div></div>
+    <div class="count"><div class="n">{{ stats.pending }}</div><div class="l">clue{{ 's' if stats.pending != 1 else '' }} waiting</div></div>
+  </div>
+  <div class="hero-cta">
+    {% if stats.cta.method == 'post' %}
+      <form method="post" action="{{ stats.cta.href }}" style="margin:0">
+        <button type="submit">{{ stats.cta.label }} &rarr;</button>
+      </form>
+    {% else %}
+      <a href="{{ stats.cta.href }}">{{ stats.cta.label }} &rarr;</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if stats.county_pins %}
+<div class="map-wrap">
+  <svg class="ireland-svg" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg" aria-label="Ancestor map of Ireland">
+    <path class="land" d="{{ stats.ireland_path }}"/>
+    {% for p in stats.county_pins %}
+    <a href="{{ url_for('ancestors.ancestors_page') }}?county={{ p.county }}">
+      <circle class="pin" cx="{{ p.x }}" cy="{{ p.y }}" r="{{ p.r }}">
+        <title>{{ p.county }} — {{ p.count }} ancestor{{ 's' if p.count != 1 else '' }}: {{ p.names|join(', ') }}</title>
+      </circle>
+      <text class="pin-label" x="{{ p.x }}" y="{{ p.y + 3 }}" text-anchor="middle">{{ p.count }}</text>
+    </a>
+    {% endfor %}
+  </svg>
+  <div>
+    <h2>&#128506;&#65039; Where your family lived</h2>
+    <p>{{ stats.county_pins|length }} count{{ 'ies' if stats.county_pins|length != 1 else 'y' }} with ancestors on file.</p>
+    <p style="font-size:.82rem;font-style:italic">Click a pin to filter Our Family by county.</p>
+  </div>
+</div>
+{% endif %}
+
+{% if stats.era_ribbon and stats.era_ribbon|selectattr('has_data')|list %}
+<div class="ribbon-wrap">
+  <h2>&#128197; Coverage across the eras</h2>
+  <div class="ribbon">
+    {% for e in stats.era_ribbon %}
+    <div class="r-era" data-ancestors="{{ e.ancestors }}" title="{{ e.era }} — {{ e.records }} confirmed record{{ 's' if e.records != 1 else '' }}, {{ e.ancestors }} ancestor{{ 's' if e.ancestors != 1 else '' }}">
+      <div class="r-bar {{ 'empty' if not e.has_data }}"
+           style="height: {{ [e.density, 8]|max if e.has_data else 4 }}%; background: {{ e.tint if e.has_data else '' }}; border:1px solid var(--sepia)"></div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="r-labels">
+    {% for e in stats.era_ribbon %}
+    <div class="r-label"><strong>{{ e.records }}</strong>{{ e.era }}</div>
+    {% endfor %}
+  </div>
+  <div class="ribbon-legend">bar height = confirmed records &middot; number on top = ancestors born then</div>
+</div>
+{% endif %}
+
+<div class="tiles">
+  <a class="tile" href="{{ url_for('ancestors.ancestors_page') }}">
+    <div class="emoji">&#128106;</div>
+    <h3>Our Family</h3>
+    <p>Browse everyone you've added and their finds.</p>
+    <div class="meta">{{ stats.ancestors }} ancestor{{ 's' if stats.ancestors != 1 else '' }} &middot; {{ stats.records_total }} record{{ 's' if stats.records_total != 1 else '' }}</div>
+  </a>
+  <a class="tile" href="{{ url_for('results.bookmarks_page') }}">
+    <div class="emoji">&#128278;</div>
+    <h3>Bookmarks</h3>
+    <p>Interesting finds you've set aside for later.</p>
+    <div class="meta">{{ stats.saved }} saved</div>
+  </a>
+  <a class="tile" href="{{ url_for('runs.index') }}?find=1#quick-search">
+    <div class="emoji">&#128269;</div>
+    <h3>Find Someone</h3>
+    <p>Search old Irish records for a new ancestor.</p>
+    <div class="meta">Quick-search &rarr;</div>
+  </a>
+</div>
+
+{% if stats.latest %}
+<div class="latest">
+  <h2>&#10024; Recent finds</h2>
+  <div class="finds">
+    {% for f in stats.latest %}
+    <div class="find">
+      <div class="n">{{ f.name or '(unnamed)' }}<span class="t">{{ f.tier }}</span></div>
+      <div class="m">
+        {% if f.type %}{{ f.type }}{% endif %}
+        {% if f.year %} &middot; {{ f.year }}{% endif %}
+        {% if f.place %} &middot; {{ f.place }}{% endif %}
+      </div>
+      <div class="m" style="margin-top:.15rem">for <strong>{{ f.person }}</strong> &middot; {{ f.site }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="site-foot">
+  <span class="glyph">&#9752;</span> Sl&aacute;inte <span class="glyph">&#9752;</span>
+</div>
