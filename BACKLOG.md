@@ -13,6 +13,19 @@ Working list. Tick when done. Add free-form.
 - [ ] Handle 1821-1851 census fragments (held by NAI separately).
 - [x] Household grouping: when a census row is found, also fetch other names living at same address and attach as kin suggestions.
 
+### Ideas — portal landing
+- [ ] Landing rework: `/` idle branch becomes portal dashboard, not just quick-search form.
+- [ ] Hero strip: counts (ancestors / confirmed / bookmarked) + progress ring + oldest-ancestor one-liner.
+- [ ] Three tiles: Our Family · Bookmarks · Find Someone (current form lives behind tile 3 or collapsed below).
+- [ ] Smart CTA: "Add first ancestor" / "Review N pending" / "Re-run search" based on state.
+- [ ] Mystery-box: pending-review count framed as "N clues waiting".
+- [ ] Map pin cloud: Ireland SVG, dots per confirmed-ancestor county, click filters Our Family.
+- [ ] Era timeline ribbon: horizontal 1800s→now, coverage density; reuses `ERA_ORDER`.
+- [ ] Recently-found strip: last 3-5 new records with thumbnails.
+- [ ] Streak / last-activity line ("Last find: 3 days ago").
+- [ ] Persistent top-bar search + help/tour button on every screen.
+- [ ] First-visit 3-slide tour (extends existing welcome overlay).
+
 ### Ideas — UX / learning
 - [ ] Mini family tree per person: draw boxes for father/mother/spouse from `ancestors.csv`, highlight ones with confirmed records.
 - [ ] Mobile layout: cards stack better; conf-buttons full-width on <600px.
